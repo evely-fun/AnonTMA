@@ -40,6 +40,38 @@ def _check_string(pairs: list[tuple[str, str]]) -> str:
     return "\n".join(f"{key}={value}" for key, value in sorted(pairs, key=lambda item: item[0]))
 
 
+def _matches_hash(pairs: list[tuple[str, str]], received_hash: str) -> bool:
+    secret = _secret_key(settings.telegram_bot_token)
+    without_signature = [(key, value) for key, value in pairs if key not in ("hash", "signature")]
+    with_signature = [(key, value) for key, value in pairs if key != "hash"]
+
+    for candidate in (without_signature, with_signature):
+        expected = hmac.new(secret, _check_string(candidate).encode(), hashlib.sha256).hexdigest()
+        if hmac.compare_digest(expected, received_hash):
+            return True
+    return False
+
+
+def describe_init_data(raw: str) -> dict[str, object]:
+    try:
+        pairs = parse_qsl(raw, keep_blank_values=True, strict_parsing=False)
+    except ValueError:
+        return {"parsable": False, "length": len(raw)}
+    data = dict(pairs)
+    age: int | None = None
+    try:
+        age = int(time.time()) - int(data.get("auth_date", "0"))
+    except ValueError:
+        age = None
+    return {
+        "parsable": True,
+        "length": len(raw),
+        "keys": sorted(data.keys()),
+        "authDateAgeSeconds": age,
+        "hasSignature": "signature" in data,
+    }
+
+
 def validate_init_data(raw: str, *, max_age: int | None = None) -> InitData:
     if not raw or len(raw) > 8192:
         raise InitDataError("init data missing or too large")
@@ -53,11 +85,7 @@ def validate_init_data(raw: str, *, max_age: int | None = None) -> InitData:
     if not received_hash:
         raise InitDataError("hash is missing")
 
-    payload_pairs = [(key, value) for key, value in pairs if key not in ("hash", "signature")]
-    expected = hmac.new(
-        _secret_key(settings.telegram_bot_token), _check_string(payload_pairs).encode(), hashlib.sha256
-    ).hexdigest()
-    if not hmac.compare_digest(expected, received_hash):
+    if not _matches_hash(pairs, received_hash):
         raise InitDataError("signature mismatch")
 
     try:

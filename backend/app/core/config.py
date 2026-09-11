@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_ttl_seconds: int = 1800
     refresh_token_ttl_seconds: int = 2592000
-    init_data_max_age_seconds: int = 300
+    init_data_max_age_seconds: int = 3600
 
     payload_encryption_key: str = ""
 
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     rate_limit_http_per_minute: int = 120
     rate_limit_ws_messages_per_10s: int = 40
-    rate_limit_auth_per_minute: int = 10
+    rate_limit_auth_per_minute: int = 40
 
     turn_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
     turn_username: str = ""

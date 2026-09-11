@@ -3,10 +3,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.deps import CurrentUser, SessionDep, rate_limit_auth
 from app.core.config import settings
 from app.core.security import TokenError, create_token, decode_token
-from app.core.telegram_auth import InitDataError, TelegramUser, validate_init_data
+from app.core.logging import get_logger
+from app.core.telegram_auth import (
+    InitDataError,
+    TelegramUser,
+    describe_init_data,
+    validate_init_data,
+)
 from app.schemas.user import AuthRequest, RefreshRequest, TokenPair
 from app.services.users import ensure_user
 
+logger = get_logger("auth")
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -23,6 +30,7 @@ async def authenticate(payload: AuthRequest, session: SessionDep) -> TokenPair:
     try:
         init_data = validate_init_data(payload.init_data)
     except InitDataError as exc:
+        logger.warning("init data rejected", reason=str(exc), **describe_init_data(payload.init_data))
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Invalid init data: {exc}") from exc
 
     start_param = payload.start_param or init_data.start_param
