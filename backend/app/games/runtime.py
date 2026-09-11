@@ -110,6 +110,14 @@ async def create_game(
     return {"gameId": game_id, "gameKey": game_key, "players": unique_players}
 
 
+async def push_state(game_id: int) -> None:
+    loaded = await _load(game_id)
+    if loaded is None:
+        return
+    game_key, state = loaded
+    await _emit(game_id, game_key, state, [])
+
+
 async def start_game(game_id: int) -> bool:
     token = await _lock(game_id)
     if token is None:

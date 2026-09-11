@@ -1,0 +1,91 @@
+.panel {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-4));
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(92vw, 420px);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  background: rgba(18, 21, 29, 0.9);
+  border: 1px solid var(--border-mid);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: var(--blur-panel);
+  -webkit-backdrop-filter: var(--blur-panel);
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.incoming {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: var(--bg-overlay);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.incomingCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 320px;
+  padding: var(--space-7) var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface);
+  background-image: var(--gradient-surface);
+  border: 1px solid var(--border-mid);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.incomingName {
+  margin-top: var(--space-3);
+  font-size: var(--text-lg);
+  font-weight: 800;
+}
+
+.incomingHint {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.incomingActions {
+  display: flex;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}

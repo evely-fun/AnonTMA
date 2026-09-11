@@ -1,0 +1,314 @@
+import { peerManager } from "@/features/voice/webrtc";
+import { haptics } from "@/shared/lib/telegram";
+import { realtime } from "@/shared/lib/socket";
+import type { PresenceSnapshot, Reward, RoomMember } from "@/shared/lib/types";
+import { useChat } from "@/store/chat";
+import { useGames } from "@/store/games";
+import { useRooms } from "@/store/rooms";
+import { useSession } from "@/store/session";
+import { useSocial } from "@/store/social";
+import { toast } from "@/store/ui";
+import { useVoice } from "@/store/voice";
+
+const rewardToast = (reward: Reward | undefined, title: string): void => {
+  if (!reward || (!reward.xp && !reward.coins)) {
+    return;
+  }
+  toast(title, {
+    description: `+${reward.xp ?? 0} XP · +${reward.coins ?? 0} coins`,
+    icon: reward.levelUp ? "🎉" : "✨",
+    tone: "success",
+  });
+  reward.achievements?.forEach((achievement) => {
+    toast(`Achievement unlocked`, { description: achievement.title, icon: achievement.icon, tone: "success" });
+  });
+};
+
+let bound = false;
+
+export const bindRealtime = (): void => {
+  if (bound) {
+    return;
+  }
+  bound = true;
+
+  realtime.onStatus((status) => useSession.getState().setConnection(status));
+
+  realtime.on("ready", (payload) => {
+    useSession.getState().setPresence(payload.presence as PresenceSnapshot);
+    const dialog = payload.dialog as Record<string, unknown> | null;
+    if (dialog) {
+      useChat.getState().matched({ ...dialog, polite: true });
+    }
+  });
+
+  realtime.on("pong", (payload) => {
+    const online = Number(payload.online ?? 0);
+    const presence = useSession.getState().presence;
+    useSession.getState().setPresence({ ...presence, online });
+  });
+
+  realtime.on("presence.snapshot", (payload) => {
+    useSession.getState().setPresence(payload as unknown as PresenceSnapshot);
+  });
+
+  realtime.on("match.searching", (payload) => {
+    useChat.getState().setQueue(Number(payload.queue ?? 0));
+  });
+
+  realtime.on("match.found", (payload) => {
+    haptics.notify("success");
+    useChat.getState().matched(payload);
+    const partnerId = Number(payload.partnerId);
+    const polite = Boolean(payload.polite);
+    if (payload.mode === "voice") {
+      void useVoice
+        .getState()
+        .enable()
+        .then((granted) => {
+          if (granted) {
+            peerManager.connect(partnerId, polite);
+          }
+        });
+    }
+  });
+
+  realtime.on("dialog.message", (payload) => {
+    const state = useChat.getState();
+    const own = Number(payload.from) === useSession.getState().profile?.id;
+    if (own) {
+      return;
+    }
+    haptics.impact("light");
+    state.appendMessage({
+      id: Number(payload.id),
+      text: String(payload.text),
+      from: Number(payload.from),
+      own: false,
+      createdAt: String(payload.createdAt),
+    });
+  });
+
+  realtime.on("dialog.typing", (payload) => {
+    useChat.getState().setPartnerTyping(Boolean(payload.typing));
+  });
+
+  realtime.on("dialog.partner_liked", () => {
+    useChat.getState().setPartnerLiked();
+    toast("Your companion liked the chat", { icon: "💜", tone: "success" });
+  });
+
+  realtime.on("dialog.reveal_request", () => {
+    useChat.getState().setRevealPending(true);
+    toast("Reveal requested", { description: "Tap reveal to share your profile", icon: "🎭" });
+  });
+
+  realtime.on("dialog.revealed", (payload) => {
+    useChat.getState().setRevealed({
+      userId: Number(payload.userId),
+      anonName: String(payload.anonName),
+      username: (payload.username as string | null) ?? null,
+    });
+    toast("Identities revealed", { icon: "✨", tone: "success" });
+  });
+
+  realtime.on("dialog.ended", (payload) => {
+    const partnerId = useChat.getState().partnerId;
+    if (partnerId) {
+      peerManager.disconnect(partnerId);
+    }
+    void useVoice.getState().disable();
+    useChat.getState().finish({
+      durationSeconds: Number(payload.durationSeconds ?? 0),
+      reward: (payload.reward as Reward) ?? {},
+      mutualLike: Boolean(payload.mutualLike),
+      reason: String(payload.reason ?? "ended"),
+    });
+    rewardToast(payload.reward as Reward, "Chat finished");
+    void useSession.getState().refreshProfile();
+  });
+
+  realtime.on("room.joined", (payload) => {
+    useRooms.getState().setMembers(payload.members as RoomMember[]);
+    const peers = (payload.peers as number[]) ?? [];
+    const selfId = useSession.getState().profile?.id ?? 0;
+    void useVoice
+      .getState()
+      .enable()
+      .then((granted) => {
+        if (!granted) {
+          return;
+        }
+        peers.forEach((peerId) => peerManager.connect(peerId, selfId < peerId));
+      });
+  });
+
+  realtime.on("room.roster", (payload) => {
+    useRooms.getState().setMembers(payload.members as RoomMember[]);
+  });
+
+  realtime.on("room.member_joined", (payload) => {
+    const member = payload.member as RoomMember;
+    useRooms.getState().upsertMember(member);
+    const selfId = useSession.getState().profile?.id ?? 0;
+    if (member.userId !== selfId && useVoice.getState().active) {
+      peerManager.connect(member.userId, selfId < member.userId);
+    }
+  });
+
+  realtime.on("room.member_updated", (payload) => {
+    useRooms.getState().upsertMember(payload.member as RoomMember);
+  });
+
+  realtime.on("room.member_left", (payload) => {
+    const userId = Number(payload.userId);
+    useRooms.getState().removeMember(userId);
+    peerManager.disconnect(userId);
+  });
+
+  realtime.on("room.message", (payload) => {
+    useRooms.getState().appendMessage({
+      id: Number(payload.id),
+      from: Number(payload.from),
+      anonName: String(payload.anonName ?? "Anon"),
+      text: String(payload.text),
+      createdAt: new Date().toISOString(),
+    });
+  });
+
+  realtime.on("friend.request", (payload) => {
+    toast("New friend request", { description: String(payload.anonName ?? ""), icon: "🤝" });
+    void useSocial.getState().load();
+  });
+
+  realtime.on("friend.accepted", () => {
+    toast("Friend request accepted", { icon: "🎉", tone: "success" });
+    void useSocial.getState().load();
+  });
+
+  realtime.on("call.incoming", (payload) => {
+    haptics.notify("warning");
+    useSocial.getState().setIncomingCall({
+      callId: String(payload.callId),
+      mode: (payload.mode as "voice" | "text") ?? "voice",
+      from: payload.from as { userId: number; anonName: string; avatarSeed: string },
+    });
+  });
+
+  realtime.on("call.ringing", (payload) => {
+    useSocial.getState().setActiveCall({
+      callId: String(payload.callId),
+      userId: Number(payload.userId),
+      polite: false,
+      status: "ringing",
+    });
+  });
+
+  realtime.on("call.accepted", (payload) => {
+    const social = useSocial.getState();
+    const current = social.activeCall;
+    const incoming = social.incomingCall;
+    const peerId = current?.userId ?? incoming?.from.userId ?? 0;
+    const polite = Boolean(payload.polite);
+    social.setActiveCall({
+      callId: String(payload.callId),
+      userId: peerId,
+      polite,
+      status: "active",
+    });
+    social.setIncomingCall(null);
+    void useVoice
+      .getState()
+      .enable()
+      .then((granted) => {
+        if (granted && peerId) {
+          peerManager.connect(peerId, polite);
+        }
+      });
+  });
+
+  realtime.on("call.declined", () => {
+    toast("Call declined", { icon: "📵" });
+    useSocial.getState().setActiveCall(null);
+  });
+
+  realtime.on("call.ended", () => {
+    const call = useSocial.getState().activeCall;
+    if (call) {
+      peerManager.disconnect(call.userId);
+    }
+    void useVoice.getState().disable();
+    useSocial.getState().setActiveCall(null);
+    useSocial.getState().setIncomingCall(null);
+  });
+
+  realtime.on("game.created", (payload) => {
+    useGames.getState().created(payload);
+  });
+
+  realtime.on("game.state", (payload) => {
+    useGames.getState().setView(payload);
+  });
+
+  realtime.on("game.rewards", (payload) => {
+    useGames.getState().setReward(payload.reward as Reward);
+    rewardToast(payload.reward as Reward, "Game finished");
+    void useSession.getState().refreshProfile();
+  });
+
+  realtime.on("mafia.role", (payload) => {
+    useGames.getState().mergePrivate({ role: payload.role, team: payload.team });
+  });
+
+  realtime.on("mafia.check_result", (payload) => {
+    toast(payload.isMafia ? "Mafia found" : "Looks clean", {
+      description: `Player #${payload.target}`,
+      icon: payload.isMafia ? "🔪" : "🕊",
+      tone: payload.isMafia ? "danger" : "success",
+    });
+  });
+
+  realtime.on("alias.word", (payload) => {
+    useGames.getState().mergePrivate({ word: payload.word });
+  });
+
+  realtime.on("telephone.phrase", (payload) => {
+    useGames.getState().mergePrivate({ phrase: payload.phrase });
+  });
+
+  realtime.on("telephone.turn", (payload) => {
+    const route = [payload.speaker, payload.listener].filter(Boolean) as number[];
+    peerManager.restrictAudio(route);
+  });
+
+  realtime.on("error", (payload) => {
+    const code = String(payload.code ?? "error");
+    if (code === "rate_limited") {
+      return;
+    }
+    toast(String(payload.message ?? "Something went wrong"), { tone: "danger", icon: "⚠️" });
+  });
+
+  const gameEvents = [
+    "game.move",
+    "game.round",
+    "game.reset",
+    "game.phase",
+    "game.finished",
+    "game.aborted",
+    "mafia.night_result",
+    "mafia.vote_result",
+    "mafia.vote",
+    "alias.guess",
+    "alias.score",
+    "alias.round_over",
+    "telephone.reveal",
+    "flappy.countdown",
+    "flappy.go",
+    "flappy.progress",
+    "flappy.crash",
+  ];
+  gameEvents.forEach((type) => {
+    realtime.on(type, (payload) => useGames.getState().pushEvent(type, payload));
+  });
+};

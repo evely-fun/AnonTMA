@@ -1,5 +1,3 @@
-from dataclasses import asdict
-
 from app.games.alias import Alias
 from app.games.base import GameEngine
 from app.games.flappy import VoiceFlappy
@@ -19,7 +17,18 @@ def get_engine(key: str) -> GameEngine | None:
 
 def catalog_payload() -> list[dict]:
     return [
-        {**asdict(engine.meta), "minPlayers": engine.meta.min_players, "maxPlayers": engine.meta.max_players,
-         "voiceRequired": engine.meta.voice_required, "durationMinutes": engine.meta.duration_minutes}
+        {
+            "key": engine.meta.key,
+            "title": engine.meta.title,
+            "subtitle": engine.meta.subtitle,
+            "icon": engine.meta.icon,
+            "accent": engine.meta.accent,
+            "minPlayers": engine.meta.min_players,
+            "maxPlayers": engine.meta.max_players,
+            "voiceRequired": engine.meta.voice_required,
+            "durationMinutes": engine.meta.duration_minutes,
+            "tags": list(engine.meta.tags),
+            "rules": list(engine.meta.rules),
+        }
         for engine in ENGINES.values()
     ]

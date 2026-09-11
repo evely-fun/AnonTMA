@@ -1,8 +1,8 @@
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -29,16 +29,18 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./anontma.db"
     redis_url: str = "redis://localhost:6379/0"
 
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:5173"]
+    )
 
     rate_limit_http_per_minute: int = 120
     rate_limit_ws_messages_per_10s: int = 40
     rate_limit_auth_per_minute: int = 10
 
-    turn_urls: list[str] = Field(default_factory=list)
+    turn_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
     turn_username: str = ""
     turn_credential: str = ""
-    stun_urls: list[str] = Field(
+    stun_urls: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"]
     )
 
@@ -51,7 +53,9 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             stripped = value.strip()
             if stripped.startswith("["):
-                return value
+                import json
+
+                return json.loads(stripped)
             return [item.strip() for item in stripped.split(",") if item.strip()]
         return value
 

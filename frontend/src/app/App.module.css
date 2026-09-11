@@ -1,0 +1,50 @@
+.shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--viewport-height, 100dvh);
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+.aurora {
+  position: absolute;
+  top: -30%;
+  left: 50%;
+  width: 140%;
+  height: 70%;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(50% 50% at 30% 40%, rgba(108, 140, 255, 0.18) 0%, rgba(108, 140, 255, 0) 100%),
+    radial-gradient(45% 45% at 72% 30%, rgba(156, 108, 255, 0.16) 0%, rgba(156, 108, 255, 0) 100%),
+    radial-gradient(40% 40% at 50% 75%, rgba(255, 108, 168, 0.1) 0%, rgba(255, 108, 168, 0) 100%);
+  filter: blur(10px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.boot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  height: 100dvh;
+  background: var(--bg-base);
+}
+
+.bootOrb {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: var(--gradient-brand);
+  filter: blur(2px);
+  animation: breathe 1.8s ease-in-out infinite;
+  box-shadow: var(--shadow-accent);
+}
+
+.bootText {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-normal);
+}

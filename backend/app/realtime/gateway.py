@@ -575,6 +575,11 @@ async def handle_game_create(session: Session, payload: dict, ack: str | None) -
     if room_id:
         await hub.broadcast(rooms.topic(room_id), event("room.game", {"gameId": game_id, "gameKey": game_key}))
 
+    if len(players) == 1:
+        await games.start_game(game_id)
+    else:
+        await games.push_state(game_id)
+
 
 async def handle_game_join(session: Session, payload: dict, ack: str | None) -> None:
     game_id = int(payload.get("gameId", 0) or 0)
