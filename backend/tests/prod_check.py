@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import os
+import random
 import sys
 import time
 from urllib.parse import urlencode
@@ -46,7 +47,8 @@ async def send(socket, kind: str, payload: dict | None = None) -> None:
 async def main() -> int:
     async with httpx.AsyncClient(timeout=60) as client:
         tokens = []
-        for user_id, name in ((999001, "Deploy Check A"), (999002, "Deploy Check B")):
+        base = 990000 + random.randint(0, 8999)
+        for user_id, name in ((base, "Deploy Check A"), (base + 1, "Deploy Check B")):
             response = await client.post(
                 f"{API}/api/v1/auth/telegram",
                 json={"initData": sign_init_data(user_id, name)},
