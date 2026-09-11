@@ -5,8 +5,8 @@ import sys
 import httpx
 import websockets
 
-BASE = "http://127.0.0.1:8000"
-WS = "ws://127.0.0.1:8000/ws"
+BASE = "http://127.0.0.1:8001"
+WS = "ws://127.0.0.1:8001/ws"
 
 
 async def login(client: httpx.AsyncClient, tg_id: int) -> str:

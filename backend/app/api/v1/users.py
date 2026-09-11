@@ -16,8 +16,20 @@ from app.services import identity
 from app.services.achievements import CATALOG
 from app.services.moderation import submit_report
 from app.services.progression import describe, title_for_level
+from app.services.users import DEFAULT_PREFERENCES
 
 router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(rate_limit_default)])
+
+ALLOWED_PREFERENCES: dict[str, type | tuple[type, ...]] = {
+    "noiseSuppression": str,
+    "theme": str,
+    "haptics": bool,
+    "sounds": bool,
+    "autoReveal": bool,
+    "matchLanguage": str,
+    "matchGender": str,
+    "allowFriendCalls": bool,
+}
 
 LEADERBOARD_FIELDS = {
     "xp": UserStats.xp,
@@ -97,8 +109,11 @@ async def update_me(payload: ProfileUpdate, user: CurrentUser, session: SessionD
     if payload.interests is not None:
         user.interests = payload.interests
     if payload.preferences is not None:
-        merged = dict(user.preferences or {})
-        merged.update({key: value for key, value in payload.preferences.items() if key in merged or True})
+        merged = dict(DEFAULT_PREFERENCES)
+        merged.update(user.preferences or {})
+        for key, value in payload.preferences.items():
+            if key in ALLOWED_PREFERENCES and isinstance(value, ALLOWED_PREFERENCES[key]):
+                merged[key] = value
         user.preferences = merged
     if payload.regenerate_mask:
         seed = identity.new_seed()

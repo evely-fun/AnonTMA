@@ -48,3 +48,17 @@
   color: var(--text-muted);
   letter-spacing: var(--tracking-normal);
 }
+
+.bootIcon {
+  font-size: 44px;
+  animation: floatSlow 4s ease-in-out infinite;
+}
+
+.bootRetry {
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  background: var(--gradient-brand);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: var(--shadow-accent);
+}

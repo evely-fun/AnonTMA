@@ -32,10 +32,21 @@ const Boot = () => (
   </div>
 );
 
+const Failure = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+  <div className={styles.boot}>
+    <div className={styles.bootIcon}>🛰</div>
+    <p className={styles.bootText}>{message}</p>
+    <button type="button" className={styles.bootRetry} onClick={onRetry}>
+      Try again
+    </button>
+  </div>
+);
+
 export const App = () => {
   const location = useLocation();
   const loading = useSession((state) => state.loading);
   const profile = useSession((state) => state.profile);
+  const error = useSession((state) => state.error);
   const load = useSession((state) => state.load);
 
   useEffect(() => {
@@ -69,6 +80,17 @@ export const App = () => {
 
   if (loading && !profile) {
     return <Boot />;
+  }
+
+  if (!profile) {
+    return (
+      <Failure
+        message={error ?? "Could not reach the server"}
+        onRetry={() => {
+          void authenticate().then(() => load());
+        }}
+      />
+    );
   }
 
   return (
