@@ -1,7 +1,37 @@
 # Deployment
 
-Two pieces: the API on Render (web service, PostgreSQL, Key Value store) and the
-mini app on Cloudflare Pages. Telegram points at both.
+## Live deployment
+
+Everything runs on Render in the `frankfurt` region, deployed from the
+`claude/affectionate-cray-idu7f1` branch with auto deploy enabled.
+
+| Piece | Name | URL |
+| --- | --- | --- |
+| Mini app | `anontma` (static site) | https://anontma.onrender.com |
+| API and WebSocket | `anontma-api` (web service) | https://anontma-api.onrender.com |
+| Database | `anontma-db` (Postgres 16, free) | internal only |
+| Live state | `anontma-cache` (Key Value, free) | internal only |
+
+The bot is `@AnteikuAnonBot` and its webhook is registered automatically on
+boot at `/telegram/webhook`.
+
+Free plan limits worth knowing:
+
+- the web service sleeps after 15 minutes of inactivity, so the first request
+  after a quiet period takes about a minute and open sockets drop
+- the free Postgres instance expires 30 days after creation, upgrade it before
+  then to keep the data
+- the free Key Value store holds 25 MB, which covers presence, matchmaking and
+  live game state at this scale
+
+Secrets live only in the Render environment, never in this repository.
+
+## Reproducing the deployment from scratch
+
+The blueprint in `render.yaml` provisions the same stack on paid plans, where
+the database and cache are wired automatically. The steps below cover a manual
+setup, including the Cloudflare Pages variant if you prefer the mini app on a
+CDN closer to your users.
 
 ## 1. What you need to provide
 
