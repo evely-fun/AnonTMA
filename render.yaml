@@ -47,6 +47,8 @@ services:
         sync: false
       - key: TELEGRAM_BOT_USERNAME
         sync: false
+      - key: PAYMENTS_MODE
+        value: test
       - key: PUBLIC_WEB_URL
         sync: false
       - key: PUBLIC_API_URL
@@ -58,4 +60,24 @@ services:
       - key: TURN_USERNAME
         sync: false
       - key: TURN_CREDENTIAL
+        sync: false
+
+  - type: web
+    name: anontma
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/dist
+    autoDeploy: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_URL
         sync: false
