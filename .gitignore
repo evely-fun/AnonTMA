@@ -16,3 +16,4 @@ coverage/
 *.sqlite3
 .wrangler/
 smoke.db
+dump.rdb
