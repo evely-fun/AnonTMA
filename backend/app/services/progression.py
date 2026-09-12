@@ -64,6 +64,45 @@ def describe(xp: int) -> Progress:
     )
 
 
+# Every fifth level lifts the energy cap and the per dialog coin bonus, so a
+# level is worth something concrete rather than only a label.
+ENERGY_PER_TIER = 10
+COINS_PER_TIER = 1
+TIER_SIZE = 5
+
+
+def tier_for_level(level: int) -> int:
+    return max(0, (level - 1) // TIER_SIZE)
+
+
+def energy_bonus(level: int) -> int:
+    return tier_for_level(level) * ENERGY_PER_TIER
+
+
+def coin_bonus(level: int) -> int:
+    return tier_for_level(level) * COINS_PER_TIER
+
+
+def ladder(current_level: int, span: int = 6) -> list[dict]:
+    """The next few levels with what each one unlocks."""
+    rows: list[dict] = []
+    start = max(1, current_level)
+    for level in range(start, min(MAX_LEVEL, start + span) + 1):
+        previous_title = title_for_level(level - 1) if level > 1 else ""
+        rows.append(
+            {
+                "level": level,
+                "xpTotal": xp_for_level(level),
+                "title": title_for_level(level),
+                "newTitle": level > 1 and title_for_level(level) != previous_title,
+                "energyBonus": energy_bonus(level),
+                "coinBonus": coin_bonus(level),
+                "reached": level <= current_level,
+            }
+        )
+    return rows
+
+
 def dialog_reward(duration_seconds: int, liked: bool, mode: str) -> tuple[int, int]:
     minutes = duration_seconds / 60
     base = 6 if mode == "voice" else 4

@@ -11,6 +11,7 @@ import { GamesPage } from "@/pages/GamesPage";
 import { AdminPage } from "@/pages/AdminPage";
 import { HomeDock, HomePage } from "@/pages/HomePage";
 import { LeaderboardPage } from "@/pages/LeaderboardPage";
+import { LevelsPage } from "@/pages/LevelsPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { PremiumPage } from "@/pages/PremiumPage";
 import { ProfilePage } from "@/pages/ProfilePage";
@@ -308,6 +309,7 @@ export const App = () => {
                 <Route path="/shop" element={<ShopPage />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/levels" element={<LevelsPage />} />
                 <Route path="*" element={<HomePage />} />
               </Routes>
             </main>

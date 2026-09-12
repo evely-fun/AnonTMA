@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useT } from "@/shared/i18n";
+import { nameEffectClass } from "@/shared/lib/cosmetics";
 import { request } from "@/shared/lib/api";
 import { compactNumber, durationLabel } from "@/shared/lib/format";
 import { listStagger, rise } from "@/shared/lib/motion";
@@ -25,6 +26,7 @@ import {
   BoltIcon,
   ChatIcon,
   CheckIcon,
+  ChevronIcon,
   LockIcon,
   CrownIcon,
   FlameIcon,
@@ -57,15 +59,6 @@ const INTERESTS = [
   "memes",
   "night talks",
 ];
-
-const NAME_EFFECT: Record<string, string> = {
-  none: "",
-  gradient:
-    "bg-[linear-gradient(100deg,var(--color-accent),var(--color-live))] bg-clip-text text-transparent",
-  glow: "text-accent drop-shadow-[0_0_10px_var(--accent-soft)]",
-  aurora:
-    "bg-[linear-gradient(100deg,var(--color-accent),var(--color-warn),var(--color-live))] bg-clip-text text-transparent",
-};
 
 export const ProfilePage = () => {
   const { t, locale } = useT();
@@ -149,7 +142,7 @@ export const ProfilePage = () => {
               <div className="min-w-0 flex-1">
                 <h2
                   className={`truncate font-display text-[21px] font-extrabold tracking-[-0.025em] ${
-                    NAME_EFFECT[profile.equipped?.effect ?? "none"] ?? ""
+                    nameEffectClass(profile.equipped?.effect)
                   }`}
                 >
                   {profile.anonName}
@@ -164,12 +157,17 @@ export const ProfilePage = () => {
               <p className="mt-3.5 text-[13.5px] leading-snug text-secondary">{profile.bio}</p>
             )}
 
-            <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => navigate("/levels")}
+              className="mt-4 block w-full text-left"
+            >
               <Meter ratio={progress.ratio} />
-              <p className="mt-2 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint tabular">
+              <p className="mt-2 flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint tabular">
                 {t("profile.xpTo", { current: progress.xpIntoLevel, total: progress.xpForNext, level: progress.level + 1 })}
+                <ChevronIcon size={12} />
               </p>
-            </div>
+            </button>
 
             <div className="mt-4 flex gap-2">
               <Button size="sm" variant="surface" onClick={() => setEditing(true)}>

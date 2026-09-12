@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useBackButton } from "@/shared/hooks/useBackButton";
 import { useT } from "@/shared/i18n";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { nameEffectClass } from "@/shared/lib/cosmetics";
 import { haptic } from "@/shared/lib/telegram";
 import type { ShopItem } from "@/shared/lib/types";
 import { Avatar, Button, PushScreen, ScreenHeader } from "@/shared/ui";
@@ -60,8 +61,10 @@ const Preview = ({ item, seed }: { item: ShopItem; seed: string }) => {
     );
   }
   return (
-    <span className="flex size-11 items-center justify-center rounded-[14px] bg-elevated text-secondary">
-      <span className="font-display text-[13px] font-extrabold">Aa</span>
+    <span className="flex size-11 items-center justify-center rounded-[14px] bg-elevated">
+      <span className={`font-display text-[15px] font-extrabold ${nameEffectClass(item.value)}`}>
+        Aa
+      </span>
     </span>
   );
 };

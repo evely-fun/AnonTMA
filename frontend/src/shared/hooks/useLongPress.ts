@@ -58,6 +58,13 @@ export const useLongPress = (onLongPress: () => void, onTap?: () => void) => {
     onPointerMove,
     onPointerUp,
     onPointerCancel,
-    onContextMenu: (event: React.MouseEvent) => event.preventDefault(),
+    onPointerLeave: onPointerCancel,
+    // A right click is the desktop equivalent of holding a tile.
+    onContextMenu: (event: React.MouseEvent) => {
+      event.preventDefault();
+      clear();
+      fired.current = true;
+      onLongPress();
+    },
   };
 };

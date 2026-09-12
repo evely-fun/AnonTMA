@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import as_utc, utcnow
 from app.db.models import RewardLog, User, UserStats
+from app.services.progression import energy_bonus
 
 ENERGY_MAX = 120
 ENERGY_REGEN_PER_HOUR = 12
@@ -64,6 +65,10 @@ def grant_premium(user: User, days: int) -> datetime:
     return user.premium_until
 
 
+def energy_cap(stats: UserStats) -> int:
+    return ENERGY_MAX + energy_bonus(stats.level)
+
+
 def regenerate(stats: UserStats, premium: bool) -> None:
     now = utcnow()
     if stats.energy_at is None:
@@ -72,7 +77,7 @@ def regenerate(stats: UserStats, premium: bool) -> None:
     if premium:
         stats.energy_at = now
         return
-    if stats.energy >= ENERGY_MAX:
+    if stats.energy >= energy_cap(stats):
         stats.energy_at = now
         return
 
@@ -80,12 +85,12 @@ def regenerate(stats: UserStats, premium: bool) -> None:
     gained = int(elapsed / 3600 * ENERGY_REGEN_PER_HOUR)
     if gained <= 0:
         return
-    stats.energy = min(ENERGY_MAX, stats.energy + gained)
+    stats.energy = min(energy_cap(stats), stats.energy + gained)
     stats.energy_at = now
 
 
 def seconds_to_next_energy(stats: UserStats, premium: bool) -> int:
-    if premium or stats.energy >= ENERGY_MAX:
+    if premium or stats.energy >= energy_cap(stats):
         return 0
     step = 3600 / ENERGY_REGEN_PER_HOUR
     elapsed = (utcnow() - (as_utc(stats.energy_at) or utcnow())).total_seconds()
@@ -106,7 +111,7 @@ def add_energy(stats: UserStats, premium: bool, amount: int) -> int:
     if premium:
         return 0
     before = stats.energy
-    stats.energy = min(ENERGY_MAX, stats.energy + amount)
+    stats.energy = min(energy_cap(stats), stats.energy + amount)
     if stats.energy_at is None:
         stats.energy_at = utcnow()
     return stats.energy - before
@@ -221,8 +226,8 @@ def state_payload(user: User, stats: UserStats) -> dict:
     regenerate(stats, premium)
     refresh_daily(stats)
     return {
-        "energy": ENERGY_MAX if premium else stats.energy,
-        "energyMax": ENERGY_MAX,
+        "energy": energy_cap(stats) if premium else stats.energy,
+        "energyMax": energy_cap(stats),
         "unlimited": premium,
         "secondsToNext": seconds_to_next_energy(stats, premium),
         "costs": ENERGY_COST,

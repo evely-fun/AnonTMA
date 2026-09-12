@@ -17,7 +17,7 @@ from app.services.achievements import CATALOG
 from app.services.moderation import submit_report
 from app.services.economy import is_premium
 from app.services.shop import equipped_of, owned_keys
-from app.services.progression import describe, title_for_level
+from app.services.progression import coin_bonus, describe, energy_bonus, ladder, title_for_level
 from app.services.users import DEFAULT_PREFERENCES
 
 router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(rate_limit_default)])
@@ -156,6 +156,23 @@ async def update_me(payload: ProfileUpdate, user: CurrentUser, session: SessionD
         user.anon_name = identity.mask_name(seed, user.language)
     await session.flush()
     return serialize_profile(user, await load_stats(session, user.id))
+
+
+@router.get("/me/levels")
+async def levels(user: CurrentUser, session: SessionDep) -> dict:
+    stats = await load_stats(session, user.id)
+    progress = describe(stats.xp)
+    return {
+        "level": progress.level,
+        "xp": progress.xp,
+        "xpIntoLevel": progress.xp_into_level,
+        "xpForNext": progress.xp_for_next,
+        "ratio": progress.ratio,
+        "title": progress.title,
+        "energyBonus": energy_bonus(progress.level),
+        "coinBonus": coin_bonus(progress.level),
+        "ladder": ladder(progress.level),
+    }
 
 
 @router.get("/me/achievements", response_model=list[AchievementView])
