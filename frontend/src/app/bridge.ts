@@ -1,8 +1,10 @@
 import { peerManager } from "@/features/voice/webrtc";
+import { translate } from "@/shared/i18n";
 import { haptics } from "@/shared/lib/telegram";
 import { realtime } from "@/shared/lib/socket";
 import type { PresenceSnapshot, Reward, RoomMember } from "@/shared/lib/types";
 import { useChat } from "@/store/chat";
+import { useEconomy } from "@/store/economy";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
@@ -15,12 +17,16 @@ const rewardToast = (reward: Reward | undefined, title: string): void => {
     return;
   }
   toast(title, {
-    description: `+${reward.xp ?? 0} XP · +${reward.coins ?? 0} coins`,
+    description: `+${reward.xp ?? 0} XP · +${reward.coins ?? 0} ${translate("common.coins")}`,
     icon: reward.levelUp ? "🎉" : "✨",
     tone: "success",
   });
   reward.achievements?.forEach((achievement) => {
-    toast(`Achievement unlocked`, { description: achievement.title, icon: achievement.icon, tone: "success" });
+    toast(translate(`achievements.${achievement.key}.title`), {
+      description: translate(`achievements.${achievement.key}.description`),
+      icon: achievement.icon,
+      tone: "success",
+    });
   });
 };
 
@@ -95,12 +101,12 @@ export const bindRealtime = (): void => {
 
   realtime.on("dialog.partner_liked", () => {
     useChat.getState().setPartnerLiked();
-    toast("Your companion liked the chat", { icon: "💜", tone: "success" });
+    toast(translate("chat.partnerLiked"), { tone: "success" });
   });
 
   realtime.on("dialog.reveal_request", () => {
     useChat.getState().setRevealPending(true);
-    toast("Reveal requested", { description: "Tap reveal to share your profile", icon: "🎭" });
+    toast(translate("chat.revealRequested"), { description: translate("chat.revealRequestedBody") });
   });
 
   realtime.on("dialog.revealed", (payload) => {
@@ -109,7 +115,7 @@ export const bindRealtime = (): void => {
       anonName: String(payload.anonName),
       username: (payload.username as string | null) ?? null,
     });
-    toast("Identities revealed", { icon: "✨", tone: "success" });
+    toast(translate("chat.revealed"), { tone: "success" });
   });
 
   realtime.on("dialog.ended", (payload) => {
@@ -124,8 +130,9 @@ export const bindRealtime = (): void => {
       mutualLike: Boolean(payload.mutualLike),
       reason: String(payload.reason ?? "ended"),
     });
-    rewardToast(payload.reward as Reward, "Chat finished");
+    rewardToast(payload.reward as Reward, translate("chat.finished"));
     void useSession.getState().refreshProfile();
+    void useEconomy.getState().load();
   });
 
   realtime.on("room.joined", (payload) => {
@@ -177,12 +184,12 @@ export const bindRealtime = (): void => {
   });
 
   realtime.on("friend.request", (payload) => {
-    toast("New friend request", { description: String(payload.anonName ?? ""), icon: "🤝" });
+    toast(translate("friends.newRequest"), { description: String(payload.anonName ?? "") });
     void useSocial.getState().load();
   });
 
   realtime.on("friend.accepted", () => {
-    toast("Friend request accepted", { icon: "🎉", tone: "success" });
+    toast(translate("friends.accepted"), { tone: "success" });
     void useSocial.getState().load();
   });
 
@@ -228,7 +235,7 @@ export const bindRealtime = (): void => {
   });
 
   realtime.on("call.declined", () => {
-    toast("Call declined", { icon: "📵" });
+    toast(translate("friends.declined"));
     useSocial.getState().setActiveCall(null);
   });
 
@@ -252,8 +259,9 @@ export const bindRealtime = (): void => {
 
   realtime.on("game.rewards", (payload) => {
     useGames.getState().setReward(payload.reward as Reward);
-    rewardToast(payload.reward as Reward, "Game finished");
+    rewardToast(payload.reward as Reward, translate("games.board.gameOver"));
     void useSession.getState().refreshProfile();
+    void useEconomy.getState().load();
   });
 
   realtime.on("mafia.role", (payload) => {
@@ -261,9 +269,8 @@ export const bindRealtime = (): void => {
   });
 
   realtime.on("mafia.check_result", (payload) => {
-    toast(payload.isMafia ? "Mafia found" : "Looks clean", {
-      description: `Player #${payload.target}`,
-      icon: payload.isMafia ? "🔪" : "🕊",
+    toast(payload.isMafia ? translate("games.board.mafiaTag") : translate("games.board.cleanTag"), {
+      description: `#${payload.target}`,
       tone: payload.isMafia ? "danger" : "success",
     });
   });
@@ -286,7 +293,15 @@ export const bindRealtime = (): void => {
     if (code === "rate_limited") {
       return;
     }
-    toast(String(payload.message ?? "Something went wrong"), { tone: "danger", icon: "⚠️" });
+    const known = translate(`errors.${code}`);
+    const message = known === `errors.${code}` ? String(payload.message ?? translate("errors.generic")) : known;
+    if (code === "no_energy") {
+      toast(message, { description: translate("economy.notEnoughHint"), tone: "danger" });
+      useChat.getState().reset();
+      void useEconomy.getState().load();
+      return;
+    }
+    toast(message, { tone: "danger" });
   });
 
   const gameEvents = [

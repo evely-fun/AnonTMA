@@ -2,6 +2,7 @@ import { m } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { compactNumber, durationLabel } from "@/shared/lib/format";
 import { listStagger, rise } from "@/shared/lib/motion";
@@ -21,6 +22,7 @@ import {
   TabScreen,
 } from "@/shared/ui";
 import {
+  BoltIcon,
   ChatIcon,
   CheckIcon,
   LockIcon,
@@ -33,6 +35,7 @@ import {
   MicIcon,
   SettingsIcon,
 } from "@/shared/ui/icons";
+import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { useSocial } from "@/store/social";
 import { toast } from "@/store/ui";
@@ -53,10 +56,12 @@ const INTERESTS = [
 ];
 
 export const ProfilePage = () => {
+  const { t, locale } = useT();
   const navigate = useNavigate();
   const profile = useSession((state) => state.profile);
   const patchProfile = useSession((state) => state.patchProfile);
   const inviteLink = useSocial((state) => state.inviteLink);
+  const economy = useEconomy((store) => store.state);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [editing, setEditing] = useState(false);
   const [bio, setBio] = useState("");
@@ -89,7 +94,7 @@ export const ProfilePage = () => {
       });
       patchProfile(updated);
       setEditing(false);
-      toast("Profile updated", { tone: "success" });
+      toast(t("profile.updated"), { tone: "success" });
     } finally {
       setBusy(false);
     }
@@ -101,7 +106,7 @@ export const ProfilePage = () => {
       body: { regenerateMask: true },
     });
     patchProfile(updated);
-    toast("New mask generated", { tone: "success", description: updated.anonName });
+    toast(t("profile.maskGenerated"), { tone: "success", description: updated.anonName });
   };
 
   const invite = async () => {
@@ -121,7 +126,7 @@ export const ProfilePage = () => {
                   {profile.anonName}
                 </h2>
                 <p className="font-display text-[11.5px] font-bold uppercase tracking-[0.12em] text-accent">
-                  {progress.title} · level {progress.level}
+                  {t(`titles.${progress.title}`)} · {t("common.level")} {progress.level}
                 </p>
               </div>
             </div>
@@ -133,13 +138,13 @@ export const ProfilePage = () => {
             <div className="mt-4">
               <Meter ratio={progress.ratio} />
               <p className="mt-2 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint tabular">
-                {progress.xpIntoLevel} / {progress.xpForNext} xp to level {progress.level + 1}
+                {t("profile.xpTo", { current: progress.xpIntoLevel, total: progress.xpForNext, level: progress.level + 1 })}
               </p>
             </div>
 
             <div className="mt-4 flex gap-2">
               <Button size="sm" variant="surface" onClick={() => setEditing(true)}>
-                Edit profile
+                {t("profile.editProfile")}
               </Button>
               <Button
                 size="sm"
@@ -147,46 +152,46 @@ export const ProfilePage = () => {
                 icon={<MaskIcon size={15} />}
                 onClick={() => void regenerate()}
               >
-                New mask
+                {t("profile.newMask")}
               </Button>
             </div>
           </div>
         </m.section>
 
         <m.section variants={rise}>
-          <SectionHead title="Your numbers" />
+          <SectionHead title={t("profile.yourNumbers")} />
           <div className="grid grid-cols-3 gap-2 px-4">
             <StatTile
               icon={<ChatIcon size={15} />}
               value={compactNumber(stats.dialogsTotal)}
-              label="chats"
+              label={t("profile.chats")}
             />
             <StatTile
               icon={<MicIcon size={15} />}
               value={durationLabel(stats.voiceSeconds)}
-              label="voice"
+              label={t("profile.voice")}
               tone="live"
             />
             <StatTile
               icon={<GamesIcon size={15} />}
               value={`${stats.gamesWon}/${stats.gamesPlayed}`}
-              label="games"
+              label={t("profile.games")}
             />
             <StatTile
               icon={<HeartIcon size={15} />}
               value={compactNumber(stats.likesReceived)}
-              label="likes"
+              label={t("profile.likes")}
             />
             <StatTile
               icon={<FlameIcon size={15} />}
               value={String(stats.streakDays)}
-              label="streak"
+              label={t("profile.streak")}
               tone="warn"
             />
             <StatTile
               icon={<CrownIcon size={15} />}
               value={String(stats.rating)}
-              label="rating"
+              label={t("profile.rating")}
               tone="accent"
             />
           </div>
@@ -194,7 +199,7 @@ export const ProfilePage = () => {
 
         <m.section variants={rise}>
           <SectionHead
-            title="Achievements"
+            title={t("profile.achievements")}
             trailing={
               <span className="font-display text-[12px] font-bold text-hint tabular">
                 {unlocked.length}/{achievements.length}
@@ -218,9 +223,11 @@ export const ProfilePage = () => {
                       item.unlocked ? "text-label" : "text-secondary"
                     }`}
                   >
-                    {item.title}
+                    {t(`achievements.${item.key}.title`)}
                   </p>
-                  <p className="truncate text-[11.5px] text-hint">{item.description}</p>
+                  <p className="truncate text-[11.5px] text-hint">
+                    {t(`achievements.${item.key}.description`)}
+                  </p>
                   {!item.unlocked && (
                     <div className="mt-2">
                       <Meter ratio={item.progress / item.threshold} height={4} />
@@ -236,12 +243,49 @@ export const ProfilePage = () => {
           <Panel divided>
             <ListRow
               leading={
+                <IconTile tone="warn">
+                  <CrownIcon size={18} />
+                </IconTile>
+              }
+              title={
+                profile.premium?.active
+                  ? t("profile.premiumActive", {
+                      date: profile.premium.until
+                        ? new Date(profile.premium.until).toLocaleDateString(
+                            locale === "ru" ? "ru-RU" : "en-GB",
+                            { day: "numeric", month: "short" },
+                          )
+                        : "",
+                    })
+                  : t("profile.getPremium")
+              }
+              subtitle={t("profile.premiumHint")}
+              chevron
+              onClick={() => navigate("/premium")}
+            />
+            <ListRow
+              leading={
+                <IconTile tone="accent">
+                  <BoltIcon size={18} />
+                </IconTile>
+              }
+              title={t("economy.dailyTitle")}
+              subtitle={
+                economy?.unlimited
+                  ? t("economy.unlimited")
+                  : `${economy?.energy ?? 0} / ${economy?.energyMax ?? 0} ${t("common.energy")}`
+              }
+              chevron
+              onClick={() => navigate("/daily")}
+            />
+            <ListRow
+              leading={
                 <IconTile tone="live">
                   <LinkIcon size={18} />
                 </IconTile>
               }
-              title="Invite a friend"
-              subtitle="You both get 100 coins"
+              title={t("profile.invite")}
+              subtitle={t("profile.inviteHint")}
               chevron
               onClick={() => void invite()}
             />
@@ -251,8 +295,8 @@ export const ProfilePage = () => {
                   <CrownIcon size={18} />
                 </IconTile>
               }
-              title="Leaderboard"
-              subtitle="See where you stand"
+              title={t("profile.leaderboard")}
+              subtitle={t("profile.leaderboardHint")}
               chevron
               onClick={() => navigate("/leaderboard")}
             />
@@ -262,14 +306,14 @@ export const ProfilePage = () => {
                   <SettingsIcon size={18} />
                 </IconTile>
               }
-              title="Settings"
-              subtitle="Voice, matching, privacy"
+              title={t("profile.settings")}
+              subtitle={t("profile.settingsHint")}
               chevron
               onClick={() => navigate("/settings")}
             />
           </Panel>
           <p className="px-6 pt-3 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-hint">
-            Anon v1.0
+            {t("profile.version")}
           </p>
         </m.section>
       </m.div>
@@ -277,28 +321,27 @@ export const ProfilePage = () => {
       <Sheet
         open={editing}
         onClose={() => setEditing(false)}
-        title="Edit profile"
-        description="Keep it anonymous, no personal details."
+        title={t("profile.editProfile")}
         footer={
           <Button full loading={busy} onClick={() => void save()}>
-            Save
+            {t("common.save")}
           </Button>
         }
       >
         <div className="space-y-4 pb-2">
           <div>
-            <SectionHead title="About you" />
+            <SectionHead title={t("profile.aboutYou")} />
             <textarea
               className="w-full rounded-[16px] bg-elevated/60 px-4 py-3 text-[14.5px] leading-snug"
               value={bio}
               maxLength={200}
               rows={3}
-              placeholder="One line about you"
+              placeholder={t("profile.aboutPlaceholder")}
               onChange={(event) => setBio(event.target.value)}
             />
           </div>
           <div>
-            <SectionHead title="Interests" note="Used to find better matches" />
+            <SectionHead title={t("profile.interests")} note={t("profile.interestsHint")} />
             <div className="flex flex-wrap gap-2 px-5">
               {INTERESTS.map((item) => (
                 <Chip
@@ -312,7 +355,7 @@ export const ProfilePage = () => {
                     )
                   }
                 >
-                  {item}
+                  {t(`interests.${item}`)}
                 </Chip>
               ))}
             </div>

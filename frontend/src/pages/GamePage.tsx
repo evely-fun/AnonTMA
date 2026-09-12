@@ -8,10 +8,20 @@ import { MafiaBoard } from "@/features/games/MafiaBoard";
 import { TelephoneBoard } from "@/features/games/TelephoneBoard";
 import { TicTacToeBoard } from "@/features/games/TicTacToeBoard";
 import { gameVisual } from "@/features/games/visuals";
+import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { listStagger, rise } from "@/shared/lib/motion";
 import type { LeaderboardEntry } from "@/shared/lib/types";
-import { Avatar, Button, Chip, IconTile, Panel, ScreenHeader, SectionHead } from "@/shared/ui";
+import {
+  Avatar,
+  Button,
+  Chip,
+  IconTile,
+  Panel,
+  PushScreen,
+  ScreenHeader,
+  SectionHead,
+} from "@/shared/ui";
 import { ClockIcon, FriendsIcon, MicIcon } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
@@ -19,6 +29,7 @@ import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 
 export const GamePage = () => {
+  const { t, list } = useT();
   const { gameKey } = useParams();
   const navigate = useNavigate();
 
@@ -46,10 +57,10 @@ export const GamePage = () => {
 
   if (!meta) {
     return (
-      <div className="flex h-full flex-col">
-        <ScreenHeader title="Game" onBack={() => navigate("/games")} />
-        <p className="px-5 pt-6 text-[13.5px] text-hint">This game is not available.</p>
-      </div>
+      <PushScreen>
+        <ScreenHeader title={t("games.title")} onBack={() => navigate("/games")} />
+        <p className="px-5 pt-6 text-[13.5px] text-hint">{t("games.unavailable")}</p>
+      </PushScreen>
     );
   }
 
@@ -60,7 +71,7 @@ export const GamePage = () => {
 
   const openTable = async () => {
     const created = await createRoom({
-      title: `${meta.title} table`,
+      title: t(`games.meta.${meta.key}.title`),
       emoji: "",
       kind: "game",
       visibility: "public",
@@ -68,7 +79,7 @@ export const GamePage = () => {
       gameKey: meta.key,
     } as never);
     if (created) navigate(`/rooms/${created.id}`);
-    else toast("Could not open a table", { tone: "danger" });
+    else toast(t("games.openTableFailed"), { tone: "danger" });
   };
 
   const renderBoard = () => {
@@ -90,10 +101,10 @@ export const GamePage = () => {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <PushScreen>
       <ScreenHeader
-        title={meta.title}
-        subtitle={playing ? phase : meta.subtitle}
+        title={t(`games.meta.${meta.key}.title`)}
+        subtitle={playing ? phase : t(`games.meta.${meta.key}.subtitle`)}
         onBack={() => {
           if (playing) leave();
           navigate("/games");
@@ -106,14 +117,14 @@ export const GamePage = () => {
             {renderBoard()}
             {phase === "lobby" && (
               <Button full onClick={start}>
-                Start now
+                {t("games.startNow")}
               </Button>
             )}
             {phase === "finished" && (
               <div className="flex flex-col items-center gap-3">
                 {reward && (
                   <Chip tone="live">
-                    +{reward.xp ?? 0} XP · +{reward.coins ?? 0} coins
+                    +{reward.xp ?? 0} XP · +{reward.coins ?? 0} {t("common.coins")}
                   </Chip>
                 )}
                 <Button
@@ -123,7 +134,7 @@ export const GamePage = () => {
                     navigate(room ? `/rooms/${room.id}` : "/games");
                   }}
                 >
-                  Done
+                  {t("common.done")}
                 </Button>
               </div>
             )}
@@ -141,24 +152,24 @@ export const GamePage = () => {
                   <Icon size={30} />
                 </IconTile>
                 <h2 className="mt-2 font-display text-[22px] font-extrabold tracking-[-0.025em]">
-                  {meta.title}
+                  {t(`games.meta.${meta.key}.title`)}
                 </h2>
                 <p className="max-w-[290px] text-[13.5px] leading-snug text-secondary">
-                  {meta.subtitle}
+                  {t(`games.meta.${meta.key}.subtitle`)}
                 </p>
                 <div className="mt-3 flex flex-wrap justify-center gap-2">
                   <Chip>
                     <FriendsIcon size={12} />
-                    {meta.minPlayers}-{meta.maxPlayers} players
+                    {meta.minPlayers}-{meta.maxPlayers} {t("common.players")}
                   </Chip>
                   <Chip>
                     <ClockIcon size={12} />
-                    {meta.durationMinutes} min
+                    {meta.durationMinutes} {t("common.min")}
                   </Chip>
                   {meta.voiceRequired && (
                     <Chip tone="live">
                       <MicIcon size={12} />
-                      voice
+                      {t("games.voice")}
                     </Chip>
                   )}
                 </div>
@@ -166,9 +177,9 @@ export const GamePage = () => {
             </m.div>
 
             <m.section variants={rise}>
-              <SectionHead title="How it works" />
+              <SectionHead title={t("games.howItWorks")} />
               <div className="space-y-2 px-4">
-                {meta.rules.map((rule, index) => (
+                {list(`games.meta.${meta.key}.rules`).map((rule, index) => (
                   <div
                     key={index}
                     className="panel flex items-start gap-3 rounded-[16px] px-4 py-3.5"
@@ -185,12 +196,12 @@ export const GamePage = () => {
             <m.div className="flex flex-col gap-2 px-4" variants={rise}>
               {meta.key === "tictactoe" && (
                 <Button full onClick={() => create("tictactoe", { withBot: true })}>
-                  Play against the bot
+                  {t("games.playBot")}
                 </Button>
               )}
               {canStartHere ? (
                 <Button full onClick={() => create(meta.key, {}, room?.id)}>
-                  Start in this room
+                  {t("games.startInRoom")}
                 </Button>
               ) : (
                 <Button
@@ -198,14 +209,14 @@ export const GamePage = () => {
                   variant={meta.key === "tictactoe" ? "surface" : "primary"}
                   onClick={() => void openTable()}
                 >
-                  Open a table
+                  {t("games.openTable")}
                 </Button>
               )}
             </m.div>
 
             {board.length > 0 && (
               <m.section variants={rise}>
-                <SectionHead title="Best players" />
+                <SectionHead title={t("games.bestPlayers")} />
                 <Panel divided>
                   {board.map((entry) => (
                     <div
@@ -232,6 +243,6 @@ export const GamePage = () => {
           </m.div>
         )}
       </div>
-    </div>
+    </PushScreen>
   );
 };

@@ -32,6 +32,7 @@ export interface Preferences {
   matchLanguage: string;
   matchGender: string;
   allowFriendCalls: boolean;
+  voicePreset: string;
 }
 
 export interface Profile {
@@ -47,6 +48,9 @@ export interface Profile {
   createdAt: string;
   lastSeenAt: string | null;
   referralCode: string;
+  palette: string;
+  uiLanguage: string;
+  premium: { active: boolean; until: string | null };
   stats: Stats;
   progress: Progress;
   preferences: Preferences;
@@ -179,4 +183,57 @@ export interface Reward {
   levelUp?: boolean;
   level?: number;
   achievements?: { key: string; title: string; icon: string }[];
+}
+
+export interface WheelPrize {
+  key: string;
+  kind: "energy" | "coins" | "premium";
+  amount: number;
+}
+
+export interface StreakReward {
+  day: number;
+  energy: number;
+  coins: number;
+  premiumDays: number;
+}
+
+export interface EconomyState {
+  energy: number;
+  energyMax: number;
+  unlimited: boolean;
+  secondsToNext: number;
+  costs: { text: number; voice: number };
+  premium: { active: boolean; until: string | null };
+  wheel: {
+    spins: number;
+    maxPending: number;
+    voiceSecondsToday: number;
+    requiredSeconds: number;
+    prizes: WheelPrize[];
+  };
+  streak: {
+    days: number;
+    claimedToday: boolean;
+    reward: StreakReward;
+    ladder: StreakReward[];
+  };
+}
+
+export interface SpinResult {
+  key: string;
+  kind: "energy" | "coins" | "premium";
+  amount: number;
+  granted: number;
+  spinsLeft: number;
+}
+
+export interface Product {
+  key: string;
+  title: string;
+  description: string;
+  stars: number;
+  days: number;
+  energy: number;
+  recurring: boolean;
 }

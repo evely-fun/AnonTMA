@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.telegram_auth import TelegramUser
 from app.db.base import utcnow
 from app.db.models import User, UserStats
-from app.services import identity
+from app.services import economy, identity
 from app.services.achievements import evaluate
 from app.services.progression import describe
 
@@ -19,6 +19,7 @@ DEFAULT_PREFERENCES: dict = {
     "matchLanguage": "any",
     "matchGender": "any",
     "allowFriendCalls": True,
+    "voicePreset": "natural",
 }
 
 
@@ -97,7 +98,11 @@ async def touch_presence(session: AsyncSession, user: User) -> None:
         stats.best_streak = max(stats.best_streak, stats.streak_days)
         stats.last_active_day = today
         stats.coins += 10 + min(stats.streak_days, 10) * 2
+        economy.add_energy(stats, economy.is_premium(user), economy.ENERGY_DAILY_LOGIN)
         await evaluate(session, stats)
+
+    economy.regenerate(stats, economy.is_premium(user))
+    economy.refresh_daily(stats)
 
 
 async def award(

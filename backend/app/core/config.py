@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     rate_limit_ws_messages_per_10s: int = 40
     rate_limit_auth_per_minute: int = 40
 
+    payments_mode: Literal["test", "live"] = "test"
+
     turn_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
     turn_username: str = ""
     turn_credential: str = ""

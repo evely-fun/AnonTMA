@@ -15,10 +15,25 @@ from app.schemas.user import (
 from app.services import identity
 from app.services.achievements import CATALOG
 from app.services.moderation import submit_report
+from app.services.economy import is_premium
 from app.services.progression import describe, title_for_level
 from app.services.users import DEFAULT_PREFERENCES
 
 router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(rate_limit_default)])
+
+ALLOWED_PALETTES = (
+    "auto",
+    "obsidian",
+    "indigo",
+    "moss",
+    "amethyst",
+    "terracotta",
+    "dusk",
+    "cobalt",
+    "garnet",
+    "chrome",
+    "sepia",
+)
 
 ALLOWED_PREFERENCES: dict[str, type | tuple[type, ...]] = {
     "noiseSuppression": str,
@@ -29,6 +44,7 @@ ALLOWED_PREFERENCES: dict[str, type | tuple[type, ...]] = {
     "matchLanguage": str,
     "matchGender": str,
     "allowFriendCalls": bool,
+    "voicePreset": str,
 }
 
 LEADERBOARD_FIELDS = {
@@ -56,6 +72,12 @@ def serialize_profile(user: User, stats: UserStats) -> ProfileView:
             "createdAt": user.created_at,
             "lastSeenAt": user.last_seen_at,
             "referralCode": user.referral_code,
+            "palette": user.palette or "auto",
+            "uiLanguage": user.ui_language or "auto",
+            "premium": {
+                "active": is_premium(user),
+                "until": user.premium_until,
+            },
             "preferences": user.preferences or {},
             "stats": {
                 "xp": stats.xp,
@@ -115,6 +137,10 @@ async def update_me(payload: ProfileUpdate, user: CurrentUser, session: SessionD
             if key in ALLOWED_PREFERENCES and isinstance(value, ALLOWED_PREFERENCES[key]):
                 merged[key] = value
         user.preferences = merged
+    if payload.palette is not None and payload.palette in ALLOWED_PALETTES:
+        user.palette = payload.palette
+    if payload.ui_language is not None and payload.ui_language in ("auto", "en", "ru"):
+        user.ui_language = payload.ui_language
     if payload.regenerate_mask:
         seed = identity.new_seed()
         user.avatar_seed = seed

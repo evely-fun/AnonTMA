@@ -16,6 +16,7 @@ from app.games import runtime as games
 from app.realtime import matchmaking, presence, rooms, sessions, signaling
 from app.realtime.hub import Connection, hub
 from app.realtime.protocol import decode, error, event
+from app.services import economy
 from app.services.moderation import blocked_ids, looks_like_spam, sanitize_text, submit_report
 from app.services.users import touch_presence
 
@@ -80,6 +81,22 @@ async def handle_match_start(session: Session, payload: dict, ack: str | None) -
         if user is None:
             await session.send(error("forbidden", "Account restricted", ack))
             return
+
+        from app.db.models import UserStats
+
+        stats = await db.get(UserStats, user.id)
+        premium = economy.is_premium(user)
+        if stats is not None:
+            economy.regenerate(stats, premium)
+            cost = economy.ENERGY_COST.get(mode, 4)
+            if not economy.spend(stats, premium, cost):
+                await db.commit()
+                await session.send(
+                    error("no_energy", f"Not enough energy, {cost} needed", ack)
+                )
+                return
+            await db.commit()
+
         blocked = list(await blocked_ids(db, user.id))
         preferences = user.preferences or {}
         ticket = matchmaking.Ticket(

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { gameVisual } from "@/features/games/visuals";
+import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
@@ -18,6 +19,7 @@ interface SummaryItem {
 }
 
 export const GamesPage = () => {
+  const { t } = useT();
   const navigate = useNavigate();
   const games = useSession((state) => state.games);
   const [summary, setSummary] = useState<SummaryItem[]>([]);
@@ -31,7 +33,7 @@ export const GamesPage = () => {
   return (
     <TabScreen>
       <div className="space-y-5 pb-4">
-        <SectionHead title="Games" note="Every table runs on the voice channel" />
+        <SectionHead title={t("games.title")} note={t("games.note")} />
 
         <m.div
           className="space-y-2.5 px-4"
@@ -59,10 +61,10 @@ export const GamesPage = () => {
 
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-display text-[15.5px] font-extrabold tracking-[-0.015em]">
-                    {game.title}
+                    {t(`games.meta.${game.key}.title`)}
                   </span>
                   <span className="mt-0.5 block text-[12.5px] leading-snug text-hint">
-                    {game.subtitle}
+                    {t(`games.meta.${game.key}.subtitle`)}
                   </span>
                   <span className="mt-2.5 flex items-center gap-3 font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-hint">
                     <span className="flex items-center gap-1">
@@ -76,12 +78,12 @@ export const GamesPage = () => {
                     {game.voiceRequired && (
                       <span className="flex items-center gap-1 text-live">
                         <MicIcon size={11} />
-                        voice
+                        {t("games.voice")}
                       </span>
                     )}
                     {stats && stats.played > 0 && (
                       <span className="tabular">
-                        {stats.won}/{stats.played} won
+                        {t("games.won", { won: stats.won, played: stats.played })}
                       </span>
                     )}
                   </span>

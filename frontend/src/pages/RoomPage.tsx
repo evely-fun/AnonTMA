@@ -2,8 +2,10 @@ import { m } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { AudioSheet } from "@/features/voice/AudioSheet";
+import { useT } from "@/shared/i18n";
 import { listStagger, rise } from "@/shared/lib/motion";
-import { Avatar, Button, IconButton, ScreenHeader, Sheet } from "@/shared/ui";
+import { Avatar, Button, IconButton, PushScreen, ScreenHeader, Sheet } from "@/shared/ui";
 import {
   ChatIcon,
   CloseIcon,
@@ -12,6 +14,7 @@ import {
   MicIcon,
   MicOffIcon,
   SendIcon,
+  SlidersIcon,
 } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
@@ -19,6 +22,7 @@ import { useSession } from "@/store/session";
 import { useVoice } from "@/store/voice";
 
 export const RoomPage = () => {
+  const { t } = useT();
   const { roomId } = useParams();
   const navigate = useNavigate();
 
@@ -45,6 +49,7 @@ export const RoomPage = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [hand, setHand] = useState(false);
+  const [audioOpen, setAudioOpen] = useState(false);
 
   useEffect(() => {
     const id = Number(roomId);
@@ -68,13 +73,13 @@ export const RoomPage = () => {
   const roomGame = games.find((game) => game.key === room?.gameKey);
 
   return (
-    <div className="flex h-full flex-col">
+    <PushScreen>
       <ScreenHeader
-        title={room?.title ?? "Room"}
-        subtitle={room?.topic ?? `${members.length} in the room`}
+        title={room?.title ?? t("nav.rooms")}
+        subtitle={room?.topic ?? t("rooms.inRoom", { count: members.length })}
         onBack={exit}
         trailing={
-          <IconButton label="Room chat" size={36} onClick={() => setChatOpen(true)}>
+          <IconButton label={t("rooms.roomChat")} size={36} onClick={() => setChatOpen(true)}>
             <ChatIcon size={16} />
           </IconButton>
         }
@@ -111,11 +116,11 @@ export const RoomPage = () => {
                   )}
                 </div>
                 <span className="w-full truncate text-center font-display text-[12px] font-bold tracking-[-0.01em]">
-                  {own ? "You" : member.anonName.split(" ").slice(0, 2).join(" ")}
+                  {own ? t("common.you") : member.anonName.split(" ").slice(0, 2).join(" ")}
                 </span>
                 {member.role === "host" && (
                   <span className="flex items-center gap-1 font-display text-[9.5px] font-bold uppercase tracking-[0.1em] text-warn">
-                    <CrownIcon size={10} /> host
+                    <CrownIcon size={10} /> {t("rooms.host")}
                   </span>
                 )}
               </m.div>
@@ -127,7 +132,7 @@ export const RoomPage = () => {
               <span className="flex size-14 items-center justify-center rounded-[18px] bg-elevated text-hint">
                 <MicIcon size={22} />
               </span>
-              <p className="text-[13.5px] text-hint">Connecting you to the table…</p>
+              <p className="text-[13.5px] text-hint">{t("rooms.connecting")}</p>
             </div>
           )}
         </m.div>
@@ -136,10 +141,11 @@ export const RoomPage = () => {
           <div className="panel mb-3 flex items-center justify-between gap-3 rounded-[18px] px-4 py-3">
             <div className="min-w-0">
               <p className="truncate font-display text-[14px] font-extrabold tracking-[-0.01em]">
-                {roomGame.title}
+                {t(`games.meta.${roomGame.key}.title`)}
               </p>
               <p className="text-[11.5px] text-hint tabular">
-                {members.length}/{roomGame.maxPlayers} · needs {roomGame.minPlayers}
+                {members.length}/{roomGame.maxPlayers} ·{" "}
+                {t("rooms.needs", { count: roomGame.minPlayers })}
               </p>
             </div>
             <Button
@@ -147,14 +153,14 @@ export const RoomPage = () => {
               disabled={members.length < roomGame.minPlayers}
               onClick={() => createGame(roomGame.key, {}, room?.id)}
             >
-              {members.length < roomGame.minPlayers ? "Waiting" : "Start"}
+              {members.length < roomGame.minPlayers ? t("rooms.waiting") : t("common.start")}
             </Button>
           </div>
         )}
 
-        <div className="nav-island flex items-center justify-center gap-5 rounded-[22px] px-4 py-3">
+        <div className="nav-island flex items-center justify-center gap-4 rounded-[22px] px-4 py-3">
           <IconButton
-            label="Raise hand"
+            label={t("rooms.raiseHand")}
             tone={hand ? "accent" : "surface"}
             size={46}
             onClick={() => {
@@ -166,7 +172,7 @@ export const RoomPage = () => {
             <HandIcon size={19} />
           </IconButton>
           <IconButton
-            label={muted ? "Unmute" : "Mute"}
+            label={muted ? t("chat.unmute") : t("chat.mute")}
             tone={muted ? "danger" : "live"}
             size={62}
             onClick={() => {
@@ -176,17 +182,24 @@ export const RoomPage = () => {
           >
             {muted ? <MicOffIcon size={24} /> : <MicIcon size={24} />}
           </IconButton>
-          <IconButton label="Leave" tone="danger" size={46} onClick={exit}>
+          <IconButton
+            label={t("chat.audioSettings")}
+            size={46}
+            onClick={() => setAudioOpen(true)}
+          >
+            <SlidersIcon size={19} />
+          </IconButton>
+          <IconButton label={t("rooms.leave")} tone="danger" size={46} onClick={exit}>
             <CloseIcon size={18} />
           </IconButton>
         </div>
       </div>
 
-      <Sheet open={chatOpen} onClose={() => setChatOpen(false)} title="Room chat">
+      <Sheet open={chatOpen} onClose={() => setChatOpen(false)} title={t("rooms.roomChat")}>
         <div className="flex max-h-[46vh] flex-col gap-2 overflow-y-auto pb-3">
           {messages.length === 0 && (
             <p className="py-10 text-center text-[13.5px] text-hint">
-              No messages yet. Say something.
+              {t("rooms.noMessages")}
             </p>
           )}
           {messages.map((message) => (
@@ -204,7 +217,7 @@ export const RoomPage = () => {
               className="h-[46px] w-full text-[14.5px]"
               value={draft}
               maxLength={600}
-              placeholder="Write to the room"
+              placeholder={t("rooms.writeToRoom")}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && draft.trim()) {
@@ -229,6 +242,8 @@ export const RoomPage = () => {
           </IconButton>
         </div>
       </Sheet>
-    </div>
+
+      <AudioSheet open={audioOpen} onClose={() => setAudioOpen(false)} />
+    </PushScreen>
   );
 };

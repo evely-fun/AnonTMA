@@ -45,6 +45,11 @@ class StatsView(ApiModel):
     best_streak: int = Field(alias="bestStreak")
 
 
+class PremiumView(ApiModel):
+    active: bool
+    until: datetime | None = None
+
+
 class ProfileView(ApiModel):
     id: int
     anon_name: str = Field(alias="anonName")
@@ -58,6 +63,9 @@ class ProfileView(ApiModel):
     created_at: datetime = Field(alias="createdAt")
     last_seen_at: datetime | None = Field(default=None, alias="lastSeenAt")
     referral_code: str = Field(alias="referralCode")
+    palette: str = "auto"
+    ui_language: str = Field(default="auto", alias="uiLanguage")
+    premium: PremiumView
     stats: StatsView
     progress: ProgressView
     preferences: dict
@@ -81,6 +89,8 @@ class ProfileUpdate(ApiModel):
     age_range: str | None = Field(default=None, alias="ageRange", max_length=16)
     interests: list[str] | None = Field(default=None, max_length=12)
     preferences: dict | None = None
+    palette: str | None = Field(default=None, max_length=16)
+    ui_language: str | None = Field(default=None, alias="uiLanguage", max_length=8)
     regenerate_mask: bool = Field(default=False, alias="regenerateMask")
 
     @field_validator("interests")

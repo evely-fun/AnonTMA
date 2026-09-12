@@ -1,6 +1,7 @@
 import { AnimatePresence, m } from "motion/react";
 import { useState } from "react";
 
+import { useT } from "@/shared/i18n";
 import { rise } from "@/shared/lib/motion";
 import { Avatar, Button, Chip, IconTile } from "@/shared/ui";
 import { EyeIcon, GhostIcon, ProfileIcon, ShieldIcon } from "@/shared/ui/icons";
@@ -26,49 +27,35 @@ interface View {
   canAct: boolean;
 }
 
-const ROLES: Record<string, { name: string; hint: string; Icon: typeof GhostIcon }> = {
-  mafia: {
-    name: "Mafia",
-    hint: "Pick a victim at night, blend in by day.",
-    Icon: GhostIcon,
-  },
-  doctor: {
-    name: "Doctor",
-    hint: "Save one person each night.",
-    Icon: ShieldIcon,
-  },
-  detective: {
-    name: "Detective",
-    hint: "Check one player per night and learn their side.",
-    Icon: EyeIcon,
-  },
-  civilian: {
-    name: "Civilian",
-    hint: "You have only your voice and your logic.",
-    Icon: ProfileIcon,
-  },
+const ROLE_ICONS: Record<string, typeof GhostIcon> = {
+  mafia: GhostIcon,
+  doctor: ShieldIcon,
+  detective: EyeIcon,
+  civilian: ProfileIcon,
 };
 
-const PHASES: Record<string, string> = {
-  night: "Night falls",
-  reveal: "Morning report",
-  discussion: "Open discussion",
-  vote: "Time to vote",
-  finished: "Game over",
+const PHASE_KEYS: Record<string, string> = {
+  night: "night",
+  reveal: "morning",
+  discussion: "discussion",
+  vote: "vote",
+  finished: "gameOver",
 };
 
 export const MafiaBoard = ({ view }: { view: View }) => {
+  const { t } = useT();
   const act = useGames((state) => state.act);
   const profile = useSession((state) => state.profile);
   const members = useRooms((state) => state.members);
   const [selected, setSelected] = useState<number | null>(null);
 
-  const role = ROLES[view.yourRole ?? "civilian"];
+  const roleKey = view.yourRole ?? "civilian";
+  const RoleIcon = ROLE_ICONS[roleKey] ?? ProfileIcon;
   const nameOf = (userId: number) =>
     userId === profile?.id
-      ? "You"
+      ? t("common.you")
       : (members.find((item) => item.userId === userId)?.anonName.split(" ").slice(0, 2).join(" ") ??
-        `Player ${userId}`);
+        `#${userId}`);
   const seedOf = (userId: number) =>
     members.find((item) => item.userId === userId)?.avatarSeed ?? String(userId);
 
@@ -77,25 +64,27 @@ export const MafiaBoard = ({ view }: { view: View }) => {
   return (
     <div className="flex flex-col gap-4">
       <GameStatus
-        eyebrow={`Day ${view.day}`}
-        title={PHASES[view.phase] ?? view.phase}
+        eyebrow={t("games.board.day", { day: view.day })}
+        title={t(`games.board.${PHASE_KEYS[view.phase] ?? "discussion"}`)}
         seconds={view.secondsLeft}
       />
 
       <div className="panel flex items-center gap-3.5 rounded-[18px] px-4 py-4">
-        <IconTile tone={view.yourRole === "mafia" ? "danger" : "accent"} size={44}>
-          <role.Icon size={21} />
+        <IconTile tone={roleKey === "mafia" ? "danger" : "accent"} size={44}>
+          <RoleIcon size={21} />
         </IconTile>
         <div className="min-w-0">
           <p className="font-display text-[16px] font-extrabold tracking-[-0.02em]">
             {view.phase === "finished"
               ? view.winner === "mafia"
-                ? "Mafia wins"
-                : "Town wins"
-              : role.name}
+                ? t("games.board.mafiaWins")
+                : t("games.board.townWins")
+              : t(`games.board.roles.${roleKey}.name`)}
           </p>
           <p className="mt-0.5 text-[12.5px] leading-snug text-hint">
-            {view.youAlive ? role.hint : "You are out, watch quietly."}
+            {view.youAlive
+              ? t(`games.board.roles.${roleKey}.hint`)
+              : t("games.board.youAreOut")}
           </p>
         </div>
       </div>
@@ -126,10 +115,12 @@ export const MafiaBoard = ({ view }: { view: View }) => {
                   {nameOf(userId)}
                 </span>
                 {checked !== undefined && (
-                  <Chip tone={checked ? "danger" : "live"}>{checked ? "mafia" : "clean"}</Chip>
+                  <Chip tone={checked ? "danger" : "live"}>
+                    {checked ? t("games.board.mafiaTag") : t("games.board.cleanTag")}
+                  </Chip>
                 )}
                 {roleTag && userId !== profile?.id && (
-                  <Chip tone="danger">{ROLES[roleTag]?.name ?? roleTag}</Chip>
+                  <Chip tone="danger">{t(`games.board.roles.${roleTag}.name`)}</Chip>
                 )}
                 {votes > 0 && (
                   <span className="font-display text-[12px] font-bold text-hint tabular">
@@ -146,7 +137,7 @@ export const MafiaBoard = ({ view }: { view: View }) => {
         <div>
           {view.phase === "discussion" ? (
             <Button full variant="surface" onClick={() => act("skip_phase", {})}>
-              Ready to vote
+              {t("games.board.readyToVote")}
             </Button>
           ) : (
             <Button
@@ -159,10 +150,10 @@ export const MafiaBoard = ({ view }: { view: View }) => {
               }}
             >
               {view.phase === "vote"
-                ? "Vote"
+                ? t("games.board.castVote")
                 : view.nightLocked
-                  ? "Choice locked"
-                  : "Confirm choice"}
+                  ? t("games.board.choiceLocked")
+                  : t("games.board.confirmChoice")}
             </Button>
           )}
         </div>

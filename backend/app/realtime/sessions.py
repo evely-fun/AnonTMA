@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.redis_client import get_redis
 from app.db.base import utcnow
-from app.db.models import Dialog, Message, UserStats
-from app.services import identity
+from app.db.models import Dialog, Message, User, UserStats
+from app.services import economy, identity
 from app.services.progression import dialog_reward
 from app.services.users import award
 
@@ -124,6 +124,7 @@ async def end_dialog(session: AsyncSession, dialog_id: int, ended_by: int | None
             stats.dialogs_total += 1
             if dialog.mode == "voice":
                 stats.voice_seconds += duration
+                economy.register_voice_time(stats, duration)
         xp, coins = dialog_reward(duration, liked, dialog.mode)
         rewards[user_id] = await award(session, user_id, xp=xp, coins=coins)
 

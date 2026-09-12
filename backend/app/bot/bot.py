@@ -6,6 +6,7 @@ from aiogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
+    PreCheckoutQuery,
     WebAppInfo,
 )
 
@@ -15,7 +16,7 @@ from app.core.logging import get_logger
 logger = get_logger("bot")
 
 WELCOME = (
-    "<b>Anon</b> is an anonymous voice and text space.\n\n"
+    "<b>Anteiku</b> is an anonymous voice and text space.\n\n"
     "Tap below to open the app, find a random companion in a second, "
     "join a voice room or start a game with friends."
 )
@@ -41,7 +42,7 @@ def app_url(start_param: str | None = None) -> str:
 
 def keyboard(start_param: str | None = None) -> InlineKeyboardMarkup:
     buttons = [
-        [InlineKeyboardButton(text="🎧  Open Anon", web_app=WebAppInfo(url=settings.public_web_url))],
+        [InlineKeyboardButton(text="🎧  Open Anteiku", web_app=WebAppInfo(url=settings.public_web_url))],
         [
             InlineKeyboardButton(
                 text="🤝  Invite a friend",
@@ -93,6 +94,26 @@ def _register(dispatcher: Dispatcher) -> None:
             reply_markup=keyboard(),
         )
 
+    @dispatcher.pre_checkout_query()
+    async def on_pre_checkout(query: PreCheckoutQuery) -> None:
+        await query.answer(ok=True)
+
+    @dispatcher.message(F.successful_payment)
+    async def on_paid(message: Message) -> None:
+        from app.db.session import SessionLocal
+        from app.services.payments import complete_purchase
+
+        payment = message.successful_payment
+        if payment is None:
+            return
+        async with SessionLocal() as session:
+            result = await complete_purchase(
+                session, payment.invoice_payload, payment.telegram_payment_charge_id
+            )
+            await session.commit()
+        if result:
+            await message.answer("Payment received, your premium is active.", reply_markup=keyboard())
+
 
 async def setup_webhook() -> None:
     bot = get_bot()
@@ -105,7 +126,7 @@ async def setup_webhook() -> None:
             url=url,
             secret_token=settings.telegram_webhook_secret,
             drop_pending_updates=True,
-            allowed_updates=["message", "callback_query", "inline_query"],
+            allowed_updates=["message", "callback_query", "inline_query", "pre_checkout_query"],
         )
         logger.info("bot webhook ready", url=url)
     except Exception as exc:

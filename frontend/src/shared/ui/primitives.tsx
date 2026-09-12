@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { haptic } from "@/shared/lib/telegram";
 import { spring } from "@/shared/lib/motion";
 
-import { ChevronIcon } from "./icons";
+import { CheckIcon, ChevronIcon } from "./icons";
 
 export const SectionHead = ({
   title,
@@ -268,3 +268,76 @@ export const EmptyState = ({
 export const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`skeleton rounded-[16px] ${className}`} />
 );
+
+export const OptionRow = ({
+  title,
+  subtitle,
+  active,
+  muted,
+  trailing,
+  onClick,
+}: {
+  title: string;
+  subtitle?: string;
+  active?: boolean;
+  muted?: boolean;
+  trailing?: ReactNode;
+  onClick?: () => void;
+}) => (
+  <m.button
+    type="button"
+    onClick={onClick}
+    whileTap={{ scale: 0.985 }}
+    transition={spring.snappy}
+    className={`flex w-full items-center gap-3 rounded-[16px] px-4 py-3.5 text-left transition-colors ${
+      active ? "bg-accent-quiet" : "panel"
+    } ${muted ? "opacity-55" : ""}`}
+  >
+    <span className="min-w-0 flex-1">
+      <span
+        className={`block font-display text-[14.5px] font-bold tracking-[-0.01em] ${
+          active ? "text-accent" : "text-label"
+        }`}
+      >
+        {title}
+      </span>
+      {subtitle && <span className="mt-0.5 block text-[12px] leading-snug text-hint">{subtitle}</span>}
+    </span>
+    {trailing}
+    {active && !trailing && (
+      <span className="text-accent">
+        <CheckIcon size={17} />
+      </span>
+    )}
+  </m.button>
+);
+
+export const Pill = ({
+  children,
+  tone = "neutral",
+  onClick,
+}: {
+  children: ReactNode;
+  tone?: "neutral" | "accent" | "warn" | "live";
+  onClick?: () => void;
+}) => {
+  const tones = {
+    neutral: "bg-elevated text-label",
+    accent: "bg-accent-quiet text-accent",
+    warn: "bg-warn/15 text-warn",
+    live: "bg-live-quiet text-live",
+  };
+  const classes = `flex items-center gap-1.5 rounded-full px-2.5 py-1.5 font-display text-[12.5px] font-bold tabular ${tones[tone]}`;
+  if (!onClick) return <span className={classes}>{children}</span>;
+  return (
+    <m.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.94 }}
+      transition={spring.snappy}
+      className={classes}
+    >
+      {children}
+    </m.button>
+  );
+};

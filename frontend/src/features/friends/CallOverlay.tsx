@@ -1,14 +1,18 @@
 import { AnimatePresence, m } from "motion/react";
+import { useState } from "react";
 
 import { useElapsed } from "@/shared/hooks/useElapsed";
+import { useT } from "@/shared/i18n";
 import { clockFormat } from "@/shared/lib/format";
 import { pop, spring } from "@/shared/lib/motion";
+import { AudioSheet } from "@/features/voice/AudioSheet";
 import { Avatar, IconButton, VoiceOrb } from "@/shared/ui";
-import { MicIcon, MicOffIcon, PhoneEndIcon, PhoneIcon } from "@/shared/ui/icons";
+import { MicIcon, MicOffIcon, PhoneEndIcon, PhoneIcon, SlidersIcon } from "@/shared/ui/icons";
 import { useSocial } from "@/store/social";
 import { useVoice } from "@/store/voice";
 
 const ActiveCall = () => {
+  const { t } = useT();
   const call = useSocial((state) => state.activeCall);
   const friends = useSocial((state) => state.friends);
   const endCall = useSocial((state) => state.endCall);
@@ -16,6 +20,7 @@ const ActiveCall = () => {
   const muted = useVoice((state) => state.muted);
   const toggleMute = useVoice((state) => state.toggleMute);
   const seconds = useElapsed(call?.status === "active");
+  const [audioOpen, setAudioOpen] = useState(false);
 
   if (!call) return null;
   const friend = friends.find((item) => item.id === call.userId);
@@ -32,28 +37,38 @@ const ActiveCall = () => {
       <Avatar seed={friend?.avatarSeed ?? "anon"} size={38} speaking={!muted && micLevel > 0.12} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-display text-[14px] font-bold tracking-[-0.01em]">
-          {friend?.anonName ?? "Friend"}
+          {friend?.anonName ?? t("nav.friends")}
         </p>
         <p className="text-[11.5px] text-hint tabular">
-          {call.status === "ringing" ? "ringing…" : clockFormat(seconds)}
+          {call.status === "ringing" ? t("friends.ringing") : clockFormat(seconds)}
         </p>
       </div>
       <IconButton
-        label={muted ? "Unmute" : "Mute"}
+        label={t("chat.audioSettings")}
+        tone="surface"
+        size={38}
+        onClick={() => setAudioOpen(true)}
+      >
+        <SlidersIcon size={16} />
+      </IconButton>
+      <IconButton
+        label={muted ? t("chat.unmute") : t("chat.mute")}
         tone={muted ? "danger" : "surface"}
         size={38}
         onClick={toggleMute}
       >
         {muted ? <MicOffIcon size={16} /> : <MicIcon size={16} />}
       </IconButton>
-      <IconButton label="End call" tone="danger" size={38} onClick={endCall}>
+      <IconButton label={t("chat.end")} tone="danger" size={38} onClick={endCall}>
         <PhoneEndIcon size={16} />
       </IconButton>
+      <AudioSheet open={audioOpen} onClose={() => setAudioOpen(false)} />
     </m.div>
   );
 };
 
 const IncomingCall = () => {
+  const { t } = useT();
   const call = useSocial((state) => state.incomingCall);
   const answer = useSocial((state) => state.answerCall);
 
@@ -61,7 +76,7 @@ const IncomingCall = () => {
 
   return (
     <m.div
-      className="fixed inset-0 z-[130] mx-auto flex max-w-[480px] items-center justify-center bg-[rgb(4_6_11/0.8)] px-6 backdrop-blur-lg"
+      className="veil fixed inset-0 z-[130] mx-auto flex max-w-[480px] items-center justify-center px-6 backdrop-blur-lg"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -79,13 +94,13 @@ const IncomingCall = () => {
           {call.from.anonName}
         </p>
         <p className="font-display text-[11.5px] font-bold uppercase tracking-[0.14em] text-hint">
-          incoming call
+          {t("friends.incomingCall")}
         </p>
         <div className="mt-8 flex items-center gap-10">
-          <IconButton label="Decline" tone="danger" size={62} onClick={() => answer(false)}>
+          <IconButton label={t("common.cancel")} tone="danger" size={62} onClick={() => answer(false)}>
             <PhoneEndIcon size={24} />
           </IconButton>
-          <IconButton label="Accept" tone="live" size={62} onClick={() => answer(true)}>
+          <IconButton label={t("friends.call")} tone="live" size={62} onClick={() => answer(true)}>
             <PhoneIcon size={24} />
           </IconButton>
         </div>

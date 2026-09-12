@@ -1,12 +1,27 @@
+import { m } from "motion/react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
+import { VOICE_PRESETS, type VoicePreset } from "@/features/voice/changer";
 import { NOISE_LEVELS, type NoiseLevel } from "@/features/voice/noise";
 import { useBackButton } from "@/shared/hooks/useBackButton";
+import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
+import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
+import { PALETTES, paletteSwatch, resolveScheme, type Palette, type ThemeMode } from "@/shared/lib/theme";
 import type { Profile } from "@/shared/lib/types";
-import { Chip, Panel, ScreenHeader, SectionHead, Segmented, Switch } from "@/shared/ui";
-import { CheckIcon } from "@/shared/ui/icons";
+import {
+  Chip,
+  OptionRow,
+  Panel,
+  PushScreen,
+  ScreenHeader,
+  SectionHead,
+  Segmented,
+  Switch,
+} from "@/shared/ui";
+import { CheckIcon, CrownIcon, LockIcon } from "@/shared/ui/icons";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 import { useVoice } from "@/store/voice";
@@ -17,12 +32,6 @@ const LANGUAGES = [
   { value: "ru", label: "Русский" },
   { value: "uk", label: "Українська" },
   { value: "es", label: "Español" },
-];
-
-const GENDERS = [
-  { value: "any", label: "Anyone" },
-  { value: "male", label: "Men" },
-  { value: "female", label: "Women" },
 ];
 
 const Toggle = ({
@@ -46,85 +55,223 @@ const Toggle = ({
 );
 
 export const SettingsPage = () => {
+  const { t } = useT();
+  const navigate = useNavigate();
   const profile = useSession((state) => state.profile);
   const patchProfile = useSession((state) => state.patchProfile);
   const setVoiceLevel = useVoice((state) => state.setLevel);
+  const setVoicePreset = useVoice((state) => state.setPreset);
   const [saving, setSaving] = useState(false);
 
   useBackButton("/profile");
 
   if (!profile) return null;
   const preferences = profile.preferences;
+  const theme = (preferences.theme ?? "auto") as ThemeMode;
+  const palette = (profile.palette ?? "auto") as Palette;
+  const scheme = resolveScheme(theme);
+  const premium = profile.premium?.active ?? false;
 
-  const update = async (patch: Record<string, unknown>) => {
+  const save = async (body: Record<string, unknown>) => {
     setSaving(true);
     try {
-      const updated = await request<Profile>("/users/me", {
-        method: "PATCH",
-        body: { preferences: { ...preferences, ...patch } },
-      });
+      const updated = await request<Profile>("/users/me", { method: "PATCH", body });
       patchProfile(updated);
     } catch {
-      toast("Could not save settings", { tone: "danger" });
+      toast(t("settings.saveFailed"), { tone: "danger" });
     } finally {
       setSaving(false);
     }
   };
 
+  const update = (patch: Record<string, unknown>) =>
+    save({ preferences: { ...preferences, ...patch } });
+
+  const choosePreset = (value: VoicePreset) => {
+    if (!premium && value !== "natural") {
+      haptic.notify("warning");
+      navigate("/premium");
+      return;
+    }
+    haptic.select();
+    setVoicePreset(value);
+    void update({ voicePreset: value });
+  };
+
   return (
-    <div className="flex h-full flex-col">
+    <PushScreen>
       <ScreenHeader
-        title="Settings"
-        subtitle={saving ? "saving…" : "voice, matching, privacy"}
-        onBack={() => history.back()}
+        title={t("settings.title")}
+        subtitle={saving ? t("settings.saving") : t("settings.subtitle")}
+        onBack={() => navigate("/profile")}
       />
 
-      <div className="flex-1 space-y-7 overflow-y-auto pb-[calc(24px+env(safe-area-inset-bottom))] pt-4">
-        <section>
-          <SectionHead title="Noise suppression" note="Runs on your device, nothing is uploaded" />
+      <m.div
+        className="flex-1 space-y-7 overflow-y-auto pb-[calc(28px+env(safe-area-inset-bottom))] pt-4"
+        variants={listStagger}
+        initial="initial"
+        animate="animate"
+      >
+        <m.section variants={rise}>
+          <SectionHead title={t("settings.appearance")} />
+          <div className="space-y-4 px-4">
+            <Segmented
+              id="theme"
+              value={theme}
+              onChange={(value) => void update({ theme: value })}
+              options={[
+                { value: "auto" as ThemeMode, label: t("settings.auto") },
+                { value: "light" as ThemeMode, label: t("settings.light") },
+                { value: "dark" as ThemeMode, label: t("settings.dark") },
+              ]}
+            />
+
+            <div>
+              <p className="mb-2.5 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-hint">
+                {t("settings.palette")}
+              </p>
+              <div className="grid grid-cols-4 gap-2.5">
+                {PALETTES.map((item) => {
+                  const swatch = paletteSwatch(item, scheme);
+                  const active = palette === item;
+                  return (
+                    <m.button
+                      key={item}
+                      type="button"
+                      onPointerDown={() => haptic.select()}
+                      onClick={() => void save({ palette: item })}
+                      whileTap={{ scale: 0.94 }}
+                      transition={spring.snappy}
+                      className="flex flex-col items-center gap-1.5"
+                    >
+                      <span
+                        className={`relative flex size-12 items-center justify-center overflow-hidden rounded-full transition-[box-shadow] duration-200 ${
+                          active
+                            ? "shadow-[0_0_0_2px_var(--color-accent)]"
+                            : "shadow-[0_0_0_1px_var(--color-separator)]"
+                        }`}
+                        style={{ background: swatch.ground }}
+                      >
+                        <span
+                          className="absolute inset-x-0 bottom-0 h-1/2"
+                          style={{ background: swatch.accent, opacity: 0.9 }}
+                        />
+                        {active && (
+                          <m.span
+                            initial={{ scale: 0.6, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={spring.snappy}
+                            className="relative z-10 flex size-5 items-center justify-center rounded-full bg-[oklch(1_0_0/0.9)] text-[oklch(0.2_0_0)]"
+                          >
+                            <CheckIcon size={12} />
+                          </m.span>
+                        )}
+                      </span>
+                      <span
+                        className={`text-[10.5px] font-semibold ${
+                          active ? "text-label" : "text-hint"
+                        }`}
+                      >
+                        {t(`palettes.${item}`)}
+                      </span>
+                    </m.button>
+                  );
+                })}
+              </div>
+              <p className="mt-2.5 text-[12px] text-hint">{t("settings.paletteHint")}</p>
+            </div>
+
+            <div>
+              <p className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-hint">
+                {t("settings.interfaceLanguage")}
+              </p>
+              <Segmented
+                id="ui-language"
+                value={(profile.uiLanguage ?? "auto") as "auto" | "en" | "ru"}
+                onChange={(value) => void save({ uiLanguage: value })}
+                options={[
+                  { value: "auto" as const, label: t("settings.auto") },
+                  { value: "en" as const, label: "English" },
+                  { value: "ru" as const, label: "Русский" },
+                ]}
+              />
+            </div>
+          </div>
+        </m.section>
+
+        <m.section variants={rise}>
+          <SectionHead title={t("settings.noise")} note={t("settings.noiseHint")} />
           <div className="space-y-2 px-4">
-            {NOISE_LEVELS.map((option) => {
-              const active = preferences.noiseSuppression === option.value;
-              return (
+            {NOISE_LEVELS.map((value) => (
+              <OptionRow
+                key={value}
+                title={t(`voice.noise.${value}.name`)}
+                subtitle={t(`voice.noise.${value}.hint`)}
+                active={preferences.noiseSuppression === value}
+                onClick={() => {
+                  haptic.select();
+                  setVoiceLevel(value as NoiseLevel);
+                  void update({ noiseSuppression: value });
+                }}
+              />
+            ))}
+          </div>
+        </m.section>
+
+        <m.section variants={rise}>
+          <SectionHead
+            title={t("voice.changer")}
+            note={premium ? t("voice.changerHint") : t("voice.premiumOnly")}
+            trailing={
+              premium ? undefined : (
                 <button
-                  key={option.value}
                   type="button"
-                  onClick={() => {
-                    haptic.select();
-                    setVoiceLevel(option.value as NoiseLevel);
-                    void update({ noiseSuppression: option.value });
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-[16px] px-4 py-3.5 text-left transition-colors ${
-                    active ? "bg-accent-quiet" : "panel"
-                  }`}
+                  onClick={() => navigate("/premium")}
+                  className="flex items-center gap-1.5 font-display text-[12px] font-bold uppercase tracking-[0.1em] text-accent"
                 >
-                  <span className="min-w-0 flex-1">
+                  <CrownIcon size={14} />
+                  {t("common.premium")}
+                </button>
+              )
+            }
+          />
+          <div className="grid grid-cols-3 gap-2 px-4">
+            {VOICE_PRESETS.map((value) => {
+              const locked = !premium && value !== "natural";
+              const active = (preferences.voicePreset ?? "natural") === value;
+              return (
+                <m.button
+                  key={value}
+                  type="button"
+                  onClick={() => choosePreset(value as VoicePreset)}
+                  whileTap={{ scale: 0.95 }}
+                  transition={spring.snappy}
+                  className={`flex flex-col items-start gap-1 rounded-[14px] px-3 py-2.5 text-left ${
+                    active ? "bg-accent-quiet" : "panel"
+                  } ${locked ? "opacity-55" : ""}`}
+                >
+                  <span className="flex w-full items-center justify-between gap-1">
                     <span
-                      className={`block font-display text-[14.5px] font-bold ${
+                      className={`truncate font-display text-[12.5px] font-bold ${
                         active ? "text-accent" : "text-label"
                       }`}
                     >
-                      {option.label}
+                      {t(`voice.presets.${value}.name`)}
                     </span>
-                    <span className="mt-0.5 block text-[12px] text-hint">{option.hint}</span>
+                    {locked && <LockIcon size={12} className="shrink-0 text-hint" />}
                   </span>
-                  {active && (
-                    <span className="text-accent">
-                      <CheckIcon size={17} />
-                    </span>
-                  )}
-                </button>
+                </m.button>
               );
             })}
           </div>
-        </section>
+        </m.section>
 
-        <section>
-          <SectionHead title="Matching" />
+        <m.section variants={rise}>
+          <SectionHead title={t("settings.matching")} />
           <div className="space-y-4 px-4">
             <div>
               <p className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-hint">
-                Language
+                {t("settings.language")}
               </p>
               <div className="flex flex-wrap gap-2">
                 {LANGUAGES.map((item) => (
@@ -133,17 +280,21 @@ export const SettingsPage = () => {
                     active={preferences.matchLanguage === item.value}
                     onClick={() => void update({ matchLanguage: item.value })}
                   >
-                    {item.label}
+                    {item.value === "any" ? t("settings.anyone") : item.label}
                   </Chip>
                 ))}
               </div>
             </div>
             <div>
               <p className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-hint">
-                Show me
+                {t("settings.showMe")}
               </p>
               <div className="flex flex-wrap gap-2">
-                {GENDERS.map((item) => (
+                {[
+                  { value: "any", label: t("settings.anyone") },
+                  { value: "male", label: t("settings.men") },
+                  { value: "female", label: t("settings.women") },
+                ].map((item) => (
                   <Chip
                     key={item.value}
                     active={preferences.matchGender === item.value}
@@ -155,55 +306,36 @@ export const SettingsPage = () => {
               </div>
             </div>
           </div>
-        </section>
+        </m.section>
 
-        <section>
-          <SectionHead title="Appearance" />
-          <div className="px-4">
-            <Segmented
-              id="theme"
-              value={preferences.theme}
-              onChange={(value) => void update({ theme: value })}
-              options={[
-                { value: "auto", label: "Auto" },
-                { value: "dark", label: "Dark" },
-                { value: "light", label: "Light" },
-              ]}
-            />
-          </div>
-        </section>
-
-        <section>
-          <SectionHead title="Privacy" />
+        <m.section variants={rise}>
+          <SectionHead title={t("settings.privacy")} />
           <Panel divided>
             <Toggle
-              title="Calls from friends"
-              hint="Friends can ring you directly"
+              title={t("settings.callsFromFriends")}
+              hint={t("settings.callsHint")}
               checked={preferences.allowFriendCalls}
               onChange={(value) => void update({ allowFriendCalls: value })}
             />
             <Toggle
-              title="Haptics"
-              hint="Vibration on taps and events"
+              title={t("settings.haptics")}
+              hint={t("settings.hapticsHint")}
               checked={preferences.haptics}
               onChange={(value) => void update({ haptics: value })}
             />
             <Toggle
-              title="Sounds"
-              hint="Match and call tones"
+              title={t("settings.sounds")}
+              hint={t("settings.soundsHint")}
               checked={preferences.sounds}
               onChange={(value) => void update({ sounds: value })}
             />
           </Panel>
-        </section>
+        </m.section>
 
-        <section className="px-4">
-          <p className="text-[12.5px] leading-relaxed text-hint">
-            Your Telegram name, photo and username are never shown to strangers. Each conversation
-            issues a fresh mask, and messages are stored only for moderation of reported chats.
-          </p>
-        </section>
-      </div>
-    </div>
+        <m.section className="px-4" variants={rise}>
+          <p className="text-[12.5px] leading-relaxed text-hint">{t("settings.about")}</p>
+        </m.section>
+      </m.div>
+    </PushScreen>
   );
 };

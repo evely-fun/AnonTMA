@@ -1,19 +1,21 @@
 import { m } from "motion/react";
 import { NavLink, useLocation } from "react-router-dom";
 
+import { useT } from "@/shared/i18n";
 import { FriendsIcon, GamesIcon, ProfileIcon, RadarIcon, RoomsIcon } from "@/shared/ui/icons";
 import { haptic } from "@/shared/lib/telegram";
 import { spring } from "@/shared/lib/motion";
 
 const TABS = [
-  { to: "/", label: "Find", Icon: RadarIcon },
-  { to: "/rooms", label: "Rooms", Icon: RoomsIcon },
-  { to: "/games", label: "Play", Icon: GamesIcon },
-  { to: "/friends", label: "Friends", Icon: FriendsIcon },
-  { to: "/profile", label: "Profile", Icon: ProfileIcon },
+  { to: "/", key: "find", Icon: RadarIcon },
+  { to: "/rooms", key: "rooms", Icon: RoomsIcon },
+  { to: "/games", key: "play", Icon: GamesIcon },
+  { to: "/friends", key: "friends", Icon: FriendsIcon },
+  { to: "/profile", key: "profile", Icon: ProfileIcon },
 ];
 
 export const BottomNav = () => {
+  const { t } = useT();
   const location = useLocation();
   const current = TABS.find((tab) =>
     tab.to === "/" ? location.pathname === "/" : location.pathname.startsWith(tab.to),
@@ -22,7 +24,7 @@ export const BottomNav = () => {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[480px]">
       <div className="nav-island relative flex w-full items-stretch gap-0.5 rounded-t-[20px] px-2 pb-[calc(5px+env(safe-area-inset-bottom))] pt-1.5">
-        {TABS.map(({ to, label, Icon }) => {
+        {TABS.map(({ to, key, Icon }) => {
           const active = current?.to === to;
           return (
             <NavLink
@@ -55,7 +57,7 @@ export const BottomNav = () => {
                   active ? "text-label" : "text-hint"
                 }`}
               >
-                {label}
+                {t(`nav.${key}`)}
               </span>
             </NavLink>
           );

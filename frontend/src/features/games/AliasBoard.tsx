@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { useT } from "@/shared/i18n";
 import { Button, IconButton, VoiceOrb } from "@/shared/ui";
 import { FlagIcon, SendIcon, WaveIcon } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
@@ -27,6 +28,7 @@ interface View {
 }
 
 export const AliasBoard = ({ view }: { view: View }) => {
+  const { t } = useT();
   const act = useGames((state) => state.act);
   const events = useGames((state) => state.events);
   const word = useGames((state) => state.privateState.word as string | undefined);
@@ -37,7 +39,7 @@ export const AliasBoard = ({ view }: { view: View }) => {
 
   const nameOf = (userId: number | null) => {
     if (userId === null) return "—";
-    if (userId === profile?.id) return "You";
+    if (userId === profile?.id) return t("common.you");
     return members.find((item) => item.userId === userId)?.anonName.split(" ")[0] ?? `P${userId}`;
   };
 
@@ -55,7 +57,7 @@ export const AliasBoard = ({ view }: { view: View }) => {
   return (
     <div className="flex flex-col gap-5">
       <GameStatus
-        eyebrow={`Team ${view.turn.toUpperCase()} explains`}
+        eyebrow={t("games.board.teamExplains", { team: view.turn.toUpperCase() })}
         title={nameOf(view.explainer)}
         seconds={view.secondsLeft}
       />
@@ -64,23 +66,32 @@ export const AliasBoard = ({ view }: { view: View }) => {
         items={[
           {
             value: view.scores.a,
-            label: view.yourTeam === "a" ? "team a · you" : "team a",
+            label:
+              view.yourTeam === "a"
+                ? `${t("games.board.teamA")} · ${t("common.you")}`
+                : t("games.board.teamA"),
             tone: view.yourTeam === "a" ? "accent" : "label",
           },
-          { value: view.target, label: "to win" },
+          { value: view.target, label: t("games.board.toWin") },
           {
             value: view.scores.b,
-            label: view.yourTeam === "b" ? "team b · you" : "team b",
+            label:
+              view.yourTeam === "b"
+                ? `${t("games.board.teamB")} · ${t("common.you")}`
+                : t("games.board.teamB"),
             tone: view.yourTeam === "b" ? "accent" : "label",
           },
         ]}
       />
 
       {view.phase === "finished" ? (
-        <WordCard label="winner" value={`Team ${String(view.winner ?? "").toUpperCase()}`} />
+        <WordCard
+          label={t("games.board.winner")}
+          value={String(view.winner ?? "").toUpperCase()}
+        />
       ) : view.youExplain ? (
         <>
-          <WordCard label="explain without saying it" value={word ?? view.word ?? "…"} />
+          <WordCard label={t("games.board.explainWithout")} value={word ?? view.word ?? "…"} />
           <div className="flex justify-center">
             <VoiceOrb level={micLevel} size={150} tone="live">
               <WaveIcon size={24} />
@@ -92,15 +103,15 @@ export const AliasBoard = ({ view }: { view: View }) => {
             disabled={view.skips >= view.maxSkips}
             onClick={() => act("skip", {})}
           >
-            Skip word · {view.maxSkips - view.skips} left
+            {t("games.board.skipWord", { count: view.maxSkips - view.skips })}
           </Button>
         </>
       ) : (
         <>
           <p className="text-center text-[13.5px] leading-snug text-hint">
             {view.turn === view.yourTeam
-              ? "Your teammate is explaining. Type guesses fast."
-              : "The other team is playing. Listen and keep them honest."}
+              ? t("games.board.teammateExplaining")
+              : t("games.board.otherTeam")}
           </p>
 
           {view.turn === view.yourTeam && (
@@ -110,12 +121,12 @@ export const AliasBoard = ({ view }: { view: View }) => {
                   className="h-[46px] w-full text-[14.5px]"
                   value={guess}
                   maxLength={60}
-                  placeholder="Your guess"
+                  placeholder={t("games.board.yourGuess")}
                   onChange={(event) => setGuess(event.target.value)}
                   onKeyDown={(event) => event.key === "Enter" && submit()}
                 />
               </div>
-              <IconButton label="Guess" tone="light" size={46} onClick={submit}>
+              <IconButton label={t("games.board.guess")} tone="light" size={46} onClick={submit}>
                 <SendIcon size={18} />
               </IconButton>
             </div>
@@ -126,7 +137,7 @@ export const AliasBoard = ({ view }: { view: View }) => {
             icon={<FlagIcon size={15} />}
             onClick={() => act("violation", {})}
           >
-            They said the word
+            {t("games.board.saidTheWord")}
           </Button>
         </>
       )}

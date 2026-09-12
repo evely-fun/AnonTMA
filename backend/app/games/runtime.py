@@ -8,11 +8,12 @@ import orjson
 from app.core.logging import get_logger
 from app.core.redis_client import get_redis
 from app.db.base import utcnow
-from app.db.models import GameResult, GameSession, GameStatus, UserStats
+from app.db.models import GameResult, GameSession, GameStatus, User, UserStats
 from app.db.session import SessionLocal
 from app.games.base import Effect
 from app.games.registry import get_engine
 from app.realtime.hub import hub
+from app.services import economy
 from app.services.progression import game_reward
 from app.services.users import award
 
@@ -224,10 +225,20 @@ async def finalize(game_id: int, game_key: str, state: dict) -> None:
                 bool(outcome.get("won")), int(outcome.get("placement", 0)), players, int(outcome.get("score", 0))
             )
             stats = await session.get(UserStats, user_id)
+            energy_gain = 0
             if stats:
                 stats.games_played += 1
                 if outcome.get("won"):
                     stats.games_won += 1
+                owner = await session.get(User, user_id)
+                premium = economy.is_premium(owner) if owner else False
+                economy.regenerate(stats, premium)
+                energy_gain = economy.add_energy(
+                    stats,
+                    premium,
+                    economy.ENERGY_GAME_REWARD
+                    + (economy.ENERGY_GAME_WIN_BONUS if outcome.get("won") else 0),
+                )
             session.add(
                 GameResult(
                     session_id=game_id,
@@ -241,7 +252,10 @@ async def finalize(game_id: int, game_key: str, state: dict) -> None:
                     created_at=utcnow(),
                 )
             )
-            rewards[user_id] = await award(session, user_id, xp=xp, coins=coins)
+            rewards[user_id] = {
+                **await award(session, user_id, xp=xp, coins=coins),
+                "energy": energy_gain,
+            }
         await session.commit()
 
     for user_id, reward in rewards.items():

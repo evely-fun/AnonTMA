@@ -125,8 +125,6 @@ export const initTelegram = (): void => {
   app.ready();
   app.expand();
   app.disableVerticalSwipes?.();
-  app.setHeaderColor?.("#0a0c11");
-  app.setBackgroundColor?.("#0a0c11");
   applySafeArea();
   applyViewport();
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import { useT } from "@/shared/i18n";
 import { haptic } from "@/shared/lib/telegram";
 import { Button, LevelBars } from "@/shared/ui";
 import { MicIcon } from "@/shared/ui/icons";
@@ -53,6 +54,7 @@ const mulberry32 = (seed: number) => {
 };
 
 export const FlappyGame = ({ view }: { view: View }) => {
+  const { t } = useT();
   const act = useGames((state) => state.act);
   const profile = useSession((state) => state.profile);
   const members = useRooms((state) => state.members);
@@ -191,17 +193,17 @@ export const FlappyGame = ({ view }: { view: View }) => {
 
   const nameOf = (userId: number) =>
     userId === profile?.id
-      ? "You"
+      ? t("common.you")
       : (members.find((item) => item.userId === userId)?.anonName.split(" ")[0] ?? `P${userId}`);
 
   return (
     <div className="flex flex-1 flex-col gap-3">
       <GameStatus
-        eyebrow="Voice flappy"
-        title={`Score ${score}`}
+        eyebrow={t("games.board.voiceFlappy")}
+        title={t("games.board.score", { value: score })}
         trailing={
           <span className="rounded-full bg-elevated px-3 py-1.5 font-display text-[12px] font-bold tabular">
-            {view.alive.length} alive
+            {t("games.board.alive", { count: view.alive.length })}
           </span>
         }
       />
@@ -210,33 +212,33 @@ export const FlappyGame = ({ view }: { view: View }) => {
         <canvas ref={canvasRef} className="block size-full" />
 
         {view.phase === "countdown" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[rgb(6_8_15/0.62)] px-8 text-center backdrop-blur-sm">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 veil px-8 text-center backdrop-blur-sm">
             <span className="font-display text-[56px] font-extrabold tracking-[-0.04em] tabular">
               {view.secondsLeft}
             </span>
             <p className="text-[13.5px] leading-snug text-secondary">
-              Hum, sing or talk to lift the bird. Silence makes it drop.
+              {t("games.board.humToFly")}
             </p>
           </div>
         )}
 
         {view.phase === "finished" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[rgb(6_8_15/0.72)] px-8 text-center backdrop-blur-sm">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 veil px-8 text-center backdrop-blur-sm">
             <span className="font-display text-[56px] font-extrabold tracking-[-0.04em] tabular">
               {view.scores[String(profile?.id ?? 0)] ?? score}
             </span>
             <p className="text-[13.5px] text-secondary">
               {view.winner === profile?.id
-                ? "You flew the furthest"
-                : `${nameOf(view.winner ?? 0)} won this round`}
+                ? t("games.board.youFlewFurthest")
+                : t("games.board.wonThisRound", { name: nameOf(view.winner ?? 0) })}
             </p>
           </div>
         )}
 
         {view.phase === "running" && !view.youAlive && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[rgb(6_8_15/0.6)] px-8 text-center backdrop-blur-sm">
+          <div className="absolute inset-0 flex items-center justify-center veil px-8 text-center backdrop-blur-sm">
             <p className="text-[13.5px] text-secondary">
-              You crashed. Watching the rest of the flock.
+              {t("games.board.youCrashed")}
             </p>
           </div>
         )}
@@ -251,7 +253,7 @@ export const FlappyGame = ({ view }: { view: View }) => {
         </div>
         {!voiceActive && (
           <Button size="sm" variant="surface" onClick={() => void enableVoice()}>
-            Allow mic
+            {t("games.board.allowMic")}
           </Button>
         )}
       </div>

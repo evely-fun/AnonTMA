@@ -1,3 +1,4 @@
+import { voiceChanger, type VoicePreset } from "./changer";
 import { suppressorWorklet } from "./worklet";
 
 export type NoiseLevel = "off" | "light" | "medium" | "high";
@@ -51,12 +52,7 @@ export const NOISE_PROFILES: Record<NoiseLevel, LevelProfile> = {
   },
 };
 
-export const NOISE_LEVELS: { value: NoiseLevel; label: string; hint: string }[] = [
-  { value: "off", label: "Off", hint: "Raw microphone, nothing removed" },
-  { value: "light", label: "Light", hint: "Gentle cleanup, keeps room tone" },
-  { value: "medium", label: "Balanced", hint: "Removes hum, keyboards and street" },
-  { value: "high", label: "Studio", hint: "Aggressive, voice only" },
-];
+export const NOISE_LEVELS: NoiseLevel[] = ["off", "light", "medium", "high"];
 
 export interface VoiceMeter {
   level: number;
@@ -79,11 +75,13 @@ export class VoicePipeline {
   private listeners = new Set<MeterListener>();
 
   level: NoiseLevel = "medium";
+  preset: VoicePreset = "natural";
   muted = false;
   ready = false;
 
-  async start(level: NoiseLevel = "medium"): Promise<MediaStream> {
+  async start(level: NoiseLevel = "medium", preset: VoicePreset = "natural"): Promise<MediaStream> {
     this.level = level;
+    this.preset = preset;
     const profile = NOISE_PROFILES[level];
 
     this.rawStream = await navigator.mediaDevices.getUserMedia({
@@ -160,7 +158,10 @@ export class VoicePipeline {
       this.lowPass.connect(this.compressor);
       this.attachFallbackMeter(context);
     }
-    this.compressor.connect(this.gainNode);
+    voiceChanger.preset = this.preset;
+    const changer = await voiceChanger.attach(context);
+    this.compressor.connect(changer.input);
+    changer.output.connect(this.gainNode);
     this.gainNode.connect(this.destination);
 
     this.applyProfile(profile);
@@ -216,6 +217,11 @@ export class VoicePipeline {
     this.applyProfile(NOISE_PROFILES[level]);
   }
 
+  setPreset(preset: VoicePreset): void {
+    this.preset = preset;
+    voiceChanger.setPreset(preset);
+  }
+
   setMuted(muted: boolean): void {
     this.muted = muted;
     if (this.gainNode && this.context) {
@@ -244,6 +250,7 @@ export class VoicePipeline {
     this.lowPass?.disconnect();
     this.compressor?.disconnect();
     this.gainNode?.disconnect();
+    voiceChanger.dispose();
     if (this.workletUrl) {
       URL.revokeObjectURL(this.workletUrl);
       this.workletUrl = null;

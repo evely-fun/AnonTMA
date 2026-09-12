@@ -2,12 +2,23 @@ import { m } from "motion/react";
 import type { ReactNode } from "react";
 
 import { haptic } from "@/shared/lib/telegram";
-import { spring, tabContent } from "@/shared/lib/motion";
+import { pushScreen, spring, tabContent } from "@/shared/lib/motion";
 
 import { ChevronIcon } from "./icons";
 
 export const TabScreen = ({ children }: { children: ReactNode }) => (
   <m.div variants={tabContent} initial="initial" animate="animate" exit="exit">
+    {children}
+  </m.div>
+);
+
+export const PushScreen = ({ children }: { children: ReactNode }) => (
+  <m.div
+    className="flex h-full flex-col"
+    variants={pushScreen}
+    initial="initial"
+    animate="animate"
+  >
     {children}
   </m.div>
 );

@@ -1,7 +1,8 @@
 import { AnimatePresence, m } from "motion/react";
 import { useEffect, useState } from "react";
 
-import { activityLabel, relativeTime } from "@/shared/lib/format";
+import { useT } from "@/shared/i18n";
+import { relativeTime } from "@/shared/lib/format";
 import { listStagger, rise } from "@/shared/lib/motion";
 import { openLink } from "@/shared/lib/telegram";
 import {
@@ -20,6 +21,7 @@ import { useSocial } from "@/store/social";
 import { toast } from "@/store/ui";
 
 export const FriendsPage = () => {
+  const { t } = useT();
   const friends = useSocial((state) => state.friends);
   const requests = useSocial((state) => state.requests);
   const loading = useSocial((state) => state.loading);
@@ -43,7 +45,7 @@ export const FriendsPage = () => {
   const invite = async () => {
     const link = await inviteLink();
     if (!link) {
-      toast("Could not build the invite link", { tone: "danger" });
+      toast(t("friends.inviteFailed"), { tone: "danger" });
       return;
     }
     openLink(link.shareUrl);
@@ -54,7 +56,7 @@ export const FriendsPage = () => {
       <div className="space-y-7 pb-4">
         {incoming.length > 0 && (
           <section>
-            <SectionHead title="Requests" />
+            <SectionHead title={t("friends.requests")} />
             <m.div variants={listStagger} initial="initial" animate="animate">
               <Panel divided>
                 <AnimatePresence initial={false}>
@@ -72,11 +74,11 @@ export const FriendsPage = () => {
                           {item.anonName}
                         </p>
                         <p className="truncate text-[12px] text-hint">
-                          {item.message ?? `Level ${item.level}`}
+                          {item.message ?? `${t("common.level")} ${item.level}`}
                         </p>
                       </div>
                       <IconButton
-                        label="Accept"
+                        label={t("common.done")}
                         tone="live"
                         size={36}
                         onClick={() => void accept(item.id)}
@@ -84,7 +86,7 @@ export const FriendsPage = () => {
                         <CheckIcon size={16} />
                       </IconButton>
                       <IconButton
-                        label="Decline"
+                        label={t("common.cancel")}
                         tone="danger"
                         size={36}
                         onClick={() => void decline(item.id)}
@@ -101,7 +103,7 @@ export const FriendsPage = () => {
 
         <section>
           <SectionHead
-            title="Your circle"
+            title={t("friends.yourCircle")}
             trailing={
               <button
                 type="button"
@@ -109,7 +111,7 @@ export const FriendsPage = () => {
                 className="flex items-center gap-1.5 font-display text-[12px] font-bold uppercase tracking-[0.1em] text-accent"
               >
                 <LinkIcon size={13} />
-                invite
+                {t("friends.invite")}
               </button>
             }
           />
@@ -117,9 +119,9 @@ export const FriendsPage = () => {
           {!loading && friends.length === 0 ? (
             <EmptyState
               icon={<FriendsIcon size={24} />}
-              title="No friends yet"
-              description="Like a conversation and send a request, or invite someone from Telegram."
-              action={<Button onClick={() => void invite()}>Invite a friend</Button>}
+              title={t("friends.empty")}
+              description={t("friends.emptyHint")}
+              action={<Button onClick={() => void invite()}>{t("friends.inviteFriend")}</Button>}
             />
           ) : (
             <m.div variants={listStagger} initial="initial" animate="animate">
@@ -141,18 +143,18 @@ export const FriendsPage = () => {
                         </p>
                         <p className="truncate text-[12px] text-hint">
                           {friend.isOnline
-                            ? activityLabel(friend.activity) || "online"
-                            : `seen ${relativeTime(friend.lastSeenAt)}`}
+                            ? t(`friends.activity.${friend.activity ?? "online"}`)
+                            : t("friends.seen", { time: relativeTime(friend.lastSeenAt) })}
                         </p>
                       </button>
                       {friend.isOnline && (
                         <IconButton
-                          label="Call"
+                          label={t("friends.call")}
                           tone="live"
                           size={38}
                           onClick={() => {
                             callFriend(friend.id);
-                            toast("Calling…", { description: friend.anonName });
+                            toast(t("friends.calling"), { description: friend.anonName });
                           }}
                         >
                           <PhoneIcon size={17} />
@@ -168,16 +170,16 @@ export const FriendsPage = () => {
 
         {outgoing.length > 0 && (
           <section>
-            <SectionHead title="Sent" />
+            <SectionHead title={t("friends.sent")} />
             <Panel divided>
               {outgoing.map((item) => (
                 <div key={item.id} className="flex items-center gap-3.5 px-4 py-3">
                   <Avatar seed={item.avatarSeed} size={34} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-display text-[14px] font-bold">{item.anonName}</p>
-                    <p className="text-[11.5px] text-hint">waiting for an answer</p>
+                    <p className="text-[11.5px] text-hint">{t("friends.waitingAnswer")}</p>
                   </div>
-                  <Chip onClick={() => void decline(item.id)}>Cancel</Chip>
+                  <Chip onClick={() => void decline(item.id)}>{t("common.cancel")}</Chip>
                 </div>
               ))}
             </Panel>
@@ -190,7 +192,7 @@ export const FriendsPage = () => {
           <div className="flex flex-col items-center gap-3 pb-2">
             <Avatar seed={active.avatarSeed} size={84} online={active.isOnline} />
             <p className="font-display text-[12px] font-bold uppercase tracking-[0.12em] text-hint">
-              {active.title} · level {active.level}
+              {t(`titles.${active.title}`)} · {t("common.level")} {active.level}
             </p>
             <div className="mt-4 flex w-full flex-col gap-2">
               <Button
@@ -202,10 +204,10 @@ export const FriendsPage = () => {
                   setSelected(null);
                 }}
               >
-                {active.isOnline ? "Voice call" : "Offline"}
+                {active.isOnline ? t("friends.voiceCall") : t("friends.offline")}
               </Button>
               <Button full variant="surface" onClick={() => void toggleFavourite(active.id)}>
-                {active.favourite ? "Remove from favourites" : "Add to favourites"}
+                {active.favourite ? t("friends.removeFavourite") : t("friends.addFavourite")}
               </Button>
               <Button
                 full
@@ -215,7 +217,7 @@ export const FriendsPage = () => {
                   setSelected(null);
                 }}
               >
-                Remove friend
+                {t("friends.removeFriend")}
               </Button>
             </div>
           </div>

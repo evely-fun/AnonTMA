@@ -2,6 +2,7 @@ import { m } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { useT } from "@/shared/i18n";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
 import {
@@ -21,18 +22,22 @@ import {
   CrownIcon,
   FlameIcon,
   GamesIcon,
+  GiftIcon,
   MicIcon,
   RoomsIcon,
   ShieldIcon,
 } from "@/shared/ui/icons";
 import { useChat } from "@/store/chat";
+import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { useSocial } from "@/store/social";
 
 export const HomePage = () => {
+  const { t } = useT();
   const navigate = useNavigate();
   const profile = useSession((state) => state.profile);
   const presence = useSession((state) => state.presence);
+  const economy = useEconomy((store) => store.state);
   const startSearch = useChat((state) => state.startSearch);
   const loadSocial = useSocial((state) => state.load);
   const friends = useSocial((state) => state.friends);
@@ -44,6 +49,8 @@ export const HomePage = () => {
 
   const online = friends.filter((friend) => friend.isOnline);
   const progress = profile?.progress;
+  const cost = economy?.costs?.[mode] ?? 0;
+  const unlimited = economy?.unlimited ?? false;
 
   const begin = () => {
     haptic.impact("medium");
@@ -59,25 +66,24 @@ export const HomePage = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="block font-display text-[11px] font-bold uppercase tracking-[0.14em] text-hint">
-                  People online
+                  {t("home.peopleOnline")}
                 </span>
                 <span className="mt-1.5 flex items-baseline gap-2 font-display text-[38px] font-extrabold leading-none tracking-[-0.04em] tabular">
                   <AnimatedNumber value={presence.online} />
                   {presence.searching > 0 && (
                     <span className="text-[13px] font-bold tracking-normal text-live">
-                      {presence.searching} searching
+                      {t("home.searching", { count: presence.searching })}
                     </span>
                   )}
                 </span>
               </div>
-              <span className="flex size-11 items-center justify-center rounded-[14px] bg-[oklch(1_0_0/0.08)] text-label">
+              <span className="flex size-11 items-center justify-center rounded-[14px] bg-[var(--sheen)] text-label">
                 {mode === "voice" ? <MicIcon size={21} /> : <ChatIcon size={21} />}
               </span>
             </div>
 
             <p className="mt-4 max-w-[280px] text-[13.5px] leading-snug text-secondary">
-              A new mask every conversation. Nothing links back to your Telegram account unless you
-              both reveal.
+              {t("home.tagline")}
             </p>
 
             <div className="mt-5">
@@ -86,8 +92,8 @@ export const HomePage = () => {
                 value={mode}
                 onChange={setMode}
                 options={[
-                  { value: "voice", label: "Voice" },
-                  { value: "text", label: "Text" },
+                  { value: "voice" as const, label: t("home.voice") },
+                  { value: "text" as const, label: t("home.text") },
                 ]}
               />
             </div>
@@ -100,8 +106,12 @@ export const HomePage = () => {
               className="primary-action mt-3 flex h-[54px] w-full items-center justify-center gap-2 rounded-[17px] font-display text-[16px] font-extrabold tracking-[-0.01em]"
             >
               <BoltIcon size={18} />
-              Find someone now
+              {t("home.findNow")}
             </m.button>
+
+            <p className="mt-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint tabular">
+              {unlimited ? t("home.free") : t("home.cost", { count: cost })}
+            </p>
           </div>
         </m.section>
 
@@ -111,10 +121,10 @@ export const HomePage = () => {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <span className="font-display text-[15px] font-extrabold tracking-[-0.01em]">
-                    {progress.title}
+                    {t(`titles.${progress.title}`)}
                   </span>
                   <span className="ml-2 font-display text-[12px] font-bold uppercase tracking-[0.1em] text-hint">
-                    level {progress.level}
+                    {t("common.level")} {progress.level}
                   </span>
                 </div>
                 <span className="flex items-center gap-1.5 rounded-full bg-warn/15 px-2.5 py-1 font-display text-[12px] font-bold text-warn tabular">
@@ -126,7 +136,7 @@ export const HomePage = () => {
                 <Meter ratio={progress.ratio} />
               </div>
               <p className="mt-2 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint tabular">
-                {progress.xpIntoLevel} / {progress.xpForNext} xp
+                {t("home.xpOf", { current: progress.xpIntoLevel, total: progress.xpForNext })}
               </p>
             </div>
           </m.section>
@@ -135,14 +145,14 @@ export const HomePage = () => {
         {online.length > 0 && (
           <m.section variants={rise}>
             <SectionHead
-              title="Friends online"
+              title={t("home.friendsOnline")}
               trailing={
                 <button
                   type="button"
                   onClick={() => navigate("/friends")}
                   className="font-display text-[12px] font-bold uppercase tracking-[0.1em] text-accent"
                 >
-                  all
+                  {t("common.all")}
                 </button>
               }
             />
@@ -167,7 +177,7 @@ export const HomePage = () => {
         )}
 
         <m.section variants={rise}>
-          <SectionHead title="Explore" />
+          <SectionHead title={t("home.explore")} />
           <Panel divided>
             <ListRow
               leading={
@@ -175,8 +185,8 @@ export const HomePage = () => {
                   <RoomsIcon size={19} />
                 </IconTile>
               }
-              title="Voice rooms"
-              subtitle="Open tables you can drop into"
+              title={t("home.voiceRooms")}
+              subtitle={t("home.voiceRoomsHint")}
               chevron
               onClick={() => navigate("/rooms")}
             />
@@ -186,19 +196,37 @@ export const HomePage = () => {
                   <GamesIcon size={19} />
                 </IconTile>
               }
-              title="Games"
-              subtitle="Mafia, Alias, Telephone and more"
+              title={t("home.games")}
+              subtitle={t("home.gamesHint")}
               chevron
               onClick={() => navigate("/games")}
             />
             <ListRow
               leading={
                 <IconTile tone="warn">
+                  <GiftIcon size={19} />
+                </IconTile>
+              }
+              title={t("home.daily")}
+              subtitle={t("home.dailyHint")}
+              trailing={
+                (economy?.wheel.spins ?? 0) > 0 ? (
+                  <span className="flex size-5 items-center justify-center rounded-full bg-accent font-display text-[11px] font-extrabold text-bg">
+                    {economy?.wheel.spins}
+                  </span>
+                ) : undefined
+              }
+              chevron
+              onClick={() => navigate("/daily")}
+            />
+            <ListRow
+              leading={
+                <IconTile tone="neutral">
                   <CrownIcon size={19} />
                 </IconTile>
               }
-              title="Leaderboard"
-              subtitle="Where you stand this week"
+              title={t("home.leaderboard")}
+              subtitle={t("home.leaderboardHint")}
               chevron
               onClick={() => navigate("/leaderboard")}
             />
@@ -210,10 +238,7 @@ export const HomePage = () => {
             <span className="mt-0.5 text-hint">
               <ShieldIcon size={18} />
             </span>
-            <p className="text-[12.5px] leading-snug text-hint">
-              Your Telegram name, photo and username stay hidden. Reports are reviewed and repeat
-              offenders lose access.
-            </p>
+            <p className="text-[12.5px] leading-snug text-hint">{t("home.privacy")}</p>
           </div>
         </m.section>
       </m.div>

@@ -1,5 +1,6 @@
 import { m } from "motion/react";
 
+import { useT } from "@/shared/i18n";
 import { spring } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
 import { useSession } from "@/store/session";
@@ -22,6 +23,7 @@ interface View {
 }
 
 export const TicTacToeBoard = ({ view }: { view: View }) => {
+  const { t } = useT();
   const act = useGames((state) => state.act);
   const profile = useSession((state) => state.profile);
   const yourTurn = view.turn === profile?.id && view.phase === "playing";
@@ -33,25 +35,25 @@ export const TicTacToeBoard = ({ view }: { view: View }) => {
   return (
     <div className="flex flex-col gap-5">
       <GameStatus
-        eyebrow={`Round ${view.round} of ${view.bestOf}`}
+        eyebrow={t("games.board.round", { current: view.round, total: view.bestOf })}
         title={
           view.phase === "finished"
             ? view.winner === profile?.id
-              ? "You won the match"
+              ? t("games.board.youWon")
               : view.winner
-                ? "You lost the match"
-                : "Draw"
+                ? t("games.board.youLost")
+                : t("games.board.draw")
             : yourTurn
-              ? "Your move"
-              : "Opponent is thinking"
+              ? t("games.board.yourMove")
+              : t("games.board.opponentThinking")
         }
         seconds={view.phase === "playing" ? view.secondsLeft : undefined}
       />
 
       <ScoreRow
         items={[
-          { value: yourWins, label: `you · ${view.yourMark ?? ""}`, tone: "accent" },
-          { value: rivalWins, label: view.withBot ? "bot" : "rival" },
+          { value: yourWins, label: `${t("common.you")} · ${view.yourMark ?? ""}`, tone: "accent" },
+          { value: rivalWins, label: view.withBot ? t("games.board.bot") : t("games.board.rival") },
         ]}
       />
 

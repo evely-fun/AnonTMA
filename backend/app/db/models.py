@@ -75,6 +75,10 @@ class User(Base, BigIntPk, TimestampMixin):
     referral_code: Mapped[str] = mapped_column(String(16), unique=True, index=True)
     referred_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 
+    premium_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    palette: Mapped[str] = mapped_column(String(16), default="auto")
+    ui_language: Mapped[str] = mapped_column(String(8), default="auto")
+
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
     banned_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -102,6 +106,13 @@ class UserStats(Base, TimestampMixin):
     friends_count: Mapped[int] = mapped_column(Integer, default=0)
     likes_received: Mapped[int] = mapped_column(Integer, default=0)
     reports_received: Mapped[int] = mapped_column(Integer, default=0)
+
+    energy: Mapped[int] = mapped_column(Integer, default=60)
+    energy_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    voice_seconds_today: Mapped[int] = mapped_column(Integer, default=0)
+    wheel_spins: Mapped[int] = mapped_column(Integer, default=0)
+    wheel_day: Mapped[str | None] = mapped_column(String(10))
+    streak_claimed_day: Mapped[str | None] = mapped_column(String(10))
 
     streak_days: Mapped[int] = mapped_column(Integer, default=0)
     best_streak: Mapped[int] = mapped_column(Integer, default=0)
@@ -232,6 +243,30 @@ class UserAchievement(Base, IntPk):
     key: Mapped[str] = mapped_column(String(48))
     progress: Mapped[int] = mapped_column(Integer, default=0)
     unlocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Purchase(Base, BigIntPk, TimestampMixin):
+    __tablename__ = "purchases"
+
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    product: Mapped[str] = mapped_column(String(32))
+    mode: Mapped[str] = mapped_column(String(8), default="test")
+    stars: Mapped[int] = mapped_column(Integer, default=0)
+    days: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="pending", index=True)
+    payload: Mapped[str] = mapped_column(String(96), unique=True, index=True)
+    charge_id: Mapped[str | None] = mapped_column(String(128))
+
+
+class RewardLog(Base, BigIntPk):
+    __tablename__ = "reward_logs"
+    __table_args__ = (Index("ix_reward_user_kind", "user_id", "kind"),)
+
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    kind: Mapped[str] = mapped_column(String(24))
+    prize: Mapped[str] = mapped_column(String(32))
+    amount: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
 
 class Report(Base, BigIntPk, TimestampMixin):

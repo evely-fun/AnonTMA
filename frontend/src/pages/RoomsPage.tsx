@@ -2,6 +2,7 @@ import { m } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { useT } from "@/shared/i18n";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
 import {
@@ -20,13 +21,10 @@ import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 
-const FILTERS = [
-  { value: "all", label: "All" },
-  { value: "voice", label: "Voice" },
-  { value: "game", label: "Games" },
-] as const;
+const FILTERS = ["all", "voice", "game"] as const;
 
 export const RoomsPage = () => {
+  const { t } = useT();
   const navigate = useNavigate();
   const list = useRooms((state) => state.list);
   const loading = useRooms((state) => state.loading);
@@ -34,7 +32,7 @@ export const RoomsPage = () => {
   const create = useRooms((state) => state.create);
   const games = useSession((state) => state.games);
 
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]["value"]>("all");
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
@@ -47,7 +45,7 @@ export const RoomsPage = () => {
 
   const submit = async () => {
     if (title.trim().length < 2) {
-      toast("Give the room a name", { tone: "danger" });
+      toast(t("rooms.nameTooShort"), { tone: "danger" });
       return;
     }
     setBusy(true);
@@ -62,7 +60,7 @@ export const RoomsPage = () => {
     } as never);
     setBusy(false);
     if (!room) {
-      toast("Could not create the room", { tone: "danger" });
+      toast(t("rooms.createFailed"), { tone: "danger" });
       return;
     }
     setOpen(false);
@@ -77,17 +75,13 @@ export const RoomsPage = () => {
         <div className="flex items-center gap-2 px-4">
           <div className="flex flex-1 gap-2">
             {FILTERS.map((item) => (
-              <Chip
-                key={item.value}
-                active={filter === item.value}
-                onClick={() => setFilter(item.value)}
-              >
-                {item.label}
+              <Chip key={item} active={filter === item} onClick={() => setFilter(item)}>
+                {t(`rooms.${item === "game" ? "games" : item}`)}
               </Chip>
             ))}
           </div>
           <Button size="sm" icon={<PlusIcon size={15} />} onClick={() => setOpen(true)}>
-            Open
+            {t("rooms.open")}
           </Button>
         </div>
 
@@ -102,9 +96,9 @@ export const RoomsPage = () => {
         {!loading && list.length === 0 && (
           <EmptyState
             icon={<DoorIcon size={24} />}
-            title="No open rooms"
-            description="Open the first table. People usually drop in within a minute."
-            action={<Button onClick={() => setOpen(true)}>Open a room</Button>}
+            title={t("rooms.empty")}
+            description={t("rooms.emptyHint")}
+            action={<Button onClick={() => setOpen(true)}>{t("rooms.openRoom")}</Button>}
           />
         )}
 
@@ -139,7 +133,7 @@ export const RoomsPage = () => {
                     </span>
                     {game && (
                       <span className="shrink-0 rounded-full bg-live-quiet px-2 py-0.5 font-display text-[10px] font-bold uppercase tracking-[0.08em] text-live">
-                        {game.title}
+                        {t(`games.meta.${game.key}.title`)}
                       </span>
                     )}
                   </span>
@@ -165,11 +159,11 @@ export const RoomsPage = () => {
                     </span>
                     {live ? (
                       <span className="flex items-center gap-1 font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-live">
-                        <MicIcon size={11} /> live
+                        <MicIcon size={11} /> {t("rooms.live")}
                       </span>
                     ) : (
                       <span className="font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-hint">
-                        quiet
+                        {t("rooms.quiet")}
                       </span>
                     )}
                   </span>
@@ -183,42 +177,42 @@ export const RoomsPage = () => {
       <Sheet
         open={open}
         onClose={() => setOpen(false)}
-        title="Open a room"
-        description="Give it a name and a topic. Anyone can join a public table."
+        title={t("rooms.openRoom")}
+        description={t("rooms.openRoomHint")}
         footer={
           <Button full loading={busy} onClick={() => void submit()}>
-            Create and join
+            {t("rooms.createAndJoin")}
           </Button>
         }
       >
         <div className="space-y-4 pb-2">
           <label className="block">
-            <SectionHead title="Name" />
+            <SectionHead title={t("rooms.name")} />
             <input
               className="h-[50px] w-full rounded-[16px] bg-elevated/60 px-4 text-[15px]"
               value={title}
               maxLength={64}
-              placeholder="Late night talks"
+              placeholder={t("rooms.namePlaceholder")}
               onChange={(event) => setTitle(event.target.value)}
             />
           </label>
 
           <label className="block">
-            <SectionHead title="Topic" />
+            <SectionHead title={t("rooms.topic")} />
             <input
               className="h-[50px] w-full rounded-[16px] bg-elevated/60 px-4 text-[15px]"
               value={topic}
               maxLength={120}
-              placeholder="Anything on your mind"
+              placeholder={t("rooms.topicPlaceholder")}
               onChange={(event) => setTopic(event.target.value)}
             />
           </label>
 
           <div>
-            <SectionHead title="Game table" />
+            <SectionHead title={t("rooms.gameTable")} />
             <div className="flex flex-wrap gap-2">
               <Chip active={gameKey === null} onClick={() => setGameKey(null)}>
-                Just voice
+                {t("rooms.justVoice")}
               </Chip>
               {games.map((game) => (
                 <Chip
@@ -226,7 +220,7 @@ export const RoomsPage = () => {
                   active={gameKey === game.key}
                   onClick={() => setGameKey(game.key)}
                 >
-                  {game.title}
+                  {t(`games.meta.${game.key}.title`)}
                 </Chip>
               ))}
             </div>

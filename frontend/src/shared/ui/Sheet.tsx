@@ -32,7 +32,7 @@ export const Sheet = ({
       {open && (
         <div className="fixed inset-0 z-50 mx-auto flex max-w-[480px] items-end">
           <m.div
-            className="absolute inset-0 bg-[rgb(4_6_11/0.72)] backdrop-blur-[6px]"
+            className="veil absolute inset-0 backdrop-blur-[6px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -40,7 +40,7 @@ export const Sheet = ({
             onClick={onClose}
           />
           <m.div
-            className="relative flex max-h-[88vh] w-full flex-col rounded-t-[26px] bg-surface pb-[calc(18px+env(safe-area-inset-bottom))] shadow-[0_-30px_80px_-40px_oklch(0_0_0/0.95)]"
+            className="relative flex max-h-[88vh] w-full flex-col rounded-t-[26px] bg-surface pb-[calc(18px+env(safe-area-inset-bottom))] shadow-[0_-30px_80px_-40px_oklch(0_0_0/0.55)]"
             variants={sheetPanel}
             initial="initial"
             animate="animate"

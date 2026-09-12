@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import type { VoicePreset } from "@/features/voice/changer";
 import { voicePipeline, type NoiseLevel } from "@/features/voice/noise";
 import { peerManager } from "@/features/voice/webrtc";
 import { realtime } from "@/shared/lib/socket";
@@ -8,6 +9,7 @@ interface VoiceState {
   active: boolean;
   muted: boolean;
   level: NoiseLevel;
+  preset: VoicePreset;
   micLevel: number;
   speaking: boolean;
   permission: "unknown" | "granted" | "denied";
@@ -18,6 +20,7 @@ interface VoiceState {
   disable: () => Promise<void>;
   toggleMute: () => void;
   setLevel: (level: NoiseLevel) => void;
+  setPreset: (preset: VoicePreset) => void;
   setPeerLevels: (levels: Map<number, number>) => void;
 }
 
@@ -25,6 +28,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
   active: false,
   muted: false,
   level: "medium",
+  preset: "natural",
   micLevel: 0,
   speaking: false,
   permission: "unknown",
@@ -36,7 +40,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
       return true;
     }
     try {
-      const stream = await voicePipeline.start(level ?? get().level);
+      const stream = await voicePipeline.start(level ?? get().level, get().preset);
       peerManager.setLocalStream(stream);
       voicePipeline.onMeter((meter) => {
         const previous = get();
@@ -75,6 +79,11 @@ export const useVoice = create<VoiceState>((set, get) => ({
   setLevel: (level) => {
     voicePipeline.setLevel(level);
     set({ level });
+  },
+
+  setPreset: (preset) => {
+    voicePipeline.setPreset(preset);
+    set({ preset });
   },
 
   setPeerLevels: (levels) => {

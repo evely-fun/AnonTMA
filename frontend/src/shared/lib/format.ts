@@ -58,21 +58,3 @@ export const relativeTime = (iso: string | null): string => {
   return new Date(iso).toLocaleDateString();
 };
 
-export const activityLabel = (activity: string | null): string => {
-  if (!activity) {
-    return "";
-  }
-  if (activity.startsWith("searching")) {
-    return "searching";
-  }
-  if (activity.startsWith("chatting")) {
-    return "in a chat";
-  }
-  if (activity.startsWith("room")) {
-    return "in a room";
-  }
-  if (activity === "call") {
-    return "on a call";
-  }
-  return "online";
-};

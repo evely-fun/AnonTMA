@@ -1,6 +1,7 @@
 import { AnimatePresence, m } from "motion/react";
 import { useState } from "react";
 
+import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { ease, pop } from "@/shared/lib/motion";
 import type { Profile } from "@/shared/lib/types";
@@ -26,6 +27,7 @@ const INTERESTS = [
 ];
 
 export const OnboardingPage = () => {
+  const { t } = useT();
   const profile = useSession((state) => state.profile);
   const patchProfile = useSession((state) => state.patchProfile);
   const micLevel = useVoice((state) => state.micLevel);
@@ -52,7 +54,7 @@ export const OnboardingPage = () => {
       });
       patchProfile(updated);
     } catch {
-      toast("Saved locally, you can change this later", { tone: "danger" });
+      toast(t("errors.generic"), { tone: "danger" });
     } finally {
       setBusy(false);
     }
@@ -90,16 +92,13 @@ export const OnboardingPage = () => {
               <MaskIcon size={52} />
             </span>
             <h1 className="mt-2 font-display text-[27px] font-extrabold leading-tight tracking-[-0.03em]">
-              Talk to people
-              <br />
-              behind a mask
+              {t("onboarding.title")}
             </h1>
             <p className="max-w-[300px] text-[14px] leading-snug text-secondary">
-              Every conversation gives you a new name and a new face. Nothing links back to your
-              Telegram account unless you both choose to reveal.
+              {t("onboarding.body")}
             </p>
             <Button full size="lg" className="mt-4" onClick={() => setStep(1)}>
-              Get started
+              {t("onboarding.getStarted")}
             </Button>
           </m.div>
         )}
@@ -115,17 +114,17 @@ export const OnboardingPage = () => {
           >
             <Avatar seed={profile?.avatarSeed ?? "anon"} size={118} />
             <h1 className="mt-2 font-display text-[24px] font-extrabold tracking-[-0.03em]">
-              {profile?.anonName ?? "Anonymous"}
+              {profile?.anonName ?? t("chat.stranger")}
             </h1>
             <p className="max-w-[290px] text-[14px] leading-snug text-secondary">
-              This is your public mask. Roll it until it feels right, you can change it any time.
+              {t("onboarding.maskBody")}
             </p>
             <div className="mt-4 flex w-full gap-2">
               <Button full variant="surface" onClick={() => void regenerate()}>
-                Roll again
+                {t("onboarding.rollAgain")}
               </Button>
               <Button full onClick={() => setStep(2)}>
-                Keep it
+                {t("onboarding.keepIt")}
               </Button>
             </div>
           </m.div>
@@ -141,9 +140,9 @@ export const OnboardingPage = () => {
             exit="exit"
           >
             <h1 className="font-display text-[24px] font-extrabold tracking-[-0.03em]">
-              What do you like talking about?
+              {t("onboarding.interestsTitle")}
             </h1>
-            <p className="text-[13.5px] text-hint">Used only to find a better companion</p>
+            <p className="text-[13.5px] text-hint">{t("onboarding.interestsHint")}</p>
 
             <div className="flex flex-wrap justify-center gap-2">
               {INTERESTS.map((item) => (
@@ -158,7 +157,7 @@ export const OnboardingPage = () => {
                     )
                   }
                 >
-                  {item}
+                  {t(`interests.${item}`)}
                 </Chip>
               ))}
             </div>
@@ -169,14 +168,14 @@ export const OnboardingPage = () => {
                   <MicIcon size={19} />
                 </span>
                 <div className="min-w-0 flex-1 text-left">
-                  <p className="font-display text-[14px] font-bold">Microphone</p>
+                  <p className="font-display text-[14px] font-bold">{t("onboarding.microphone")}</p>
                   <p className="text-[11.5px] text-hint">
-                    {permission === "granted" ? "Say something, the bars move" : "Needed for voice"}
+                    {permission === "granted" ? t("onboarding.micGranted") : t("onboarding.micNeeded")}
                   </p>
                 </div>
                 {permission !== "granted" && (
                   <Button size="sm" variant="surface" onClick={() => void enableVoice()}>
-                    Allow
+                    {t("onboarding.allow")}
                   </Button>
                 )}
               </div>
@@ -192,11 +191,11 @@ export const OnboardingPage = () => {
             </div>
 
             <Button full size="lg" loading={busy} className="mt-2" onClick={() => void finish()}>
-              Enter Anon
+              {t("onboarding.enter")}
             </Button>
             <p className="flex items-center gap-1.5 text-[11.5px] text-hint">
               <ShieldIcon size={12} />
-              You can change everything later in settings
+              {t("onboarding.changeLater")}
             </p>
           </m.div>
         )}

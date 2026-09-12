@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { useT } from "@/shared/i18n";
 import { Button, IconButton, VoiceOrb } from "@/shared/ui";
 import { MicIcon, SendIcon, WaveIcon } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
@@ -29,6 +30,7 @@ interface View {
 }
 
 export const TelephoneBoard = ({ view }: { view: View }) => {
+  const { t } = useT();
   const act = useGames((state) => state.act);
   const phrase = useGames((state) => state.privateState.phrase as string | undefined);
   const members = useRooms((state) => state.members);
@@ -38,7 +40,7 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
 
   const nameOf = (userId: number | null) => {
     if (userId === null) return "—";
-    if (userId === profile?.id) return "You";
+    if (userId === profile?.id) return t("common.you");
     return members.find((item) => item.userId === userId)?.anonName.split(" ")[0] ?? `P${userId}`;
   };
 
@@ -46,25 +48,25 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
     return (
       <div className="flex flex-col gap-4">
         <GameStatus
-          eyebrow={`Round ${view.round} of ${view.rounds}`}
-          title="How it mutated"
+          eyebrow={t("games.board.round", { current: view.round, total: view.rounds })}
+          title={t("games.board.howItMutated")}
           seconds={view.secondsLeft}
         />
-        <WordCard label="original" value={view.reveal?.original ?? ""} />
+        <WordCard label={t("games.board.original")} value={view.reveal?.original ?? ""} />
         <div className="flex flex-col gap-2">
           {view.reveal?.history.map((entry, index) => (
             <div key={index} className="panel rounded-[16px] px-4 py-3">
               <span className="font-display text-[10.5px] font-bold uppercase tracking-[0.12em] text-hint">
-                {nameOf(entry.from)} to {nameOf(entry.to)}
+                {t("games.board.whispers", { from: nameOf(entry.from), to: nameOf(entry.to) })}
               </span>
               <p className="mt-1 text-[14px] leading-snug">{entry.heard}</p>
               <span className="mt-2 inline-block rounded-full bg-accent-quiet px-2.5 py-0.5 font-display text-[10.5px] font-bold text-accent tabular">
-                {entry.accuracy}% kept
+                {t("games.board.kept", { value: entry.accuracy })}
               </span>
             </div>
           ))}
         </div>
-        <WordCard label="final" value={view.reveal?.final ?? ""} />
+        <WordCard label={t("games.board.final")} value={view.reveal?.final ?? ""} />
       </div>
     );
   }
@@ -72,29 +74,35 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
   return (
     <div className="flex flex-col gap-5">
       <GameStatus
-        eyebrow={`Step ${view.step + 1} of ${Math.max(1, view.chain.length - 1)}`}
-        title={`${nameOf(view.speaker)} whispers to ${nameOf(view.listener)}`}
+        eyebrow={t("games.board.step", {
+          current: view.step + 1,
+          total: Math.max(1, view.chain.length - 1),
+        })}
+        title={t("games.board.whispers", {
+          from: nameOf(view.speaker),
+          to: nameOf(view.listener),
+        })}
         seconds={view.secondsLeft}
       />
 
       {view.youSpeak ? (
         <>
-          <WordCard label="say this out loud, once" value={phrase ?? "…"} />
+          <WordCard label={t("games.board.sayOutLoud")} value={phrase ?? "…"} />
           <div className="flex justify-center">
             <VoiceOrb level={micLevel} size={170} tone="warn">
               <MicIcon size={26} />
             </VoiceOrb>
           </div>
           <Button full onClick={() => act("done_speaking", {})}>
-            I said it
+            {t("games.board.iSaidIt")}
           </Button>
         </>
       ) : view.youListen ? (
         <>
           <p className="text-center text-[13.5px] leading-snug text-hint">
             {view.phase === "speak"
-              ? "Listen closely, only you can hear the speaker."
-              : "Type exactly what you heard."}
+              ? t("games.board.listenClosely")
+              : t("games.board.typeWhatHeard")}
           </p>
           <div className="flex justify-center">
             <VoiceOrb level={0.25} size={150} tone="live" pulse={view.phase === "speak"}>
@@ -108,7 +116,7 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
                   className="h-[46px] w-full text-[14.5px]"
                   value={guess}
                   maxLength={160}
-                  placeholder="What did you hear?"
+                  placeholder={t("games.board.whatDidYouHear")}
                   onChange={(event) => setGuess(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
@@ -119,7 +127,7 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
                 />
               </div>
               <IconButton
-                label="Pass on"
+                label={t("games.board.passOn")}
                 tone="light"
                 size={46}
                 onClick={() => {
@@ -135,7 +143,7 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
       ) : (
         <>
           <p className="text-center text-[13.5px] leading-snug text-hint">
-            Your microphone is off for this step. Wait for your turn in the chain.
+            {t("games.board.micOffThisStep")}
           </p>
           <div className="flex flex-col gap-2">
             {view.chain.map((userId, index) => {

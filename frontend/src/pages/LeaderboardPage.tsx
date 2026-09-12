@@ -2,26 +2,23 @@ import { m } from "motion/react";
 import { useEffect, useState } from "react";
 
 import { useBackButton } from "@/shared/hooks/useBackButton";
+import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { compactNumber, durationLabel } from "@/shared/lib/format";
 import { listStagger, rise } from "@/shared/lib/motion";
 import type { LeaderboardEntry } from "@/shared/lib/types";
-import { Avatar, ScreenHeader, Segmented, Skeleton } from "@/shared/ui";
+import { Avatar, PushScreen, ScreenHeader, Segmented, Skeleton } from "@/shared/ui";
 import { CrownIcon } from "@/shared/ui/icons";
 
 type Metric = "xp" | "rating" | "voice" | "games";
 
-const METRICS: { value: Metric; label: string }[] = [
-  { value: "xp", label: "XP" },
-  { value: "rating", label: "Rating" },
-  { value: "voice", label: "Voice" },
-  { value: "games", label: "Wins" },
-];
+const METRICS: Metric[] = ["xp", "rating", "voice", "games"];
 
 const format = (metric: Metric, value: number): string =>
   metric === "voice" ? durationLabel(value) : compactNumber(value);
 
 export const LeaderboardPage = () => {
+  const { t } = useT();
   const [metric, setMetric] = useState<Metric>("xp");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,12 +34,21 @@ export const LeaderboardPage = () => {
   }, [metric]);
 
   return (
-    <div className="flex h-full flex-col">
-      <ScreenHeader title="Leaderboard" subtitle="top of the week" onBack={() => history.back()} />
+    <PushScreen>
+      <ScreenHeader
+        title={t("leaderboard.title")}
+        subtitle={t("leaderboard.subtitle")}
+        onBack={() => history.back()}
+      />
 
       <div className="flex-1 overflow-y-auto pb-[calc(24px+env(safe-area-inset-bottom))] pt-4">
         <div className="px-4">
-          <Segmented id="metric" value={metric} onChange={setMetric} options={METRICS} />
+          <Segmented
+            id="metric"
+            value={metric}
+            onChange={setMetric}
+            options={METRICS.map((value) => ({ value, label: t(`leaderboard.${value === "games" ? "wins" : value}`) }))}
+          />
         </div>
 
         {loading ? (
@@ -90,7 +96,7 @@ export const LeaderboardPage = () => {
                     {entry.anonName}
                   </span>
                   <span className="font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint">
-                    level {entry.level}
+                    {t("common.level")} {entry.level}
                   </span>
                 </span>
                 <span className="font-display text-[15px] font-extrabold tabular">
@@ -101,6 +107,6 @@ export const LeaderboardPage = () => {
           </m.div>
         )}
       </div>
-    </div>
+    </PushScreen>
   );
 };

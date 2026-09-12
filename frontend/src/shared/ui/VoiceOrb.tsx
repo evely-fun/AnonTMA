@@ -21,7 +21,10 @@ export const VoiceOrb = ({
   const energy = muted ? 0 : Math.min(1, Math.max(0, level));
   const lit = Math.round(energy * TICKS);
   const colors = {
-    accent: { ring: "var(--color-accent)", glow: "oklch(0.72 0.115 236 / 0.3)" },
+    accent: {
+      ring: "var(--color-accent)",
+      glow: "oklch(0.72 var(--accent-chroma) var(--accent-hue) / 0.3)",
+    },
     live: { ring: "var(--color-live)", glow: "oklch(0.8 0.15 150 / 0.26)" },
     warn: { ring: "var(--color-warn)", glow: "oklch(0.83 0.17 78 / 0.26)" },
   }[tone];
@@ -55,7 +58,7 @@ export const VoiceOrb = ({
           cy={center}
           r={outer - 2}
           fill="none"
-          stroke="oklch(1 0 0 / 0.06)"
+          stroke="var(--color-separator)"
           strokeWidth="1"
         />
         {Array.from({ length: TICKS }, (_, index) => {
@@ -72,7 +75,7 @@ export const VoiceOrb = ({
               y1={y1}
               x2={x2}
               y2={y2}
-              stroke={active ? colors.ring : "oklch(1 0 0 / 0.12)"}
+              stroke={active ? colors.ring : "var(--color-separator)"}
               strokeWidth={active ? 2.6 : 1.6}
               strokeLinecap="round"
               style={{ transition: "stroke 120ms linear" }}

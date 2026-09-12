@@ -29,6 +29,8 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 async def init_models() -> None:
     from app.db import models  # noqa: F401
     from app.db.base import Base
+    from app.db.migrate import add_missing_columns
 
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+        await add_missing_columns(connection)
