@@ -9,7 +9,8 @@ import {
   type AvatarStyle,
 } from "@/shared/lib/avatars";
 
-export type AvatarFrame = "none" | "halo" | "pulse" | "orbit" | "ember" | "gilded";
+const FRAME_KEYS = ["none", "halo", "pulse", "orbit", "ember", "gilded"] as const;
+export type AvatarFrame = (typeof FRAME_KEYS)[number];
 
 const SHELLS: [string, string][] = [
   ["#1d4f86", "#0d2647"],
@@ -31,13 +32,60 @@ const hash = (value: string): number => {
   return Math.abs(output);
 };
 
-const FRAME_RING: Record<AvatarFrame, string> = {
-  none: "",
-  halo: "shadow-[0_0_0_2px_var(--color-accent)]",
-  pulse: "shadow-[0_0_0_2px_var(--color-live)]",
-  orbit: "shadow-[0_0_0_2px_var(--color-accent),0_0_0_5px_var(--accent-soft)]",
-  ember: "shadow-[0_0_0_2px_var(--color-warn)]",
-  gilded: "shadow-[0_0_0_2px_oklch(0.85_0.14_88),0_0_14px_-2px_oklch(0.85_0.14_88/0.6)]",
+const EMBER_SPARKS = [
+  { left: "18%", delay: "0s" },
+  { left: "48%", delay: "0.8s" },
+  { left: "76%", delay: "1.6s" },
+];
+
+/** Each frame is its own layer so the five of them read differently. */
+const FrameLayer = ({ frame }: { frame: AvatarFrame }) => {
+  if (frame === "none") {
+    return null;
+  }
+  if (frame === "halo") {
+    return (
+      <>
+        <span className="frame-ring frame-halo-glow" />
+        <span className="frame-ring frame-halo" />
+      </>
+    );
+  }
+  if (frame === "pulse") {
+    return (
+      <>
+        <span className="frame-ring frame-pulse-ring" />
+        <m.span
+          className="frame-ring frame-pulse-ring"
+          animate={{ scale: [1, 1.22, 1], opacity: [0.75, 0, 0.75] }}
+          transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </>
+    );
+  }
+  if (frame === "orbit") {
+    return (
+      <>
+        <span className="frame-ring frame-orbit-ring" />
+        <span className="frame-orbit-arm" />
+      </>
+    );
+  }
+  if (frame === "ember") {
+    return (
+      <>
+        <span className="frame-ring frame-ember-ring" />
+        {EMBER_SPARKS.map((spark) => (
+          <span
+            key={spark.left}
+            className="frame-ember-spark"
+            style={{ left: spark.left, animationDelay: spark.delay }}
+          />
+        ))}
+      </>
+    );
+  }
+  return <span className="frame-ring frame-gilded" />;
 };
 
 interface AvatarProps {
@@ -51,7 +99,7 @@ interface AvatarProps {
   className?: string;
 }
 
-const Geometric = ({ seed, size, radius }: { seed: string; size: number; radius: number }) => {
+const Geometric = ({ seed, size }: { seed: string; size: number }) => {
   const art = useMemo(() => {
     const base = hash(seed || "anon");
     const [from, to] = SHELLS[base % SHELLS.length];
@@ -70,7 +118,7 @@ const Geometric = ({ seed, size, radius }: { seed: string; size: number; radius:
       width={size}
       height={size}
       viewBox="0 0 64 64"
-      style={{ borderRadius: radius }}
+      style={{ borderRadius: size }}
       aria-hidden="true"
     >
       <defs>
@@ -79,7 +127,7 @@ const Geometric = ({ seed, size, radius }: { seed: string; size: number; radius:
           <stop offset="100%" stopColor={art.to} />
         </linearGradient>
       </defs>
-      <rect width="64" height="64" rx={radius * (64 / size)} fill={`url(#${art.id})`} />
+      <rect width="64" height="64" rx="32" fill={`url(#${art.id})`} />
       {art.glyph === 0 && <circle cx={32 + art.offset - 8} cy={30} r="15" fill="#fff" opacity="0.1" />}
       {art.glyph === 1 && (
         <rect x={art.offset} y="34" width="52" height="26" rx="13" fill="#fff" opacity="0.1" />
@@ -134,8 +182,7 @@ export const Avatar = ({
     [ready, resolved, seed],
   );
 
-  const radius = Math.round(size * 0.34);
-  const ring = FRAME_RING[(frame as AvatarFrame) ?? "none"] ?? "";
+  const layer = (FRAME_KEYS as readonly string[]).includes(frame) ? (frame as AvatarFrame) : "none";
 
   return (
     <span
@@ -150,16 +197,10 @@ export const Avatar = ({
           transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut" }}
         />
       )}
-      {frame === "pulse" && (
-        <m.span
-          className="pointer-events-none absolute -inset-1 rounded-full border border-live/70"
-          animate={{ scale: [1, 1.12, 1], opacity: [0.7, 0, 0.7] }}
-          transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
-        />
-      )}
+      <FrameLayer frame={layer} />
       <span
-        className={`overflow-hidden ${ring}`}
-        style={{ width: size, height: size, borderRadius: markup ? size : radius }}
+        className="overflow-hidden"
+        style={{ width: size, height: size, borderRadius: size }}
       >
         {markup ? (
           <span
@@ -168,7 +209,7 @@ export const Avatar = ({
             dangerouslySetInnerHTML={{ __html: markup }}
           />
         ) : (
-          <Geometric seed={seed} size={size} radius={radius} />
+          <Geometric seed={seed} size={size} />
         )}
       </span>
       {online && (

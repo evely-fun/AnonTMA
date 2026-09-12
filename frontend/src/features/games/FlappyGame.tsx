@@ -9,6 +9,16 @@ import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 import { useVoice } from "@/store/voice";
 
+import {
+  BIRD_RADIUS,
+  BIRD_X,
+  FlappyScene,
+  GROUND_HEIGHT,
+  PIPE_WIDTH,
+  WORLD_HEIGHT,
+  WORLD_WIDTH,
+  type ScenePipe,
+} from "./flappyScene";
 import { GameStatus } from "./shared";
 
 interface View {
@@ -25,23 +35,16 @@ interface View {
   secondsLeft: number;
 }
 
-interface Pipe {
-  x: number;
-  gapCenter: number;
-  gapSize: number;
-  passed: boolean;
-}
+type Pipe = ScenePipe & { passed: boolean };
 
-const WORLD_WIDTH = 360;
-const WORLD_HEIGHT = 560;
-const BIRD_X = 96;
-const BIRD_RADIUS = 13;
 const GRAVITY = 900;
 const LIFT = 1900;
 const MAX_FALL = 620;
-const PIPE_WIDTH = 58;
 const PIPE_SPACING = 210;
 const SPEED = 148;
+const PLAY_HEIGHT = WORLD_HEIGHT - GROUND_HEIGHT;
+const CEILING = BIRD_RADIUS;
+const FLOOR = PLAY_HEIGHT - BIRD_RADIUS;
 
 const mulberry32 = (seed: number) => {
   let state = seed >>> 0;
@@ -64,7 +67,7 @@ export const FlappyGame = ({ view }: { view: View }) => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const levelRef = useRef(0);
-  const world = useRef({ y: WORLD_HEIGHT / 2, velocity: 0, distance: 0, score: 0, dead: false });
+  const world = useRef({ y: PLAY_HEIGHT / 2, velocity: 0, distance: 0, score: 0, level: 0, dead: false });
   const [score, setScore] = useState(0);
 
   levelRef.current = micLevel;
@@ -75,7 +78,7 @@ export const FlappyGame = ({ view }: { view: View }) => {
 
   useEffect(() => {
     if (view.phase !== "running") {
-      world.current = { y: WORLD_HEIGHT / 2, velocity: 0, distance: 0, score: 0, dead: false };
+      world.current = { y: PLAY_HEIGHT / 2, velocity: 0, distance: 0, score: 0, level: 0, dead: false };
       setScore(0);
       return;
     }
@@ -93,19 +96,28 @@ export const FlappyGame = ({ view }: { view: View }) => {
     const difficulty = view.difficulty === "hard" ? 0.78 : view.difficulty === "easy" ? 1.25 : 1;
     const pipes: Pipe[] = Array.from({ length: 64 }, (_, index) => ({
       x: WORLD_WIDTH + 140 + index * PIPE_SPACING,
-      gapCenter: 120 + random() * (WORLD_HEIGHT - 260),
+      gapCenter: 110 + random() * (PLAY_HEIGHT - 220),
       gapSize: 172 * difficulty,
       passed: false,
     }));
 
+    const scene = new FlappyScene(view.seed);
     let frame = 0;
     let last = performance.now();
     let lastReport = 0;
+
+    const kill = (state: typeof world.current) => {
+      state.dead = true;
+      scene.crash();
+      haptic.notify("error");
+      act("crash", { score: state.score });
+    };
 
     const draw = (now: number) => {
       const delta = Math.min(0.05, (now - last) / 1000);
       last = now;
       const state = world.current;
+      state.level = levelRef.current;
 
       if (!state.dead) {
         const lift = Math.max(0, levelRef.current - 0.08) * LIFT;
@@ -114,47 +126,27 @@ export const FlappyGame = ({ view }: { view: View }) => {
         state.y += state.velocity * delta;
         state.distance += SPEED * delta;
 
-        if (state.y < BIRD_RADIUS || state.y > WORLD_HEIGHT - BIRD_RADIUS) {
-          state.dead = true;
-          haptic.notify("error");
-          act("crash", { score: state.score });
+        if (state.y < CEILING || state.y > FLOOR) {
+          state.y = Math.max(CEILING, Math.min(FLOOR, state.y));
+          kill(state);
         }
       }
 
-      context.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-      const sky = context.createLinearGradient(0, 0, 0, WORLD_HEIGHT);
-      sky.addColorStop(0, "#0a1220");
-      sky.addColorStop(1, "#131a26");
-      context.fillStyle = sky;
-      context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-
-      context.fillStyle = "rgba(255,255,255,0.05)";
-      for (let index = 0; index < 30; index += 1) {
-        const x = (index * 137 - state.distance * 0.25) % (WORLD_WIDTH + 40);
-        const y = (index * 79) % WORLD_HEIGHT;
-        context.fillRect(x < 0 ? x + WORLD_WIDTH + 40 : x, y, 2, 2);
-      }
-
-      pipes.forEach((pipe) => {
-        const x = pipe.x - state.distance;
-        if (x < -PIPE_WIDTH || x > WORLD_WIDTH) return;
-        const top = pipe.gapCenter - pipe.gapSize / 2;
-        const bottom = pipe.gapCenter + pipe.gapSize / 2;
-
-        context.fillStyle = "#1d2534";
-        context.fillRect(x, 0, PIPE_WIDTH, top);
-        context.fillRect(x, bottom, PIPE_WIDTH, WORLD_HEIGHT - bottom);
-        context.fillStyle = "#35b3ee";
-        context.fillRect(x, top - 4, PIPE_WIDTH, 4);
-        context.fillRect(x, bottom, PIPE_WIDTH, 4);
-
-        if (!state.dead) {
+      if (!state.dead) {
+        for (const pipe of pipes) {
+          const x = pipe.x - state.distance;
+          if (x > WORLD_WIDTH) {
+            break;
+          }
+          if (x < -PIPE_WIDTH) {
+            continue;
+          }
+          const top = pipe.gapCenter - pipe.gapSize / 2;
+          const bottom = pipe.gapCenter + pipe.gapSize / 2;
           const withinX = BIRD_X + BIRD_RADIUS > x && BIRD_X - BIRD_RADIUS < x + PIPE_WIDTH;
-          const outsideGap = state.y - BIRD_RADIUS < top || state.y + BIRD_RADIUS > bottom;
-          if (withinX && outsideGap) {
-            state.dead = true;
-            haptic.notify("error");
-            act("crash", { score: state.score });
+          if (withinX && (state.y - BIRD_RADIUS < top || state.y + BIRD_RADIUS > bottom)) {
+            kill(state);
+            break;
           }
           if (!pipe.passed && x + PIPE_WIDTH < BIRD_X) {
             pipe.passed = true;
@@ -163,25 +155,14 @@ export const FlappyGame = ({ view }: { view: View }) => {
             haptic.impact("light");
           }
         }
-      });
+      }
 
-      const tilt = Math.max(-0.5, Math.min(0.8, state.velocity / 600));
-      context.save();
-      context.translate(BIRD_X, state.y);
-      context.rotate(tilt);
-      context.fillStyle = "#f3c969";
-      context.beginPath();
-      context.arc(0, 0, BIRD_RADIUS, 0, Math.PI * 2);
-      context.fill();
-      context.fillStyle = "#06080f";
-      context.beginPath();
-      context.arc(5, -4, 2.4, 0, Math.PI * 2);
-      context.fill();
-      context.restore();
+      context.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+      scene.render(context, state, pipes, delta);
 
       if (!state.dead && now - lastReport > 500) {
         lastReport = now;
-        act("progress", { score: state.score, altitude: 1 - state.y / WORLD_HEIGHT });
+        act("progress", { score: state.score, altitude: 1 - state.y / PLAY_HEIGHT });
       }
 
       frame = window.requestAnimationFrame(draw);

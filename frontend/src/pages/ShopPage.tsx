@@ -7,6 +7,7 @@ import { useT } from "@/shared/i18n";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { nameEffectClass } from "@/shared/lib/cosmetics";
 import { haptic } from "@/shared/lib/telegram";
+import { paletteSwatch, resolveScheme, type Palette, type ThemeMode } from "@/shared/lib/theme";
 import type { ShopItem } from "@/shared/lib/types";
 import { Avatar, Button, PushScreen, ScreenHeader } from "@/shared/ui";
 import { CheckIcon, CoinIcon, CrownIcon, LockIcon, SparkleIcon } from "@/shared/ui/icons";
@@ -28,7 +29,15 @@ const RARITY_TONE: Record<ShopItem["rarity"], string> = {
   legendary: "text-destructive",
 };
 
-const Preview = ({ item, seed }: { item: ShopItem; seed: string }) => {
+const Preview = ({
+  item,
+  seed,
+  scheme,
+}: {
+  item: ShopItem;
+  seed: string;
+  scheme: "dark" | "light";
+}) => {
   if (item.category === "avatar") {
     return <Avatar seed={seed} style={item.value} size={46} />;
   }
@@ -36,13 +45,13 @@ const Preview = ({ item, seed }: { item: ShopItem; seed: string }) => {
     return <Avatar seed={seed} frame={item.value} size={46} />;
   }
   if (item.category === "palette") {
+    // The swatch has to be resolved from the palette itself, not from the
+    // tokens on the root, or every option previews as the active theme.
+    const swatch = paletteSwatch(item.value as Palette, scheme);
     return (
       <span
         className="size-11 rounded-full"
-        data-palette={item.value}
-        style={{
-          background: `linear-gradient(150deg, oklch(0.72 var(--accent-chroma) var(--accent-hue)), oklch(0.24 var(--ground-chroma) var(--ground-hue)))`,
-        }}
+        style={{ background: `linear-gradient(150deg, ${swatch.accent}, ${swatch.ground})` }}
       />
     );
   }
@@ -82,6 +91,7 @@ export const ShopPage = () => {
   const load = useShop((store) => store.load);
   const buy = useShop((store) => store.buy);
   const equip = useShop((store) => store.equip);
+  const scheme = resolveScheme((profile?.preferences?.theme ?? "auto") as ThemeMode);
   const [tab, setTab] = useState<Category>("avatar");
 
   useBackButton("/");
@@ -184,7 +194,7 @@ export const ShopPage = () => {
                   worn ? "panel-hero" : "panel"
                 }`}
               >
-                <Preview item={item} seed={seed} />
+                <Preview item={item} seed={seed} scheme={scheme} />
 
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-display text-[14.5px] font-bold tracking-[-0.01em]">
