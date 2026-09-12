@@ -80,6 +80,7 @@ export const ProfilePage = () => {
   const [editing, setEditing] = useState(false);
   const [bio, setBio] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
+  const [gender, setGender] = useState("unknown");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -95,7 +96,8 @@ export const ProfilePage = () => {
   useEffect(() => {
     setBio(profile?.bio ?? "");
     setInterests(profile?.interests ?? []);
-  }, [profile?.bio, profile?.interests]);
+    setGender(profile?.gender ?? "unknown");
+  }, [profile?.bio, profile?.interests, profile?.gender]);
 
   if (!profile) return null;
 
@@ -108,7 +110,7 @@ export const ProfilePage = () => {
     try {
       const updated = await request<Profile>("/users/me", {
         method: "PATCH",
-        body: { bio, interests },
+        body: { bio, interests, gender },
       });
       patchProfile(updated);
       setEditing(false);
@@ -390,6 +392,24 @@ export const ProfilePage = () => {
               placeholder={t("profile.aboutPlaceholder")}
               onChange={(event) => setBio(event.target.value)}
             />
+          </div>
+          <div>
+            <SectionHead title={t("profile.gender")} note={t("profile.genderHint")} />
+            <div className="flex flex-wrap gap-2 px-5">
+              {[
+                { value: "female", label: t("profile.female") },
+                { value: "male", label: t("profile.male") },
+                { value: "unknown", label: t("profile.unspecified") },
+              ].map((item) => (
+                <Chip
+                  key={item.value}
+                  active={gender === item.value}
+                  onClick={() => setGender(item.value)}
+                >
+                  {item.label}
+                </Chip>
+              ))}
+            </div>
           </div>
           <div>
             <SectionHead title={t("profile.interests")} note={t("profile.interestsHint")} />

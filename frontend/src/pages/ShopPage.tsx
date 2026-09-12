@@ -10,6 +10,7 @@ import type { ShopItem } from "@/shared/lib/types";
 import { Avatar, Button, PushScreen, ScreenHeader } from "@/shared/ui";
 import { CheckIcon, CoinIcon, CrownIcon, LockIcon, SparkleIcon } from "@/shared/ui/icons";
 import { useEconomy } from "@/store/economy";
+import { defaultStyleFor } from "@/shared/lib/avatars";
 import { useSession } from "@/store/session";
 import { useShop } from "@/store/shop";
 import { toast } from "@/store/ui";
@@ -87,7 +88,16 @@ export const ShopPage = () => {
   }, [load]);
 
   const seed = profile?.avatarSeed ?? "anon";
-  const shown = useMemo(() => items.filter((item) => item.category === tab), [items, tab]);
+  const suggested = defaultStyleFor(profile?.gender);
+  const shown = useMemo(() => {
+    const list = items.filter((item) => item.category === tab);
+    if (tab !== "avatar") return list;
+    return [...list].sort((a, b) => {
+      const rank = (item: ShopItem) =>
+        item.owned ? 0 : item.value === suggested ? 1 : 2;
+      return rank(a) - rank(b);
+    });
+  }, [items, tab, suggested]);
 
   const onBuy = async (item: ShopItem) => {
     haptic.impact("medium");
@@ -183,6 +193,9 @@ export const ShopPage = () => {
                     }`}
                   >
                     {t(`shop.rarity.${item.rarity}`)}
+                    {item.category === "avatar" && item.value === suggested && !item.owned && (
+                      <span className="ml-2 text-accent">{t("shop.suggested")}</span>
+                    )}
                   </p>
                 </div>
 
