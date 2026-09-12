@@ -62,6 +62,7 @@ Everything else is generated or derived.
 | `PUBLIC_WEB_URL` | your Pages URL | `https://anontma.pages.dev` |
 | `CORS_ORIGINS` | same as `PUBLIC_WEB_URL`, comma separated | `https://anontma.pages.dev` |
 | `PAYMENTS_MODE` | `test` or `live` | `test` grants instantly, `live` charges Telegram Stars |
+| `ADMIN_TG_IDS` | your numeric Telegram id, comma separated | unlocks the in app moderation panel |
 | `TURN_URLS` | optional, comma separated | `turn:turn.example.com:3478` |
 | `TURN_USERNAME` / `TURN_CREDENTIAL` | optional | for the TURN server |
 
@@ -150,3 +151,24 @@ The economy adds a few columns to `users` and `user_stats`. They are created
 automatically on boot: the service compares the models against the live
 schema and adds whatever is missing, so no manual migration step is needed
 when deploying an update.
+
+
+## Moderation
+
+Reports are grouped into one case per reported account, so review happens per
+person rather than per report. A case carries the number of distinct reporters,
+a reason breakdown, the account's trust score, age and past sanctions, and the
+message trail captured when each report was filed.
+
+Voice is never recorded, so a voice report carries metadata only and the case
+says so in plain words. Text reports carry the last messages of that chat with
+each line marked as coming from the reported user or the other side.
+
+One report per reporter per target counts within a day, and a reporter whose
+reports keep getting dismissed carries less weight, so a single angry user
+cannot fill the queue or sink an account.
+
+The panel lives at `/admin` inside the app and only appears for the Telegram
+ids listed in `ADMIN_TG_IDS`. Actions are dismiss, warn, mute for a day, ban
+for a week, ban permanently and lift a ban; each one is written to an audit log
+against the account.

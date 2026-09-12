@@ -49,6 +49,8 @@ services:
         sync: false
       - key: PAYMENTS_MODE
         value: test
+      - key: ADMIN_TG_IDS
+        sync: false
       - key: PUBLIC_WEB_URL
         sync: false
       - key: PUBLIC_API_URL
