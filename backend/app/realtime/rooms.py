@@ -11,7 +11,9 @@ from app.realtime.hub import hub
 
 MEMBERS_KEY = "room:{room_id}:members"
 USER_ROOM_KEY = "room:user:{user_id}"
+BANNED_KEY = "room:{room_id}:banned"
 ROOM_TTL = 60 * 60 * 12
+KICK_TTL = 60 * 15
 
 
 def topic(room_id: int) -> str:
@@ -43,6 +45,18 @@ async def current_room(user_id: int) -> int | None:
     return int(raw) if raw else None
 
 
+async def is_kicked(room_id: int, user_id: int) -> bool:
+    return bool(await get_redis().sismember(BANNED_KEY.format(room_id=room_id), str(user_id)))
+
+
+async def kick(room_id: int, user_id: int) -> None:
+    client = get_redis()
+    pipeline = client.pipeline()
+    pipeline.sadd(BANNED_KEY.format(room_id=room_id), str(user_id))
+    pipeline.expire(BANNED_KEY.format(room_id=room_id), KICK_TTL)
+    await pipeline.execute()
+
+
 async def join(session: AsyncSession, room: Room, user: User) -> dict:
     client = get_redis()
     stats = await session.get(UserStats, user.id)
@@ -53,6 +67,7 @@ async def join(session: AsyncSession, room: Room, user: User) -> dict:
         "level": stats.level if stats else 1,
         "role": "host" if room.owner_id == user.id else "member",
         "muted": False,
+        "forcedMute": False,
         "hand": False,
         "joinedAt": time.time(),
     }

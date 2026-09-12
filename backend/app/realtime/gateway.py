@@ -383,6 +383,9 @@ async def handle_room_join(session: Session, payload: dict, ack: str | None) -> 
         if await rooms.population(room_id) >= min(room.max_participants, settings.max_room_participants):
             await session.send(error("room_full", "Room is full", ack))
             return
+        if await rooms.is_kicked(room_id, session.user_id):
+            await session.send(error("room_kicked", "You were removed from this room", ack))
+            return
         user = await _load_user(db, session.user_id)
         if user is None:
             return
@@ -432,9 +435,14 @@ async def handle_room_leave(session: Session, payload: dict, ack: str | None) ->
 
 async def handle_room_state(session: Session, payload: dict, ack: str | None) -> None:
     room_id = int(payload.get("roomId", 0) or 0)
+    current = (await rooms.member_map(room_id)).get(session.user_id)
     changes: dict = {}
     if "muted" in payload:
-        changes["muted"] = bool(payload["muted"])
+        wanted = bool(payload["muted"])
+        if current and current.get("forcedMute") and not wanted:
+            await session.send(error("force_muted", "The host muted you", ack))
+            return
+        changes["muted"] = wanted
     if "hand" in payload:
         changes["hand"] = bool(payload["hand"])
     if not changes:
@@ -472,6 +480,116 @@ async def handle_room_message(session: Session, payload: dict, ack: str | None) 
             },
         ),
     )
+
+
+ROOM_ACTIONS = ("mute", "unmute", "kick", "promote", "demote", "transfer")
+
+
+async def handle_room_moderate(session: Session, payload: dict, ack: str | None) -> None:
+    room_id = int(payload.get("roomId", 0) or 0)
+    target_id = int(payload.get("userId", 0) or 0)
+    action = str(payload.get("action", ""))
+
+    if action not in ROOM_ACTIONS or not room_id or not target_id:
+        await session.send(error("bad_request", "Unknown action", ack))
+        return
+    if target_id == session.user_id:
+        await session.send(error("bad_request", "Pick another member", ack))
+        return
+
+    members = await rooms.member_map(room_id)
+    actor = members.get(session.user_id)
+    target = members.get(target_id)
+    if actor is None or target is None:
+        await session.send(error("not_found", "Member is not in the room", ack))
+        return
+    if actor.get("role") not in ("host", "cohost"):
+        await session.send(error("forbidden", "Only the host can do that", ack))
+        return
+    if target.get("role") == "host":
+        await session.send(error("forbidden", "The host cannot be moderated", ack))
+        return
+    if action in ("promote", "demote", "transfer") and actor.get("role") != "host":
+        await session.send(error("forbidden", "Only the host can do that", ack))
+        return
+
+    if action == "kick":
+        async with SessionLocal() as db:
+            await rooms.kick(room_id, target_id)
+            await rooms.leave(db, room_id, target_id)
+            await db.commit()
+        await signaling.unlink_peers(target_id, *members.keys())
+        await hub.send_to_user(
+            target_id, event("room.kicked", {"roomId": room_id, "by": session.user_id})
+        )
+        await hub.broadcast(
+            rooms.topic(room_id),
+            event("room.member_left", {"roomId": room_id, "userId": target_id}),
+        )
+        await session.send(event("room.moderated", {"action": action, "userId": target_id}, ack))
+        return
+
+    if action == "transfer":
+        async with SessionLocal() as db:
+            room = await db.get(Room, room_id)
+            if room is not None:
+                room.owner_id = target_id
+                await db.commit()
+        promoted = await rooms.update_member(room_id, target_id, role="host")
+        demoted = await rooms.update_member(room_id, session.user_id, role="member")
+        for entry in (promoted, demoted):
+            if entry is not None:
+                await hub.broadcast(
+                    rooms.topic(room_id),
+                    event("room.member_updated", {"roomId": room_id, "member": entry}),
+                )
+        await session.send(event("room.moderated", {"action": action, "userId": target_id}, ack))
+        return
+
+    changes: dict = {}
+    if action == "mute":
+        changes = {"muted": True, "forcedMute": True}
+    elif action == "unmute":
+        changes = {"forcedMute": False}
+    elif action == "promote":
+        changes = {"role": "cohost"}
+    elif action == "demote":
+        changes = {"role": "member"}
+
+    entry = await rooms.update_member(room_id, target_id, **changes)
+    if entry is None:
+        await session.send(error("not_found", "Member is not in the room", ack))
+        return
+
+    await hub.broadcast(
+        rooms.topic(room_id), event("room.member_updated", {"roomId": room_id, "member": entry})
+    )
+    await hub.send_to_user(
+        target_id, event("room.moderation", {"roomId": room_id, "action": action})
+    )
+    await session.send(event("room.moderated", {"action": action, "userId": target_id}, ack))
+
+
+async def handle_room_report(session: Session, payload: dict, ack: str | None) -> None:
+    room_id = int(payload.get("roomId", 0) or 0)
+    target_id = int(payload.get("userId", 0) or 0)
+    if not room_id or not target_id or target_id == session.user_id:
+        return
+    members = await rooms.member_map(room_id)
+    if session.user_id not in members or target_id not in members:
+        return
+    async with SessionLocal() as db:
+        await submit_report(
+            db,
+            reporter_id=session.user_id,
+            target_id=target_id,
+            reason=str(payload.get("reason", "other")),
+            scope="room",
+            scope_id=room_id,
+            details=str(payload.get("details", ""))[:500],
+        )
+        await db.commit()
+    await session.send(event("room.reported", {"userId": target_id}, ack))
 
 
 async def handle_rtc(session: Session, payload: dict, ack: str | None) -> None:
@@ -644,6 +762,8 @@ HANDLERS = {
     "room.leave": handle_room_leave,
     "room.state": handle_room_state,
     "room.message": handle_room_message,
+    "room.moderate": handle_room_moderate,
+    "room.report": handle_room_report,
     "rtc.signal": handle_rtc,
     "call.invite": handle_call_invite,
     "call.answer": handle_call_answer,

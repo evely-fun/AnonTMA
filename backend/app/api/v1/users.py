@@ -16,6 +16,7 @@ from app.services import identity
 from app.services.achievements import CATALOG
 from app.services.moderation import submit_report
 from app.services.economy import is_premium
+from app.services.shop import equipped_of, owned_keys
 from app.services.progression import describe, title_for_level
 from app.services.users import DEFAULT_PREFERENCES
 
@@ -56,6 +57,9 @@ LEADERBOARD_FIELDS = {
 }
 
 
+PAID_PALETTES = {"garnet", "amethyst", "sepia", "chrome"}
+
+
 def serialize_profile(user: User, stats: UserStats) -> ProfileView:
     progress = describe(stats.xp)
     return ProfileView.model_validate(
@@ -73,6 +77,7 @@ def serialize_profile(user: User, stats: UserStats) -> ProfileView:
             "lastSeenAt": user.last_seen_at,
             "referralCode": user.referral_code,
             "palette": user.palette or "auto",
+            "equipped": equipped_of(user),
             "uiLanguage": user.ui_language or "auto",
             "premium": {
                 "active": is_premium(user),
@@ -138,6 +143,10 @@ async def update_me(payload: ProfileUpdate, user: CurrentUser, session: SessionD
                 merged[key] = value
         user.preferences = merged
     if payload.palette is not None and payload.palette in ALLOWED_PALETTES:
+        if payload.palette in PAID_PALETTES:
+            owned = await owned_keys(session, user.id)
+            if f"palette.{payload.palette}" not in owned:
+                raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "Palette is locked")
         user.palette = payload.palette
     if payload.ui_language is not None and payload.ui_language in ("auto", "en", "ru"):
         user.ui_language = payload.ui_language

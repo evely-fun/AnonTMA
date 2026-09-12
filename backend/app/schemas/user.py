@@ -64,6 +64,7 @@ class ProfileView(ApiModel):
     last_seen_at: datetime | None = Field(default=None, alias="lastSeenAt")
     referral_code: str = Field(alias="referralCode")
     palette: str = "auto"
+    equipped: dict = Field(default_factory=dict)
     ui_language: str = Field(default="auto", alias="uiLanguage")
     premium: PremiumView
     stats: StatsView

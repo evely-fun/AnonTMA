@@ -78,6 +78,9 @@ class User(Base, BigIntPk, TimestampMixin):
     premium_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     palette: Mapped[str] = mapped_column(String(16), default="auto")
     ui_language: Mapped[str] = mapped_column(String(8), default="auto")
+    equipped: Mapped[dict] = mapped_column(JSON, default=dict)
+    muted_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    warnings: Mapped[int] = mapped_column(Integer, default=0)
 
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -106,6 +109,8 @@ class UserStats(Base, TimestampMixin):
     friends_count: Mapped[int] = mapped_column(Integer, default=0)
     likes_received: Mapped[int] = mapped_column(Integer, default=0)
     reports_received: Mapped[int] = mapped_column(Integer, default=0)
+    reports_filed: Mapped[int] = mapped_column(Integer, default=0)
+    reports_upheld: Mapped[int] = mapped_column(Integer, default=0)
 
     energy: Mapped[int] = mapped_column(Integer, default=60)
     energy_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -279,3 +284,45 @@ class Report(Base, BigIntPk, TimestampMixin):
     reason: Mapped[str] = mapped_column(String(32))
     details: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(16), default="open", index=True)
+    case_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
+    evidence: Mapped[dict] = mapped_column(JSON, default=dict)
+    weight: Mapped[int] = mapped_column(Integer, default=100)
+
+
+class ModerationCase(Base, BigIntPk, TimestampMixin):
+    __tablename__ = "moderation_cases"
+    __table_args__ = (Index("ix_case_state", "state", "priority"),)
+
+    target_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    state: Mapped[str] = mapped_column(String(16), default="open", index=True)
+    priority: Mapped[int] = mapped_column(Integer, default=0)
+    report_count: Mapped[int] = mapped_column(Integer, default=0)
+    reporter_count: Mapped[int] = mapped_column(Integer, default=0)
+    reasons: Mapped[dict] = mapped_column(JSON, default=dict)
+    last_report_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    resolved_by_id: Mapped[int | None] = mapped_column(BigInteger)
+    resolution: Mapped[str | None] = mapped_column(String(24))
+    note: Mapped[str | None] = mapped_column(Text)
+
+
+class ModerationAction(Base, BigIntPk):
+    __tablename__ = "moderation_actions"
+    __table_args__ = (Index("ix_action_target", "target_id", "id"),)
+
+    case_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
+    target_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    admin_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    action: Mapped[str] = mapped_column(String(24))
+    duration_hours: Mapped[int] = mapped_column(Integer, default=0)
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class Inventory(Base, BigIntPk):
+    __tablename__ = "inventory"
+    __table_args__ = (UniqueConstraint("user_id", "item", name="uq_inventory_item"),)
+
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    item: Mapped[str] = mapped_column(String(48))
+    acquired_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

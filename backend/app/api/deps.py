@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.rate_limit import enforce
 from app.core.security import TokenError, decode_token
-from app.db.base import utcnow
+from app.db.base import as_utc, utcnow
 from app.db.models import User
 from app.db.session import get_session
 
@@ -42,9 +42,10 @@ async def current_user(
     user = await session.get(User, int(payload["sub"]))
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unknown user")
-    if user.is_banned and (user.banned_until is None or user.banned_until > utcnow()):
+    until = as_utc(user.banned_until)
+    if user.is_banned and (until is None or until > utcnow()):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Account is restricted")
-    if user.is_banned and user.banned_until and user.banned_until <= utcnow():
+    if user.is_banned and until and until <= utcnow():
         user.is_banned = False
         user.banned_until = None
         user.trust_score = max(user.trust_score, 60)
@@ -52,3 +53,14 @@ async def current_user(
 
 
 CurrentUser = Annotated[User, Depends(current_user)]
+
+
+async def current_admin(user: CurrentUser) -> User:
+    from app.services.admin import is_admin
+
+    if not is_admin(user):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not an administrator")
+    return user
+
+
+CurrentAdmin = Annotated[User, Depends(current_admin)]

@@ -39,6 +39,8 @@ class Settings(BaseSettings):
 
     payments_mode: Literal["test", "live"] = "test"
 
+    admin_tg_ids: Annotated[list[str], NoDecode] = Field(default_factory=list)
+
     turn_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
     turn_username: str = ""
     turn_credential: str = ""
@@ -49,7 +51,7 @@ class Settings(BaseSettings):
     max_room_participants: int = 12
     matchmaking_ttl_seconds: int = 120
 
-    @field_validator("cors_origins", "turn_urls", "stun_urls", mode="before")
+    @field_validator("cors_origins", "turn_urls", "stun_urls", "admin_tg_ids", mode="before")
     @classmethod
     def split_csv(cls, value: object) -> object:
         if isinstance(value, str):
