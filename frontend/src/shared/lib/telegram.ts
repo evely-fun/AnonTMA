@@ -135,17 +135,25 @@ export const initTelegram = (): void => {
   app.onEvent("contentSafeAreaChanged", applySafeArea);
 };
 
-export const haptics = {
+let hapticsEnabled = true;
+
+export const setHapticsEnabled = (enabled: boolean): void => {
+  hapticsEnabled = enabled;
+};
+
+export const haptic = {
   impact(style: HapticStyle = "light"): void {
-    webApp()?.HapticFeedback?.impactOccurred(style);
+    if (hapticsEnabled) webApp()?.HapticFeedback?.impactOccurred(style);
   },
   notify(style: NotificationStyle): void {
-    webApp()?.HapticFeedback?.notificationOccurred(style);
+    if (hapticsEnabled) webApp()?.HapticFeedback?.notificationOccurred(style);
   },
   select(): void {
-    webApp()?.HapticFeedback?.selectionChanged();
+    if (hapticsEnabled) webApp()?.HapticFeedback?.selectionChanged();
   },
 };
+
+export const haptics = haptic;
 
 export const backButton = {
   show(handler: () => void): () => void {

@@ -1,16 +1,14 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "motion/react";
 import { useState } from "react";
 
-import { voicePipeline } from "@/features/voice/noise";
 import { request } from "@/shared/lib/api";
-import { popVariants } from "@/shared/lib/motion";
+import { ease, pop } from "@/shared/lib/motion";
 import type { Profile } from "@/shared/lib/types";
-import { Avatar, Button, Card, Chip, VoiceOrb } from "@/shared/ui";
+import { Avatar, Button, Chip, LevelBars, Meter } from "@/shared/ui";
+import { MaskIcon, MicIcon, ShieldIcon } from "@/shared/ui/icons";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 import { useVoice } from "@/store/voice";
-
-import styles from "./OnboardingPage.module.css";
 
 const INTERESTS = [
   "music",
@@ -37,7 +35,7 @@ export const OnboardingPage = () => {
   const [interests, setInterests] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const regenerate = async (): Promise<void> => {
+  const regenerate = async () => {
     const updated = await request<Profile>("/users/me", {
       method: "PATCH",
       body: { regenerateMask: true },
@@ -45,7 +43,7 @@ export const OnboardingPage = () => {
     patchProfile(updated);
   };
 
-  const finish = async (): Promise<void> => {
+  const finish = async () => {
     setBusy(true);
     try {
       const updated = await request<Profile>("/users/me", {
@@ -54,93 +52,100 @@ export const OnboardingPage = () => {
       });
       patchProfile(updated);
     } catch {
-      toast("Could not save, you can change this later", { tone: "danger" });
+      toast("Saved locally, you can change this later", { tone: "danger" });
     } finally {
       setBusy(false);
     }
   };
 
-  const testMic = async (): Promise<void> => {
-    const granted = await enableVoice();
-    if (!granted) {
-      toast("Microphone is blocked, you can still use text chat", { tone: "danger" });
-      return;
-    }
-    await voicePipeline.start(useVoice.getState().level).catch(() => undefined);
-  };
-
   return (
-    <main className={styles.screen}>
-      <div className={styles.progress}>
+    <m.main
+      className="flex h-full flex-col items-center gap-6 px-6 pb-[calc(24px+env(safe-area-inset-bottom))] pt-[calc(28px+env(safe-area-inset-top))]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, ease: ease.out }}
+    >
+      <div className="flex gap-1.5">
         {[0, 1, 2].map((index) => (
           <span
             key={index}
-            className={[styles.dot, index <= step ? styles.dotActive : ""].filter(Boolean).join(" ")}
+            className={`h-1 w-6 rounded-full transition-colors duration-300 ${
+              index <= step ? "bg-accent" : "bg-bezel"
+            }`}
           />
         ))}
       </div>
 
       <AnimatePresence mode="wait">
-        {step === 0 ? (
-          <motion.div
+        {step === 0 && (
+          <m.div
             key="welcome"
-            className={styles.stage}
-            variants={popVariants}
+            className="flex flex-1 flex-col items-center justify-center gap-4 text-center"
+            variants={pop}
             initial="initial"
             animate="animate"
             exit="exit"
           >
-            <VoiceOrb level={0.25} tone="brand" size={190}>
-              🎭
-            </VoiceOrb>
-            <h1 className={styles.title}>
-              Meet people <span className="gradient-text">behind a mask</span>
+            <span className="flex size-[110px] items-center justify-center rounded-[34px] bg-elevated text-accent shadow-[inset_0_1px_0_oklch(1_0_0/0.14)]">
+              <MaskIcon size={52} />
+            </span>
+            <h1 className="mt-2 font-display text-[27px] font-extrabold leading-tight tracking-[-0.03em]">
+              Talk to people
+              <br />
+              behind a mask
             </h1>
-            <p className={styles.text}>
-              Every conversation gives you a new name and a new face. Nothing is linked back to your
+            <p className="max-w-[300px] text-[14px] leading-snug text-secondary">
+              Every conversation gives you a new name and a new face. Nothing links back to your
               Telegram account unless you both choose to reveal.
             </p>
-            <Button full size="lg" onClick={() => setStep(1)}>
-              Let us start
+            <Button full size="lg" className="mt-4" onClick={() => setStep(1)}>
+              Get started
             </Button>
-          </motion.div>
-        ) : null}
+          </m.div>
+        )}
 
-        {step === 1 ? (
-          <motion.div
+        {step === 1 && (
+          <m.div
             key="mask"
-            className={styles.stage}
-            variants={popVariants}
+            className="flex flex-1 flex-col items-center justify-center gap-4 text-center"
+            variants={pop}
             initial="initial"
             animate="animate"
             exit="exit"
           >
-            <Avatar seed={profile?.avatarSeed ?? "anon"} size={120} />
-            <h1 className={styles.title}>{profile?.anonName ?? "Anonymous"}</h1>
-            <p className={styles.text}>
+            <Avatar seed={profile?.avatarSeed ?? "anon"} size={118} />
+            <h1 className="mt-2 font-display text-[24px] font-extrabold tracking-[-0.03em]">
+              {profile?.anonName ?? "Anonymous"}
+            </h1>
+            <p className="max-w-[290px] text-[14px] leading-snug text-secondary">
               This is your public mask. Roll it until it feels right, you can change it any time.
             </p>
-            <div className={styles.row}>
-              <Button variant="secondary" onClick={() => void regenerate()}>
+            <div className="mt-4 flex w-full gap-2">
+              <Button full variant="surface" onClick={() => void regenerate()}>
                 Roll again
               </Button>
-              <Button onClick={() => setStep(2)}>Keep it</Button>
+              <Button full onClick={() => setStep(2)}>
+                Keep it
+              </Button>
             </div>
-          </motion.div>
-        ) : null}
+          </m.div>
+        )}
 
-        {step === 2 ? (
-          <motion.div
+        {step === 2 && (
+          <m.div
             key="interests"
-            className={styles.stage}
-            variants={popVariants}
+            className="flex flex-1 flex-col items-center justify-center gap-4 text-center"
+            variants={pop}
             initial="initial"
             animate="animate"
             exit="exit"
           >
-            <h1 className={styles.title}>What do you like talking about?</h1>
-            <p className={styles.text}>We use this only to find a better companion for you.</p>
-            <div className={styles.chips}>
+            <h1 className="font-display text-[24px] font-extrabold tracking-[-0.03em]">
+              What do you like talking about?
+            </h1>
+            <p className="text-[13.5px] text-hint">Used only to find a better companion</p>
+
+            <div className="flex flex-wrap justify-center gap-2">
               {INTERESTS.map((item) => (
                 <Chip
                   key={item}
@@ -158,34 +163,44 @@ export const OnboardingPage = () => {
               ))}
             </div>
 
-            <Card className={styles.micCard}>
-              <div className={styles.micRow}>
-                <span className={styles.micIcon}>🎙</span>
-                <div className={styles.micBody}>
-                  <p className={styles.micTitle}>Test your microphone</p>
-                  <p className={styles.micHint}>
-                    {permission === "granted"
-                      ? "Say something, the bar should move"
-                      : "Needed for voice chats and voice games"}
+            <div className="panel mt-4 w-full rounded-[20px] px-4 py-4">
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-[13px] bg-live-quiet text-live">
+                  <MicIcon size={19} />
+                </span>
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="font-display text-[14px] font-bold">Microphone</p>
+                  <p className="text-[11.5px] text-hint">
+                    {permission === "granted" ? "Say something, the bars move" : "Needed for voice"}
                   </p>
-                  <div className={styles.micTrack}>
-                    <span className={styles.micFill} style={{ width: `${Math.min(100, micLevel * 130)}%` }} />
-                  </div>
                 </div>
-                {permission !== "granted" ? (
-                  <Button size="sm" variant="secondary" onClick={() => void testMic()}>
+                {permission !== "granted" && (
+                  <Button size="sm" variant="surface" onClick={() => void enableVoice()}>
                     Allow
                   </Button>
-                ) : null}
+                )}
               </div>
-            </Card>
+              {permission === "granted" ? (
+                <div className="mt-3">
+                  <LevelBars level={micLevel} bars={20} />
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <Meter ratio={0} tone="live" />
+                </div>
+              )}
+            </div>
 
-            <Button full size="lg" loading={busy} onClick={() => void finish()}>
+            <Button full size="lg" loading={busy} className="mt-2" onClick={() => void finish()}>
               Enter Anon
             </Button>
-          </motion.div>
-        ) : null}
+            <p className="flex items-center gap-1.5 text-[11.5px] text-hint">
+              <ShieldIcon size={12} />
+              You can change everything later in settings
+            </p>
+          </m.div>
+        )}
       </AnimatePresence>
-    </main>
+    </m.main>
   );
 };

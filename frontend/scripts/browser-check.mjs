@@ -69,22 +69,21 @@ const run = async () => {
     await page.waitForTimeout(500);
     await page.getByText("Keep it").click();
     await page.waitForTimeout(500);
-    await page.getByText("night talks").click();
+    await page.getByText("night talks").first().click();
     await page.getByText("Enter Anon").click();
     await page.waitForTimeout(1200);
     steps.push({ name: "onboarding", ok: true, sample: "" });
     await page.screenshot({ path: "/tmp/shots/onboarding.png" });
   }
 
-  await visit("home", async () => undefined, ["Find a companion", "online"]);
+  await visit("home", async () => undefined, ["Find someone now", "PEOPLE ONLINE"]);
   await visit("rooms", async () => page.getByRole("link", { name: /Rooms/ }).click(), ["Rooms"]);
-  await visit("games", async () => page.getByRole("link", { name: /Games/ }).click(), [
-    "Games",
+  await visit("games", async () => page.getByRole("link", { name: /Play/ }).click(), [
     "Mafia",
     "Voice Flappy",
   ]);
   await visit("game-detail", async () => page.getByText("Tic Tac Toe").first().click(), [
-    "How it works",
+    "HOW IT WORKS",
     "Play against the bot",
   ]);
   await visit("tictactoe", async () => page.getByText("Play against the bot").click(), [
@@ -95,12 +94,12 @@ const run = async () => {
     await page.getByRole("link", { name: /Friends/ }).click();
   }, ["Friends"]);
   await visit("profile", async () => page.getByRole("link", { name: /Profile/ }).click(), [
-    "Your numbers",
-    "Achievements",
+    "YOUR NUMBERS",
+    "ACHIEVEMENTS",
   ]);
-  await visit("settings", async () => page.getByRole("button", { name: "Settings" }).click(), [
-    "Noise",
-    "Matching",
+  await visit("settings", async () => page.getByText("Settings", { exact: true }).first().click(), [
+    "NOISE SUPPRESSION",
+    "MATCHING",
   ]);
 
   await browser.close();

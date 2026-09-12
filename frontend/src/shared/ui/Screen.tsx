@@ -1,50 +1,48 @@
-import { motion } from "framer-motion";
+import { m } from "motion/react";
 import type { ReactNode } from "react";
 
-import { pageVariants } from "@/shared/lib/motion";
+import { haptic } from "@/shared/lib/telegram";
+import { spring, tabContent } from "@/shared/lib/motion";
 
-import styles from "./Screen.module.css";
+import { ChevronIcon } from "./icons";
 
-interface ScreenProps {
-  children?: ReactNode;
-  title?: string;
-  subtitle?: string;
-  leading?: ReactNode;
-  trailing?: ReactNode;
-  padded?: boolean;
-  bare?: boolean;
-  className?: string;
-}
+export const TabScreen = ({ children }: { children: ReactNode }) => (
+  <m.div variants={tabContent} initial="initial" animate="animate" exit="exit">
+    {children}
+  </m.div>
+);
 
-export const Screen = ({
-  children,
+export const ScreenHeader = ({
   title,
   subtitle,
-  leading,
+  onBack,
   trailing,
-  padded = true,
-  bare = false,
-  className = "",
-}: ScreenProps) => (
-  <motion.main
-    className={[styles.screen, bare ? styles.bare : "", className].filter(Boolean).join(" ")}
-    variants={pageVariants}
-    initial="initial"
-    animate="animate"
-    exit="exit"
-  >
-    {title ? (
-      <header className={styles.header}>
-        <div className={styles.headerSide}>{leading}</div>
-        <div className={styles.headerCenter}>
-          <h1 className={styles.title}>{title}</h1>
-          {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
-        </div>
-        <div className={[styles.headerSide, styles.headerRight].join(" ")}>{trailing}</div>
-      </header>
-    ) : null}
-    <div className={[styles.content, padded ? styles.padded : "", "scroller"].filter(Boolean).join(" ")}>
-      {children}
+}: {
+  title: string;
+  subtitle?: string;
+  onBack?: () => void;
+  trailing?: ReactNode;
+}) => (
+  <header className="glass sticky top-0 z-20 flex items-center gap-3 px-4 pb-3 pt-[calc(10px+env(safe-area-inset-top))]">
+    {onBack && (
+      <m.button
+        type="button"
+        onPointerDown={() => haptic.impact("light")}
+        onClick={onBack}
+        whileTap={{ scale: 0.9 }}
+        transition={spring.snappy}
+        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-elevated text-label"
+        aria-label="Back"
+      >
+        <ChevronIcon size={17} className="rotate-180" />
+      </m.button>
+    )}
+    <div className="min-w-0 flex-1">
+      <h1 className="truncate font-display text-[19px] font-extrabold tracking-[-0.02em]">
+        {title}
+      </h1>
+      {subtitle && <p className="truncate text-[12.5px] text-hint">{subtitle}</p>}
     </div>
-  </motion.main>
+    {trailing}
+  </header>
 );

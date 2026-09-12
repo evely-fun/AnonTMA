@@ -1,44 +1,48 @@
-import type { Transition, Variants } from "framer-motion";
+import type { Transition, Variants } from "motion/react";
 
-export const spring: Transition = {
-  type: "spring",
-  stiffness: 420,
-  damping: 34,
-  mass: 0.8,
+export const ease = {
+  out: [0.23, 1, 0.32, 1] as const,
+  inOut: [0.77, 0, 0.175, 1] as const,
+  drawer: [0.32, 0.72, 0, 1] as const,
 };
 
-export const softSpring: Transition = {
-  type: "spring",
-  stiffness: 260,
-  damping: 28,
+export const spring = {
+  snappy: { type: "spring", stiffness: 520, damping: 32, mass: 0.6 } as Transition,
+  ui: { type: "spring", stiffness: 320, damping: 30, mass: 0.8 } as Transition,
+  soft: { type: "spring", stiffness: 210, damping: 26 } as Transition,
 };
 
-export const pageVariants: Variants = {
-  initial: { opacity: 0, y: 12, scale: 0.99 },
-  animate: { opacity: 1, y: 0, scale: 1, transition: { ...spring, mass: 0.7 } },
-  exit: { opacity: 0, y: -8, scale: 0.99, transition: { duration: 0.16, ease: [0.4, 0, 1, 1] } },
+export const rise: Variants = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease: ease.out } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.18 } },
 };
 
-export const listVariants: Variants = {
-  animate: { transition: { staggerChildren: 0.045, delayChildren: 0.02 } },
+export const listStagger: Variants = {
+  initial: {},
+  animate: { transition: { staggerChildren: 0.05, delayChildren: 0.03 } },
 };
 
-export const itemVariants: Variants = {
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0, transition: softSpring },
-  exit: { opacity: 0, y: -10, transition: { duration: 0.14 } },
+export const tabContent: Variants = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: ease.out } },
+  exit: { opacity: 0, y: -6, transition: { duration: 0.16, ease: ease.out } },
 };
 
-export const sheetVariants: Variants = {
+export const pushScreen: Variants = {
+  initial: { opacity: 0, x: 26 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.36, ease: ease.drawer } },
+  exit: { opacity: 0, x: 20, transition: { duration: 0.22, ease: ease.out } },
+};
+
+export const sheetPanel: Variants = {
   initial: { y: "100%" },
-  animate: { y: 0, transition: { ...spring, damping: 38 } },
-  exit: { y: "100%", transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } },
+  animate: { y: 0, transition: { duration: 0.42, ease: ease.drawer } },
+  exit: { y: "100%", transition: { duration: 0.26, ease: ease.out } },
 };
 
-export const popVariants: Variants = {
-  initial: { opacity: 0, scale: 0.92 },
-  animate: { opacity: 1, scale: 1, transition: spring },
-  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.15 } },
+export const pop: Variants = {
+  initial: { opacity: 0, scale: 0.94 },
+  animate: { opacity: 1, scale: 1, transition: spring.ui },
+  exit: { opacity: 0, scale: 0.96, transition: { duration: 0.16 } },
 };
-
-export const tapScale = { scale: 0.97 };

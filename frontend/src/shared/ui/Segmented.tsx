@@ -1,53 +1,44 @@
-import { motion } from "framer-motion";
+import { m } from "motion/react";
 
-import { haptics } from "@/shared/lib/telegram";
+import { haptic } from "@/shared/lib/telegram";
 import { spring } from "@/shared/lib/motion";
-
-import styles from "./Segmented.module.css";
-
-interface Option<T extends string> {
-  value: T;
-  label: string;
-  icon?: string;
-}
-
-interface SegmentedProps<T extends string> {
-  options: Option<T>[];
-  value: T;
-  onChange: (value: T) => void;
-  id: string;
-  size?: "sm" | "md";
-}
 
 export const Segmented = <T extends string>({
   options,
   value,
   onChange,
   id,
-  size = "md",
-}: SegmentedProps<T>) => (
-  <div className={[styles.track, styles[size]].join(" ")} role="tablist">
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  id: string;
+}) => (
+  <div className="relative flex rounded-[14px] bg-elevated/70 p-1" role="tablist">
     {options.map((option) => {
-      const selected = option.value === value;
+      const active = option.value === value;
       return (
         <button
           key={option.value}
           type="button"
           role="tab"
-          aria-selected={selected}
-          className={[styles.option, selected ? styles.selected : ""].filter(Boolean).join(" ")}
-          onClick={() => {
-            if (!selected) {
-              haptics.select();
-              onChange(option.value);
-            }
-          }}
+          aria-selected={active}
+          onPointerDown={() => haptic.select()}
+          onClick={() => !active && onChange(option.value)}
+          className="relative flex-1 py-2"
         >
-          {selected ? (
-            <motion.span layoutId={`segment-${id}`} className={styles.pill} transition={spring} />
-          ) : null}
-          <span className={styles.content}>
-            {option.icon ? <span className={styles.icon}>{option.icon}</span> : null}
+          {active && (
+            <m.span
+              layoutId={`seg-${id}`}
+              className="absolute inset-0 rounded-[11px] bg-label"
+              transition={spring.snappy}
+            />
+          )}
+          <span
+            className={`relative font-display text-[13px] font-bold tracking-[-0.01em] transition-colors duration-200 ${
+              active ? "text-bg" : "text-hint"
+            }`}
+          >
             {option.label}
           </span>
         </button>

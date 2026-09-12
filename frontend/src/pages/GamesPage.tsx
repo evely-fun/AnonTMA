@@ -1,13 +1,14 @@
-import { motion } from "framer-motion";
+import { m } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { gameVisual } from "@/features/games/visuals";
 import { request } from "@/shared/lib/api";
-import { itemVariants, listVariants } from "@/shared/lib/motion";
-import { Card, Chip, Screen, Section } from "@/shared/ui";
+import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { haptic } from "@/shared/lib/telegram";
+import { IconTile, SectionHead, TabScreen } from "@/shared/ui";
+import { ChevronIcon, ClockIcon, FriendsIcon, MicIcon } from "@/shared/ui/icons";
 import { useSession } from "@/store/session";
-
-import styles from "./GamesPage.module.css";
 
 interface SummaryItem {
   gameKey: string;
@@ -27,59 +28,71 @@ export const GamesPage = () => {
       .catch(() => setSummary([]));
   }, []);
 
-  const statsFor = (key: string): SummaryItem | undefined =>
-    summary.find((item) => item.gameKey === key);
-
   return (
-    <Screen title="Games" subtitle="play with voice">
-      <Section title="Pick a game" subtitle="Everything works with the voice channel">
-        <motion.div className={styles.list} variants={listVariants} initial="initial" animate="animate">
+    <TabScreen>
+      <div className="space-y-5 pb-4">
+        <SectionHead title="Games" note="Every table runs on the voice channel" />
+
+        <m.div
+          className="space-y-2.5 px-4"
+          variants={listStagger}
+          initial="initial"
+          animate="animate"
+        >
           {games.map((game) => {
-            const stats = statsFor(game.key);
+            const { Icon, tone } = gameVisual(game.key);
+            const stats = summary.find((item) => item.gameKey === game.key);
             return (
-              <motion.div key={game.key} variants={itemVariants}>
-                <Card onClick={() => navigate(`/games/${game.key}`)} className={styles.card}>
-                  <span
-                    className={styles.glow}
-                    style={{ background: `radial-gradient(60% 60% at 20% 0%, ${game.accent}33, transparent)` }}
-                  />
-                  <div className={styles.cardBody}>
-                    <span className={styles.icon} style={{ background: `${game.accent}22`, color: game.accent }}>
-                      {game.icon}
+              <m.button
+                key={game.key}
+                type="button"
+                variants={rise}
+                onPointerDown={() => haptic.select()}
+                onClick={() => navigate(`/games/${game.key}`)}
+                whileTap={{ scale: 0.985 }}
+                transition={spring.snappy}
+                className="panel flex w-full items-center gap-3.5 rounded-[20px] px-4 py-4 text-left"
+              >
+                <IconTile tone={tone} size={46}>
+                  <Icon size={21} />
+                </IconTile>
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-display text-[15.5px] font-extrabold tracking-[-0.015em]">
+                    {game.title}
+                  </span>
+                  <span className="mt-0.5 block text-[12.5px] leading-snug text-hint">
+                    {game.subtitle}
+                  </span>
+                  <span className="mt-2.5 flex items-center gap-3 font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-hint">
+                    <span className="flex items-center gap-1">
+                      <FriendsIcon size={11} />
+                      {game.minPlayers}-{game.maxPlayers}
                     </span>
-                    <div className={styles.cardText}>
-                      <div className={styles.titleRow}>
-                        <h3 className={styles.title}>{game.title}</h3>
-                        {game.voiceRequired ? (
-                          <Chip size="sm" tone="mint">
-                            voice
-                          </Chip>
-                        ) : null}
-                      </div>
-                      <p className={styles.subtitle}>{game.subtitle}</p>
-                      <div className={styles.meta}>
-                        <span>
-                          {game.minPlayers}–{game.maxPlayers} players
-                        </span>
-                        <span className={styles.dot} />
-                        <span>{game.durationMinutes} min</span>
-                        {stats && stats.played > 0 ? (
-                          <>
-                            <span className={styles.dot} />
-                            <span>
-                              {stats.won}/{stats.played} won
-                            </span>
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
+                    <span className="flex items-center gap-1">
+                      <ClockIcon size={11} />
+                      {game.durationMinutes}m
+                    </span>
+                    {game.voiceRequired && (
+                      <span className="flex items-center gap-1 text-live">
+                        <MicIcon size={11} />
+                        voice
+                      </span>
+                    )}
+                    {stats && stats.played > 0 && (
+                      <span className="tabular">
+                        {stats.won}/{stats.played} won
+                      </span>
+                    )}
+                  </span>
+                </span>
+
+                <ChevronIcon size={16} className="shrink-0 text-hint/60" />
+              </m.button>
             );
           })}
-        </motion.div>
-      </Section>
-    </Screen>
+        </m.div>
+      </div>
+    </TabScreen>
   );
 };

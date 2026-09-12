@@ -1,16 +1,30 @@
-import { motion } from "framer-motion";
+import { m } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { itemVariants, listVariants } from "@/shared/lib/motion";
-import { Avatar, Button, Card, Chip, EmptyState, Screen, Segmented, Sheet } from "@/shared/ui";
+import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { haptic } from "@/shared/lib/telegram";
+import {
+  Avatar,
+  Button,
+  Chip,
+  EmptyState,
+  IconTile,
+  SectionHead,
+  Sheet,
+  Skeleton,
+  TabScreen,
+} from "@/shared/ui";
+import { DoorIcon, GamesIcon, MicIcon, PlusIcon, RoomsIcon } from "@/shared/ui/icons";
 import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 
-import styles from "./RoomsPage.module.css";
-
-const EMOJIS = ["🎧", "🌙", "☕️", "🎮", "🎬", "🎸", "💬", "🧠", "🔥", "🛸"];
+const FILTERS = [
+  { value: "all", label: "All" },
+  { value: "voice", label: "Voice" },
+  { value: "game", label: "Games" },
+] as const;
 
 export const RoomsPage = () => {
   const navigate = useNavigate();
@@ -19,31 +33,34 @@ export const RoomsPage = () => {
   const loadList = useRooms((state) => state.loadList);
   const create = useRooms((state) => state.create);
   const games = useSession((state) => state.games);
-  const [filter, setFilter] = useState<"all" | "voice" | "game">("all");
+
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]["value"]>("all");
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
-  const [emoji, setEmoji] = useState("🎧");
   const [gameKey, setGameKey] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     void loadList(filter === "all" ? undefined : { kind: filter });
   }, [loadList, filter]);
 
-  const submit = async (): Promise<void> => {
+  const submit = async () => {
     if (title.trim().length < 2) {
       toast("Give the room a name", { tone: "danger" });
       return;
     }
+    setBusy(true);
     const room = await create({
       title: title.trim(),
       topic: topic.trim() || null,
-      emoji,
+      emoji: "",
       kind: gameKey ? "game" : "voice",
       visibility: "public",
       maxParticipants: 8,
       gameKey,
     } as never);
+    setBusy(false);
     if (!room) {
       toast("Could not create the room", { tone: "danger" });
       return;
@@ -55,154 +72,167 @@ export const RoomsPage = () => {
   };
 
   return (
-    <Screen title="Rooms" subtitle="live voice tables">
-      <div className={styles.controls}>
-        <Segmented
-          id="room-filter"
-          value={filter}
-          onChange={setFilter}
-          size="sm"
-          options={[
-            { value: "all", label: "All" },
-            { value: "voice", label: "Voice" },
-            { value: "game", label: "Games" },
-          ]}
-        />
-        <Button size="sm" onClick={() => setOpen(true)} icon="＋">
-          New
-        </Button>
-      </div>
-
-      {loading && list.length === 0 ? (
-        <div className={styles.list}>
-          {[0, 1, 2].map((index) => (
-            <div key={index} className={[styles.skeleton, "skeleton"].join(" ")} />
-          ))}
+    <TabScreen>
+      <div className="space-y-6 pb-4">
+        <div className="flex items-center gap-2 px-4">
+          <div className="flex flex-1 gap-2">
+            {FILTERS.map((item) => (
+              <Chip
+                key={item.value}
+                active={filter === item.value}
+                onClick={() => setFilter(item.value)}
+              >
+                {item.label}
+              </Chip>
+            ))}
+          </div>
+          <Button size="sm" icon={<PlusIcon size={15} />} onClick={() => setOpen(true)}>
+            Open
+          </Button>
         </div>
-      ) : null}
 
-      {!loading && list.length === 0 ? (
-        <EmptyState
-          icon="🎧"
-          title="No open rooms yet"
-          description="Be the first to open a table and people will join within seconds."
-          action={<Button onClick={() => setOpen(true)}>Create a room</Button>}
-        />
-      ) : null}
+        {loading && list.length === 0 && (
+          <div className="space-y-2.5 px-4">
+            {[0, 1, 2].map((index) => (
+              <Skeleton key={index} className="h-[86px]" />
+            ))}
+          </div>
+        )}
 
-      <motion.div className={styles.list} variants={listVariants} initial="initial" animate="animate">
-        {list.map((room) => (
-          <motion.div key={room.id} variants={itemVariants}>
-            <Card onClick={() => navigate(`/rooms/${room.id}`)}>
-              <div className={styles.roomRow}>
-                <span className={styles.roomEmoji}>{room.emoji}</span>
-                <div className={styles.roomBody}>
-                  <div className={styles.roomTitleRow}>
-                    <span className={styles.roomTitle}>{room.title}</span>
-                    {room.gameKey ? (
-                      <Chip size="sm" tone="accent">
-                        {games.find((game) => game.key === room.gameKey)?.title ?? room.gameKey}
-                      </Chip>
-                    ) : null}
-                  </div>
-                  {room.topic ? <p className={styles.roomTopic}>{room.topic}</p> : null}
-                  <div className={styles.roomMeta}>
-                    <span className={styles.avatars}>
-                      {room.members.slice(0, 4).map((member) => (
-                        <Avatar key={member.userId} seed={member.avatarSeed} size={22} />
+        {!loading && list.length === 0 && (
+          <EmptyState
+            icon={<DoorIcon size={24} />}
+            title="No open rooms"
+            description="Open the first table. People usually drop in within a minute."
+            action={<Button onClick={() => setOpen(true)}>Open a room</Button>}
+          />
+        )}
+
+        <m.div
+          className="space-y-2.5 px-4"
+          variants={listStagger}
+          initial="initial"
+          animate="animate"
+        >
+          {list.map((room) => {
+            const game = games.find((item) => item.key === room.gameKey);
+            const live = room.participants > 0;
+            return (
+              <m.button
+                key={room.id}
+                type="button"
+                variants={rise}
+                onPointerDown={() => haptic.select()}
+                onClick={() => navigate(`/rooms/${room.id}`)}
+                whileTap={{ scale: 0.985 }}
+                transition={spring.snappy}
+                className="panel flex w-full items-start gap-3.5 rounded-[20px] px-4 py-4 text-left"
+              >
+                <IconTile tone={room.gameKey ? "live" : "accent"} size={44}>
+                  {room.gameKey ? <GamesIcon size={20} /> : <RoomsIcon size={20} />}
+                </IconTile>
+
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="truncate font-display text-[15.5px] font-extrabold tracking-[-0.015em]">
+                      {room.title}
+                    </span>
+                    {game && (
+                      <span className="shrink-0 rounded-full bg-live-quiet px-2 py-0.5 font-display text-[10px] font-bold uppercase tracking-[0.08em] text-live">
+                        {game.title}
+                      </span>
+                    )}
+                  </span>
+                  {room.topic && (
+                    <span className="mt-0.5 block truncate text-[12.5px] text-hint">
+                      {room.topic}
+                    </span>
+                  )}
+                  <span className="mt-3 flex items-center gap-2.5">
+                    <span className="flex">
+                      {room.members.slice(0, 4).map((member, index) => (
+                        <span
+                          key={member.userId}
+                          style={{ marginLeft: index === 0 ? 0 : -9 }}
+                          className="rounded-[8px] ring-2 ring-surface"
+                        >
+                          <Avatar seed={member.avatarSeed} size={22} />
+                        </span>
                       ))}
                     </span>
-                    <span className={styles.count}>
+                    <span className="font-display text-[12px] font-bold text-secondary tabular">
                       {room.participants}/{room.maxParticipants}
                     </span>
-                    {room.participants > 0 ? (
-                      <span className={styles.liveBadge}>live</span>
+                    {live ? (
+                      <span className="flex items-center gap-1 font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-live">
+                        <MicIcon size={11} /> live
+                      </span>
                     ) : (
-                      <span className={styles.quietBadge}>quiet</span>
+                      <span className="font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-hint">
+                        quiet
+                      </span>
                     )}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        ))}
-      </motion.div>
+                  </span>
+                </span>
+              </m.button>
+            );
+          })}
+        </m.div>
+      </div>
 
       <Sheet
         open={open}
         onClose={() => setOpen(false)}
         title="Open a room"
-        description="Pick a vibe, invite friends, or let strangers drop in."
+        description="Give it a name and a topic. Anyone can join a public table."
         footer={
-          <Button full onClick={() => void submit()}>
+          <Button full loading={busy} onClick={() => void submit()}>
             Create and join
           </Button>
         }
       >
-        <div className={styles.field}>
-          <label className={styles.label}>Emoji</label>
-          <div className={styles.emojiRow}>
-            {EMOJIS.map((item) => (
-              <button
-                key={item}
-                type="button"
-                className={[styles.emojiButton, emoji === item ? styles.emojiActive : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => setEmoji(item)}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="room-title">
-            Name
+        <div className="space-y-4 pb-2">
+          <label className="block">
+            <SectionHead title="Name" />
+            <input
+              className="h-[50px] w-full rounded-[16px] bg-elevated/60 px-4 text-[15px]"
+              value={title}
+              maxLength={64}
+              placeholder="Late night talks"
+              onChange={(event) => setTitle(event.target.value)}
+            />
           </label>
-          <input
-            id="room-title"
-            className={styles.input}
-            value={title}
-            maxLength={64}
-            placeholder="Late night talks"
-            onChange={(event) => setTitle(event.target.value)}
-          />
-        </div>
 
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="room-topic">
-            Topic
+          <label className="block">
+            <SectionHead title="Topic" />
+            <input
+              className="h-[50px] w-full rounded-[16px] bg-elevated/60 px-4 text-[15px]"
+              value={topic}
+              maxLength={120}
+              placeholder="Anything on your mind"
+              onChange={(event) => setTopic(event.target.value)}
+            />
           </label>
-          <input
-            id="room-topic"
-            className={styles.input}
-            value={topic}
-            maxLength={120}
-            placeholder="Anything on your mind"
-            onChange={(event) => setTopic(event.target.value)}
-          />
-        </div>
 
-        <div className={styles.field}>
-          <label className={styles.label}>Game table</label>
-          <div className={styles.chipRow}>
-            <Chip active={gameKey === null} onClick={() => setGameKey(null)}>
-              Just voice
-            </Chip>
-            {games.map((game) => (
-              <Chip
-                key={game.key}
-                active={gameKey === game.key}
-                onClick={() => setGameKey(game.key)}
-              >
-                {game.icon} {game.title}
+          <div>
+            <SectionHead title="Game table" />
+            <div className="flex flex-wrap gap-2">
+              <Chip active={gameKey === null} onClick={() => setGameKey(null)}>
+                Just voice
               </Chip>
-            ))}
+              {games.map((game) => (
+                <Chip
+                  key={game.key}
+                  active={gameKey === game.key}
+                  onClick={() => setGameKey(game.key)}
+                >
+                  {game.title}
+                </Chip>
+              ))}
+            </div>
           </div>
         </div>
       </Sheet>
-    </Screen>
+    </TabScreen>
   );
 };

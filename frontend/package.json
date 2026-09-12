@@ -10,10 +10,12 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "framer-motion": "^11.15.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "motion": "^11.18.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.1",
+    "tailwindcss": "^4.3.3",
     "zustand": "^5.0.2"
   },
   "devDependencies": {

@@ -1,14 +1,23 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "motion/react";
 import { useEffect, useState } from "react";
 
 import { activityLabel, relativeTime } from "@/shared/lib/format";
-import { itemVariants, listVariants } from "@/shared/lib/motion";
+import { listStagger, rise } from "@/shared/lib/motion";
 import { openLink } from "@/shared/lib/telegram";
-import { Avatar, Button, Card, Chip, EmptyState, IconButton, Screen, Section, Sheet } from "@/shared/ui";
+import {
+  Avatar,
+  Button,
+  Chip,
+  EmptyState,
+  IconButton,
+  Panel,
+  SectionHead,
+  Sheet,
+  TabScreen,
+} from "@/shared/ui";
+import { CheckIcon, CloseIcon, FriendsIcon, LinkIcon, PhoneIcon, StarIcon } from "@/shared/ui/icons";
 import { useSocial } from "@/store/social";
 import { toast } from "@/store/ui";
-
-import styles from "./FriendsPage.module.css";
 
 export const FriendsPage = () => {
   const friends = useSocial((state) => state.friends);
@@ -31,7 +40,7 @@ export const FriendsPage = () => {
   const outgoing = requests.filter((item) => item.direction === "outgoing");
   const active = friends.find((friend) => friend.id === selected) ?? null;
 
-  const invite = async (): Promise<void> => {
+  const invite = async () => {
     const link = await inviteLink();
     if (!link) {
       toast("Could not build the invite link", { tone: "danger" });
@@ -41,145 +50,166 @@ export const FriendsPage = () => {
   };
 
   return (
-    <Screen title="Friends" subtitle={`${friends.filter((item) => item.isOnline).length} online`}>
-      {incoming.length > 0 ? (
-        <Section title="Requests">
-          <motion.div className={styles.list} variants={listVariants} initial="initial" animate="animate">
-            <AnimatePresence initial={false}>
-              {incoming.map((item) => (
-                <motion.div key={item.id} variants={itemVariants} exit="exit" layout>
-                  <Card>
-                    <div className={styles.row}>
-                      <Avatar seed={item.avatarSeed} size={44} level={item.level} />
-                      <div className={styles.rowBody}>
-                        <span className={styles.name}>{item.anonName}</span>
-                        {item.message ? <span className={styles.note}>{item.message}</span> : null}
-                      </div>
-                      <div className={styles.rowActions}>
-                        <IconButton
-                          label="Accept"
-                          tone="success"
-                          size="sm"
-                          onClick={() => void accept(item.id)}
-                        >
-                          ✓
-                        </IconButton>
-                        <IconButton
-                          label="Decline"
-                          tone="danger"
-                          size="sm"
-                          onClick={() => void decline(item.id)}
-                        >
-                          ✕
-                        </IconButton>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        </Section>
-      ) : null}
-
-      <Section
-        title="Your circle"
-        action={
-          <Chip size="sm" tone="accent" onClick={() => void invite()}>
-            Invite
-          </Chip>
-        }
-      >
-        {!loading && friends.length === 0 ? (
-          <EmptyState
-            icon="🤝"
-            title="No friends yet"
-            description="Like a conversation and send a request, or invite someone from Telegram."
-            action={<Button onClick={() => void invite()}>Invite a friend</Button>}
-          />
-        ) : null}
-
-        <motion.div className={styles.list} variants={listVariants} initial="initial" animate="animate">
-          {friends.map((friend) => (
-            <motion.div key={friend.id} variants={itemVariants} layout>
-              <Card onClick={() => setSelected(friend.id)}>
-                <div className={styles.row}>
-                  <Avatar seed={friend.avatarSeed} size={44} online={friend.isOnline} level={friend.level} />
-                  <div className={styles.rowBody}>
-                    <span className={styles.name}>
-                      {friend.alias ?? friend.anonName}
-                      {friend.favourite ? " ★" : ""}
-                    </span>
-                    <span className={styles.note}>
-                      {friend.isOnline
-                        ? activityLabel(friend.activity) || "online"
-                        : `seen ${relativeTime(friend.lastSeenAt)}`}
-                    </span>
-                  </div>
-                  {friend.isOnline ? (
-                    <IconButton
-                      label="Call"
-                      tone="success"
-                      size="sm"
-                      onClick={() => {
-                        callFriend(friend.id);
-                        toast("Calling…", { icon: "📞" });
-                      }}
+    <TabScreen>
+      <div className="space-y-7 pb-4">
+        {incoming.length > 0 && (
+          <section>
+            <SectionHead title="Requests" />
+            <m.div variants={listStagger} initial="initial" animate="animate">
+              <Panel divided>
+                <AnimatePresence initial={false}>
+                  {incoming.map((item) => (
+                    <m.div
+                      key={item.id}
+                      variants={rise}
+                      exit="exit"
+                      layout
+                      className="flex items-center gap-3.5 px-4 py-3.5"
                     >
-                      📞
-                    </IconButton>
-                  ) : null}
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </motion.div>
-      </Section>
+                      <Avatar seed={item.avatarSeed} size={42} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-display text-[14.5px] font-bold">
+                          {item.anonName}
+                        </p>
+                        <p className="truncate text-[12px] text-hint">
+                          {item.message ?? `Level ${item.level}`}
+                        </p>
+                      </div>
+                      <IconButton
+                        label="Accept"
+                        tone="live"
+                        size={36}
+                        onClick={() => void accept(item.id)}
+                      >
+                        <CheckIcon size={16} />
+                      </IconButton>
+                      <IconButton
+                        label="Decline"
+                        tone="danger"
+                        size={36}
+                        onClick={() => void decline(item.id)}
+                      >
+                        <CloseIcon size={15} />
+                      </IconButton>
+                    </m.div>
+                  ))}
+                </AnimatePresence>
+              </Panel>
+            </m.div>
+          </section>
+        )}
 
-      {outgoing.length > 0 ? (
-        <Section title="Sent">
-          <div className={styles.list}>
-            {outgoing.map((item) => (
-              <Card key={item.id}>
-                <div className={styles.row}>
-                  <Avatar seed={item.avatarSeed} size={36} />
-                  <div className={styles.rowBody}>
-                    <span className={styles.name}>{item.anonName}</span>
-                    <span className={styles.note}>waiting for an answer</span>
+        <section>
+          <SectionHead
+            title="Your circle"
+            trailing={
+              <button
+                type="button"
+                onClick={() => void invite()}
+                className="flex items-center gap-1.5 font-display text-[12px] font-bold uppercase tracking-[0.1em] text-accent"
+              >
+                <LinkIcon size={13} />
+                invite
+              </button>
+            }
+          />
+
+          {!loading && friends.length === 0 ? (
+            <EmptyState
+              icon={<FriendsIcon size={24} />}
+              title="No friends yet"
+              description="Like a conversation and send a request, or invite someone from Telegram."
+              action={<Button onClick={() => void invite()}>Invite a friend</Button>}
+            />
+          ) : (
+            <m.div variants={listStagger} initial="initial" animate="animate">
+              <Panel divided>
+                {friends.map((friend) => (
+                  <m.div key={friend.id} variants={rise} layout>
+                    <div className="flex items-center gap-3.5 px-4 py-3.5">
+                      <button type="button" onClick={() => setSelected(friend.id)}>
+                        <Avatar seed={friend.avatarSeed} size={42} online={friend.isOnline} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelected(friend.id)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <p className="flex items-center gap-1.5 truncate font-display text-[14.5px] font-bold">
+                          {friend.alias ?? friend.anonName}
+                          {friend.favourite && <StarIcon size={12} className="text-warn" />}
+                        </p>
+                        <p className="truncate text-[12px] text-hint">
+                          {friend.isOnline
+                            ? activityLabel(friend.activity) || "online"
+                            : `seen ${relativeTime(friend.lastSeenAt)}`}
+                        </p>
+                      </button>
+                      {friend.isOnline && (
+                        <IconButton
+                          label="Call"
+                          tone="live"
+                          size={38}
+                          onClick={() => {
+                            callFriend(friend.id);
+                            toast("Calling…", { description: friend.anonName });
+                          }}
+                        >
+                          <PhoneIcon size={17} />
+                        </IconButton>
+                      )}
+                    </div>
+                  </m.div>
+                ))}
+              </Panel>
+            </m.div>
+          )}
+        </section>
+
+        {outgoing.length > 0 && (
+          <section>
+            <SectionHead title="Sent" />
+            <Panel divided>
+              {outgoing.map((item) => (
+                <div key={item.id} className="flex items-center gap-3.5 px-4 py-3">
+                  <Avatar seed={item.avatarSeed} size={34} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-display text-[14px] font-bold">{item.anonName}</p>
+                    <p className="text-[11.5px] text-hint">waiting for an answer</p>
                   </div>
-                  <Chip size="sm" onClick={() => void decline(item.id)}>
-                    Cancel
-                  </Chip>
+                  <Chip onClick={() => void decline(item.id)}>Cancel</Chip>
                 </div>
-              </Card>
-            ))}
-          </div>
-        </Section>
-      ) : null}
+              ))}
+            </Panel>
+          </section>
+        )}
+      </div>
 
       <Sheet open={active !== null} onClose={() => setSelected(null)} title={active?.anonName ?? ""}>
-        {active ? (
-          <div className={styles.detail}>
-            <Avatar seed={active.avatarSeed} size={88} online={active.isOnline} level={active.level} />
-            <p className={styles.detailTitle}>{active.title}</p>
-            <div className={styles.detailActions}>
+        {active && (
+          <div className="flex flex-col items-center gap-3 pb-2">
+            <Avatar seed={active.avatarSeed} size={84} online={active.isOnline} />
+            <p className="font-display text-[12px] font-bold uppercase tracking-[0.12em] text-hint">
+              {active.title} · level {active.level}
+            </p>
+            <div className="mt-4 flex w-full flex-col gap-2">
               <Button
                 full
+                disabled={!active.isOnline}
+                icon={<PhoneIcon size={17} />}
                 onClick={() => {
                   callFriend(active.id);
                   setSelected(null);
                 }}
-                icon="📞"
-                disabled={!active.isOnline}
               >
                 {active.isOnline ? "Voice call" : "Offline"}
               </Button>
-              <Button full variant="secondary" onClick={() => void toggleFavourite(active.id)}>
+              <Button full variant="surface" onClick={() => void toggleFavourite(active.id)}>
                 {active.favourite ? "Remove from favourites" : "Add to favourites"}
               </Button>
               <Button
                 full
-                variant="ghost"
+                variant="quiet"
                 onClick={() => {
                   void remove(active.id);
                   setSelected(null);
@@ -189,8 +219,8 @@ export const FriendsPage = () => {
               </Button>
             </div>
           </div>
-        ) : null}
+        )}
       </Sheet>
-    </Screen>
+    </TabScreen>
   );
 };

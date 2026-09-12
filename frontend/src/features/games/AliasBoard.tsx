@@ -1,12 +1,13 @@
 import { useState } from "react";
 
-import { Button, Chip, VoiceOrb } from "@/shared/ui";
+import { Button, IconButton, VoiceOrb } from "@/shared/ui";
+import { FlagIcon, SendIcon, WaveIcon } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 import { useVoice } from "@/store/voice";
 
-import styles from "./games.module.css";
+import { GameStatus, ScoreRow, WordCard } from "./shared";
 
 interface View {
   phase: string;
@@ -21,7 +22,6 @@ interface View {
   skips: number;
   maxSkips: number;
   target: number;
-  roundLog: { word: string; status: string; by?: number }[];
   winner: string | null;
   secondsLeft: number;
 }
@@ -35,124 +35,117 @@ export const AliasBoard = ({ view }: { view: View }) => {
   const micLevel = useVoice((state) => state.micLevel);
   const [guess, setGuess] = useState("");
 
-  const nameOf = (userId: number | null): string => {
-    if (userId === null) {
-      return "—";
-    }
-    if (userId === profile?.id) {
-      return "You";
-    }
-    return members.find((item) => item.userId === userId)?.anonName.split(" ")[0] ?? `Player ${userId}`;
+  const nameOf = (userId: number | null) => {
+    if (userId === null) return "—";
+    if (userId === profile?.id) return "You";
+    return members.find((item) => item.userId === userId)?.anonName.split(" ")[0] ?? `P${userId}`;
   };
 
   const guesses = events
     .filter((event) => event.type === "alias.guess")
-    .slice(-8)
+    .slice(-6)
     .reverse();
 
-  const submit = (): void => {
-    if (!guess.trim()) {
-      return;
-    }
+  const submit = () => {
+    if (!guess.trim()) return;
     act("guess", { text: guess.trim() });
     setGuess("");
   };
 
   return (
-    <div className={styles.stage}>
-      <div className={styles.statusBar}>
-        <div>
-          <span className={styles.phase}>Team {view.turn.toUpperCase()} explains</span>
-          <span className={styles.phaseValue}>{nameOf(view.explainer)}</span>
-        </div>
-        <span className={styles.countdown}>⏱ {view.secondsLeft}</span>
-      </div>
+    <div className="flex flex-col gap-5">
+      <GameStatus
+        eyebrow={`Team ${view.turn.toUpperCase()} explains`}
+        title={nameOf(view.explainer)}
+        seconds={view.secondsLeft}
+      />
 
-      <div className={styles.scoreRow}>
-        <div className={styles.scoreItem}>
-          <span className={styles.scoreValue}>{view.scores.a}</span>
-          <span className={styles.scoreLabel}>team a{view.yourTeam === "a" ? " · you" : ""}</span>
-        </div>
-        <div className={styles.scoreItem}>
-          <span className={styles.scoreValue}>{view.target}</span>
-          <span className={styles.scoreLabel}>to win</span>
-        </div>
-        <div className={styles.scoreItem}>
-          <span className={styles.scoreValue}>{view.scores.b}</span>
-          <span className={styles.scoreLabel}>team b{view.yourTeam === "b" ? " · you" : ""}</span>
-        </div>
-      </div>
+      <ScoreRow
+        items={[
+          {
+            value: view.scores.a,
+            label: view.yourTeam === "a" ? "team a · you" : "team a",
+            tone: view.yourTeam === "a" ? "accent" : "label",
+          },
+          { value: view.target, label: "to win" },
+          {
+            value: view.scores.b,
+            label: view.yourTeam === "b" ? "team b · you" : "team b",
+            tone: view.yourTeam === "b" ? "accent" : "label",
+          },
+        ]}
+      />
 
       {view.phase === "finished" ? (
-        <div className={styles.wordCard}>
-          <span className={styles.wordLabel}>winner</span>
-          <span className={styles.wordValue}>Team {String(view.winner ?? "").toUpperCase()}</span>
-        </div>
+        <WordCard label="winner" value={`Team ${String(view.winner ?? "").toUpperCase()}`} />
       ) : view.youExplain ? (
         <>
-          <div className={styles.wordCard}>
-            <span className={styles.wordLabel}>explain without saying it</span>
-            <span className={styles.wordValue}>{word ?? view.word ?? "…"}</span>
+          <WordCard label="explain without saying it" value={word ?? view.word ?? "…"} />
+          <div className="flex justify-center">
+            <VoiceOrb level={micLevel} size={150} tone="live">
+              <WaveIcon size={24} />
+            </VoiceOrb>
           </div>
-          <VoiceOrb level={micLevel} tone="voice" size={140}>
-            🗣
-          </VoiceOrb>
-          <div className={styles.actions}>
-            <Button
-              full
-              variant="secondary"
-              disabled={view.skips >= view.maxSkips}
-              onClick={() => act("skip", {})}
-            >
-              Skip ({view.maxSkips - view.skips} left)
-            </Button>
-          </div>
+          <Button
+            full
+            variant="surface"
+            disabled={view.skips >= view.maxSkips}
+            onClick={() => act("skip", {})}
+          >
+            Skip word · {view.maxSkips - view.skips} left
+          </Button>
         </>
       ) : (
         <>
-          <p className={styles.hint}>
+          <p className="text-center text-[13.5px] leading-snug text-hint">
             {view.turn === view.yourTeam
-              ? "Your teammate is explaining. Type your guesses fast."
+              ? "Your teammate is explaining. Type guesses fast."
               : "The other team is playing. Listen and keep them honest."}
           </p>
-          {view.turn === view.yourTeam ? (
-            <div className={styles.composer}>
-              <input
-                className={styles.input}
-                value={guess}
-                maxLength={60}
-                placeholder="Your guess"
-                onChange={(event) => setGuess(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    submit();
-                  }
-                }}
-              />
-              <Chip tone="accent" onClick={submit}>
-                Guess
-              </Chip>
+
+          {view.turn === view.yourTeam && (
+            <div className="flex items-center gap-2">
+              <div className="flex flex-1 items-center rounded-[16px] bg-surface px-4">
+                <input
+                  className="h-[46px] w-full text-[14.5px]"
+                  value={guess}
+                  maxLength={60}
+                  placeholder="Your guess"
+                  onChange={(event) => setGuess(event.target.value)}
+                  onKeyDown={(event) => event.key === "Enter" && submit()}
+                />
+              </div>
+              <IconButton label="Guess" tone="light" size={46} onClick={submit}>
+                <SendIcon size={18} />
+              </IconButton>
             </div>
-          ) : null}
-          <Button variant="ghost" onClick={() => act("violation", {})}>
+          )}
+
+          <Button
+            variant="quiet"
+            icon={<FlagIcon size={15} />}
+            onClick={() => act("violation", {})}
+          >
             They said the word
           </Button>
         </>
       )}
 
-      <div className={styles.feed}>
-        {guesses.map((event) => (
-          <div
-            key={event.id}
-            className={[styles.feedItem, event.payload.correct ? styles.feedGood : ""]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            {nameOf(Number(event.payload.by))}: {String(event.payload.text)}
-            {event.payload.correct ? " ✓" : ""}
-          </div>
-        ))}
-      </div>
+      {guesses.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          {guesses.map((event) => (
+            <div
+              key={event.id}
+              className={`rounded-[12px] px-3.5 py-2 text-[12.5px] ${
+                event.payload.correct ? "bg-live-quiet text-live" : "bg-elevated/60 text-secondary"
+              }`}
+            >
+              <span className="font-bold">{nameOf(Number(event.payload.by))}</span>{" "}
+              {String(event.payload.text)}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

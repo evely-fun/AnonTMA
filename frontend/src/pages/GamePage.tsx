@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { m } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -7,21 +7,21 @@ import { FlappyGame } from "@/features/games/FlappyGame";
 import { MafiaBoard } from "@/features/games/MafiaBoard";
 import { TelephoneBoard } from "@/features/games/TelephoneBoard";
 import { TicTacToeBoard } from "@/features/games/TicTacToeBoard";
-import { useBackButton } from "@/shared/hooks/useBackButton";
+import { gameVisual } from "@/features/games/visuals";
 import { request } from "@/shared/lib/api";
-import { itemVariants, listVariants } from "@/shared/lib/motion";
+import { listStagger, rise } from "@/shared/lib/motion";
 import type { LeaderboardEntry } from "@/shared/lib/types";
-import { Avatar, Button, Card, Chip, IconButton, Screen, Section } from "@/shared/ui";
+import { Avatar, Button, Chip, IconTile, Panel, ScreenHeader, SectionHead } from "@/shared/ui";
+import { ClockIcon, FriendsIcon, MicIcon } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 
-import styles from "./GamePage.module.css";
-
 export const GamePage = () => {
   const { gameKey } = useParams();
   const navigate = useNavigate();
+
   const games = useSession((state) => state.games);
   const view = useGames((state) => state.view);
   const activeKey = useGames((state) => state.gameKey);
@@ -37,51 +37,42 @@ export const GamePage = () => {
 
   const meta = games.find((game) => game.key === gameKey);
 
-  useBackButton("/games");
-
   useEffect(() => {
-    if (!gameKey) {
-      return;
-    }
-    void request<LeaderboardEntry[]>(`/games/${gameKey}/leaderboard?limit=10`)
+    if (!gameKey) return;
+    void request<LeaderboardEntry[]>(`/games/${gameKey}/leaderboard?limit=8`)
       .then(setBoard)
       .catch(() => setBoard([]));
   }, [gameKey]);
 
   if (!meta) {
     return (
-      <Screen title="Game">
-        <Card>
-          <p className={styles.hint}>This game is not available.</p>
-        </Card>
-      </Screen>
+      <div className="flex h-full flex-col">
+        <ScreenHeader title="Game" onBack={() => navigate("/games")} />
+        <p className="px-5 pt-6 text-[13.5px] text-hint">This game is not available.</p>
+      </div>
     );
   }
 
+  const { Icon, tone } = gameVisual(meta.key);
   const playing = Boolean(gameId && activeKey === gameKey && view);
   const phase = (view?.phase as string | undefined) ?? "lobby";
   const canStartHere = room?.gameKey === gameKey && members.length >= meta.minPlayers;
 
-  const openTable = async (): Promise<void> => {
+  const openTable = async () => {
     const created = await createRoom({
       title: `${meta.title} table`,
-      emoji: meta.icon,
+      emoji: "",
       kind: "game",
       visibility: "public",
       maxParticipants: meta.maxPlayers,
       gameKey: meta.key,
     } as never);
-    if (created) {
-      navigate(`/rooms/${created.id}`);
-    } else {
-      toast("Could not open a table", { tone: "danger" });
-    }
+    if (created) navigate(`/rooms/${created.id}`);
+    else toast("Could not open a table", { tone: "danger" });
   };
 
   const renderBoard = () => {
-    if (!view) {
-      return null;
-    }
+    if (!view) return null;
     switch (gameKey) {
       case "tictactoe":
         return <TicTacToeBoard view={view as never} />;
@@ -99,42 +90,32 @@ export const GamePage = () => {
   };
 
   return (
-    <Screen
-      bare
-      padded={false}
-      title={meta.title}
-      subtitle={playing ? phase : meta.subtitle}
-      leading={
-        <IconButton
-          label="Back"
-          size="sm"
-          onClick={() => {
-            if (playing) {
-              leave();
-            }
-            navigate("/games");
-          }}
-        >
-          ←
-        </IconButton>
-      }
-    >
-      <div className={styles.body}>
+    <div className="flex h-full flex-col">
+      <ScreenHeader
+        title={meta.title}
+        subtitle={playing ? phase : meta.subtitle}
+        onBack={() => {
+          if (playing) leave();
+          navigate("/games");
+        }}
+      />
+
+      <div className="flex flex-1 flex-col overflow-y-auto pb-[calc(18px+env(safe-area-inset-bottom))]">
         {playing ? (
-          <>
+          <div className="flex flex-1 flex-col gap-4 px-4 pt-3">
             {renderBoard()}
-            {phase === "lobby" ? (
+            {phase === "lobby" && (
               <Button full onClick={start}>
                 Start now
               </Button>
-            ) : null}
-            {phase === "finished" ? (
-              <div className={styles.finishRow}>
-                {reward ? (
-                  <Chip tone="mint">
+            )}
+            {phase === "finished" && (
+              <div className="flex flex-col items-center gap-3">
+                {reward && (
+                  <Chip tone="live">
                     +{reward.xp ?? 0} XP · +{reward.coins ?? 0} coins
                   </Chip>
-                ) : null}
+                )}
                 <Button
                   full
                   onClick={() => {
@@ -145,93 +126,112 @@ export const GamePage = () => {
                   Done
                 </Button>
               </div>
-            ) : null}
-          </>
+            )}
+          </div>
         ) : (
-          <motion.div
-            className={styles.lobby}
-            variants={listVariants}
+          <m.div
+            className="space-y-7 pt-4"
+            variants={listStagger}
             initial="initial"
             animate="animate"
           >
-            <motion.div variants={itemVariants}>
-              <Card className={styles.heroCard}>
-                <span
-                  className={styles.heroIcon}
-                  style={{ background: `${meta.accent}22`, color: meta.accent }}
-                >
-                  {meta.icon}
-                </span>
-                <h2 className={styles.heroTitle}>{meta.title}</h2>
-                <p className={styles.heroSubtitle}>{meta.subtitle}</p>
-                <div className={styles.tags}>
-                  <Chip size="sm">
-                    {meta.minPlayers}–{meta.maxPlayers} players
+            <m.div className="px-4" variants={rise}>
+              <div className="panel-hero flex flex-col items-center gap-2 rounded-[24px] px-5 py-7 text-center">
+                <IconTile tone={tone} size={64}>
+                  <Icon size={30} />
+                </IconTile>
+                <h2 className="mt-2 font-display text-[22px] font-extrabold tracking-[-0.025em]">
+                  {meta.title}
+                </h2>
+                <p className="max-w-[290px] text-[13.5px] leading-snug text-secondary">
+                  {meta.subtitle}
+                </p>
+                <div className="mt-3 flex flex-wrap justify-center gap-2">
+                  <Chip>
+                    <FriendsIcon size={12} />
+                    {meta.minPlayers}-{meta.maxPlayers} players
                   </Chip>
-                  <Chip size="sm">{meta.durationMinutes} min</Chip>
-                  {meta.voiceRequired ? (
-                    <Chip size="sm" tone="mint">
+                  <Chip>
+                    <ClockIcon size={12} />
+                    {meta.durationMinutes} min
+                  </Chip>
+                  {meta.voiceRequired && (
+                    <Chip tone="live">
+                      <MicIcon size={12} />
                       voice
                     </Chip>
-                  ) : null}
+                  )}
                 </div>
-              </Card>
-            </motion.div>
+              </div>
+            </m.div>
 
-            <motion.div variants={itemVariants}>
-              <Section title="How it works">
-                <ul className={styles.rules}>
-                  {meta.rules.map((rule, index) => (
-                    <li key={index} className={styles.rule}>
-                      <span className={styles.ruleIndex}>{index + 1}</span>
-                      {rule}
-                    </li>
-                  ))}
-                </ul>
-              </Section>
-            </motion.div>
+            <m.section variants={rise}>
+              <SectionHead title="How it works" />
+              <div className="space-y-2 px-4">
+                {meta.rules.map((rule, index) => (
+                  <div
+                    key={index}
+                    className="panel flex items-start gap-3 rounded-[16px] px-4 py-3.5"
+                  >
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent-quiet font-display text-[11px] font-extrabold text-accent">
+                      {index + 1}
+                    </span>
+                    <span className="text-[13.5px] leading-snug text-secondary">{rule}</span>
+                  </div>
+                ))}
+              </div>
+            </m.section>
 
-            <motion.div variants={itemVariants} className={styles.cta}>
-              {meta.key === "tictactoe" ? (
-                <Button full onClick={() => create("tictactoe", { withBot: true })} icon="🤖">
+            <m.div className="flex flex-col gap-2 px-4" variants={rise}>
+              {meta.key === "tictactoe" && (
+                <Button full onClick={() => create("tictactoe", { withBot: true })}>
                   Play against the bot
                 </Button>
-              ) : null}
+              )}
               {canStartHere ? (
                 <Button full onClick={() => create(meta.key, {}, room?.id)}>
                   Start in this room
                 </Button>
               ) : (
-                <Button full variant={meta.key === "tictactoe" ? "secondary" : "primary"} onClick={() => void openTable()}>
+                <Button
+                  full
+                  variant={meta.key === "tictactoe" ? "surface" : "primary"}
+                  onClick={() => void openTable()}
+                >
                   Open a table
                 </Button>
               )}
-            </motion.div>
+            </m.div>
 
-            {board.length > 0 ? (
-              <motion.div variants={itemVariants}>
-                <Section title="Best players">
-                  <div className={styles.board}>
-                    {board.map((entry) => (
-                      <div
-                        key={entry.userId}
-                        className={[styles.boardRow, entry.isMe ? styles.boardMe : ""]
-                          .filter(Boolean)
-                          .join(" ")}
-                      >
-                        <span className={styles.rank}>{entry.rank}</span>
-                        <Avatar seed={entry.avatarSeed} size={32} />
-                        <span className={styles.boardName}>{entry.anonName}</span>
-                        <span className={styles.boardValue}>{entry.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Section>
-              </motion.div>
-            ) : null}
-          </motion.div>
+            {board.length > 0 && (
+              <m.section variants={rise}>
+                <SectionHead title="Best players" />
+                <Panel divided>
+                  {board.map((entry) => (
+                    <div
+                      key={entry.userId}
+                      className={`flex items-center gap-3 px-4 py-3 ${
+                        entry.isMe ? "bg-accent-quiet" : ""
+                      }`}
+                    >
+                      <span className="w-5 text-center font-display text-[12px] font-extrabold text-hint tabular">
+                        {entry.rank}
+                      </span>
+                      <Avatar seed={entry.avatarSeed} size={32} />
+                      <span className="min-w-0 flex-1 truncate font-display text-[14px] font-bold">
+                        {entry.anonName}
+                      </span>
+                      <span className="font-display text-[14px] font-extrabold tabular">
+                        {entry.value}
+                      </span>
+                    </div>
+                  ))}
+                </Panel>
+              </m.section>
+            )}
+          </m.div>
         )}
       </div>
-    </Screen>
+    </div>
   );
 };

@@ -1,13 +1,14 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "motion/react";
 import { useState } from "react";
 
-import { itemVariants } from "@/shared/lib/motion";
-import { Avatar, Button, Chip } from "@/shared/ui";
+import { rise } from "@/shared/lib/motion";
+import { Avatar, Button, Chip, IconTile } from "@/shared/ui";
+import { EyeIcon, GhostIcon, ProfileIcon, ShieldIcon } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 
-import styles from "./games.module.css";
+import { GameStatus } from "./shared";
 
 interface View {
   phase: string;
@@ -20,20 +21,35 @@ interface View {
   checks: Record<string, boolean>;
   votes: Record<string, number>;
   nightLocked: boolean;
-  log: { day: number; text: string; user?: number }[];
   winner: string | null;
   secondsLeft: number;
   canAct: boolean;
 }
 
-const ROLE_INFO: Record<string, { icon: string; name: string; hint: string }> = {
-  mafia: { icon: "🔪", name: "Mafia", hint: "Choose a victim each night, stay invisible by day." },
-  doctor: { icon: "🩺", name: "Doctor", hint: "Save one person every night, you may save yourself once." },
-  detective: { icon: "🔍", name: "Detective", hint: "Check one player per night and learn their side." },
-  civilian: { icon: "👤", name: "Civilian", hint: "You have only your voice and your logic." },
+const ROLES: Record<string, { name: string; hint: string; Icon: typeof GhostIcon }> = {
+  mafia: {
+    name: "Mafia",
+    hint: "Pick a victim at night, blend in by day.",
+    Icon: GhostIcon,
+  },
+  doctor: {
+    name: "Doctor",
+    hint: "Save one person each night.",
+    Icon: ShieldIcon,
+  },
+  detective: {
+    name: "Detective",
+    hint: "Check one player per night and learn their side.",
+    Icon: EyeIcon,
+  },
+  civilian: {
+    name: "Civilian",
+    hint: "You have only your voice and your logic.",
+    Icon: ProfileIcon,
+  },
 };
 
-const PHASE_LABEL: Record<string, string> = {
+const PHASES: Record<string, string> = {
   night: "Night falls",
   reveal: "Morning report",
   discussion: "Open discussion",
@@ -47,60 +63,44 @@ export const MafiaBoard = ({ view }: { view: View }) => {
   const members = useRooms((state) => state.members);
   const [selected, setSelected] = useState<number | null>(null);
 
-  const role = ROLE_INFO[view.yourRole ?? "civilian"];
-  const nameOf = (userId: number): string => {
-    if (userId === profile?.id) {
-      return "You";
-    }
-    const member = members.find((item) => item.userId === userId);
-    return member?.anonName.split(" ").slice(0, 2).join(" ") ?? `Player ${userId}`;
-  };
-  const seedOf = (userId: number): string =>
+  const role = ROLES[view.yourRole ?? "civilian"];
+  const nameOf = (userId: number) =>
+    userId === profile?.id
+      ? "You"
+      : (members.find((item) => item.userId === userId)?.anonName.split(" ").slice(0, 2).join(" ") ??
+        `Player ${userId}`);
+  const seedOf = (userId: number) =>
     members.find((item) => item.userId === userId)?.avatarSeed ?? String(userId);
 
   const canPick = view.canAct && view.youAlive && !(view.phase === "night" && view.nightLocked);
 
-  const confirm = (): void => {
-    if (selected === null) {
-      return;
-    }
-    act(view.phase === "vote" ? "vote" : "night_action", { target: selected });
-    setSelected(null);
-  };
-
   return (
-    <div className={styles.stage}>
-      <div className={styles.statusBar}>
-        <div>
-          <span className={styles.phase}>Day {view.day}</span>
-          <span className={styles.phaseValue}>{PHASE_LABEL[view.phase] ?? view.phase}</span>
+    <div className="flex flex-col gap-4">
+      <GameStatus
+        eyebrow={`Day ${view.day}`}
+        title={PHASES[view.phase] ?? view.phase}
+        seconds={view.secondsLeft}
+      />
+
+      <div className="panel flex items-center gap-3.5 rounded-[18px] px-4 py-4">
+        <IconTile tone={view.yourRole === "mafia" ? "danger" : "accent"} size={44}>
+          <role.Icon size={21} />
+        </IconTile>
+        <div className="min-w-0">
+          <p className="font-display text-[16px] font-extrabold tracking-[-0.02em]">
+            {view.phase === "finished"
+              ? view.winner === "mafia"
+                ? "Mafia wins"
+                : "Town wins"
+              : role.name}
+          </p>
+          <p className="mt-0.5 text-[12.5px] leading-snug text-hint">
+            {view.youAlive ? role.hint : "You are out, watch quietly."}
+          </p>
         </div>
-        {view.secondsLeft > 0 ? <span className={styles.countdown}>⏱ {view.secondsLeft}</span> : null}
       </div>
 
-      {view.phase === "finished" ? (
-        <div className={styles.roleCard}>
-          <span className={styles.roleIcon}>{view.winner === "mafia" ? "🔪" : "🏛"}</span>
-          <div>
-            <p className={styles.roleName}>{view.winner === "mafia" ? "Mafia wins" : "Town wins"}</p>
-            <p className={styles.roleHint}>
-              {Object.entries(view.visibleRoles)
-                .map(([id, value]) => `${nameOf(Number(id))} · ${ROLE_INFO[value]?.name ?? value}`)
-                .join(", ")}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className={styles.roleCard}>
-          <span className={styles.roleIcon}>{role.icon}</span>
-          <div>
-            <p className={styles.roleName}>{role.name}</p>
-            <p className={styles.roleHint}>{view.youAlive ? role.hint : "You are out, watch quietly."}</p>
-          </div>
-        </div>
-      )}
-
-      <div className={styles.playerList}>
+      <div className="flex flex-col gap-2">
         <AnimatePresence initial={false}>
           {view.players.map((userId) => {
             const alive = view.alive.includes(userId);
@@ -108,55 +108,65 @@ export const MafiaBoard = ({ view }: { view: View }) => {
             const roleTag = view.visibleRoles[String(userId)];
             const votes = Object.values(view.votes).filter((target) => target === userId).length;
             return (
-              <motion.button
+              <m.button
                 key={userId}
                 type="button"
-                variants={itemVariants}
+                variants={rise}
                 initial="initial"
                 animate="animate"
                 exit="exit"
                 disabled={!canPick || !alive || userId === profile?.id}
-                className={[
-                  styles.playerRow,
-                  selected === userId ? styles.playerSelected : "",
-                  alive ? "" : styles.playerDead,
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
                 onClick={() => setSelected(userId)}
+                className={`flex items-center gap-3 rounded-[16px] px-3.5 py-3 text-left transition-colors ${
+                  selected === userId ? "bg-accent-quiet" : "panel"
+                } ${alive ? "" : "opacity-40 grayscale"}`}
               >
-                <Avatar seed={seedOf(userId)} size={38} />
-                <span className={styles.playerName}>{nameOf(userId)}</span>
-                {checked !== undefined ? (
-                  <Chip size="sm" tone={checked ? "danger" : "mint"}>
-                    {checked ? "mafia" : "clean"}
-                  </Chip>
-                ) : null}
-                {roleTag && userId !== profile?.id ? (
-                  <Chip size="sm" tone="danger">
-                    {ROLE_INFO[roleTag]?.name ?? roleTag}
-                  </Chip>
-                ) : null}
-                {votes > 0 ? <span className={styles.playerTag}>{votes} votes</span> : null}
-              </motion.button>
+                <Avatar seed={seedOf(userId)} size={36} />
+                <span className="min-w-0 flex-1 truncate font-display text-[14px] font-bold">
+                  {nameOf(userId)}
+                </span>
+                {checked !== undefined && (
+                  <Chip tone={checked ? "danger" : "live"}>{checked ? "mafia" : "clean"}</Chip>
+                )}
+                {roleTag && userId !== profile?.id && (
+                  <Chip tone="danger">{ROLES[roleTag]?.name ?? roleTag}</Chip>
+                )}
+                {votes > 0 && (
+                  <span className="font-display text-[12px] font-bold text-hint tabular">
+                    {votes}
+                  </span>
+                )}
+              </m.button>
             );
           })}
         </AnimatePresence>
       </div>
 
-      {view.phase !== "finished" ? (
-        <div className={styles.actions}>
+      {view.phase !== "finished" && (
+        <div>
           {view.phase === "discussion" ? (
-            <Button full variant="secondary" onClick={() => act("skip_phase", {})}>
+            <Button full variant="surface" onClick={() => act("skip_phase", {})}>
               Ready to vote
             </Button>
           ) : (
-            <Button full disabled={selected === null || !canPick} onClick={confirm}>
-              {view.phase === "vote" ? "Vote" : view.nightLocked ? "Choice locked" : "Confirm choice"}
+            <Button
+              full
+              disabled={selected === null || !canPick}
+              onClick={() => {
+                if (selected === null) return;
+                act(view.phase === "vote" ? "vote" : "night_action", { target: selected });
+                setSelected(null);
+              }}
+            >
+              {view.phase === "vote"
+                ? "Vote"
+                : view.nightLocked
+                  ? "Choice locked"
+                  : "Confirm choice"}
             </Button>
           )}
         </div>
-      ) : null}
+      )}
     </div>
   );
 };

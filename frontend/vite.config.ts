@@ -1,10 +1,11 @@
 import { fileURLToPath, URL } from "node:url";
 
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -16,13 +17,13 @@ export default defineConfig({
   },
   build: {
     target: "es2020",
-    cssCodeSplit: true,
+    cssCodeSplit: false,
     sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ["react", "react-dom", "react-router-dom"],
-          motion: ["framer-motion"],
+          motion: ["motion/react"],
         },
       },
     },
