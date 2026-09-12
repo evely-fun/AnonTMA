@@ -1,62 +1,63 @@
-from sqlalchemy import inspect, text
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy import Column, Table, inspect, text
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.core.logging import get_logger
 from app.db.base import Base
 
 logger = get_logger("migrate")
 
-TYPE_OVERRIDES = {
-    "TIMESTAMP WITH TIME ZONE": {"sqlite": "DATETIME"},
-    "BIGINT": {"sqlite": "INTEGER"},
-}
+
+def _literal(value: object, dialect: str) -> str | None:
+    if isinstance(value, bool):
+        if dialect == "sqlite":
+            return "1" if value else "0"
+        return "TRUE" if value else "FALSE"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, str):
+        escaped = value.replace("'", "''")
+        return f"'{escaped}'"
+    return None
 
 
-def _column_ddl(dialect: str, column) -> str:
-    raw = str(column.type)
-    mapped = TYPE_OVERRIDES.get(raw, {}).get(dialect, raw)
-    parts = [f'"{column.name}"', mapped]
-    if column.default is not None and column.default.is_scalar:
-        value = column.default.arg
-        if isinstance(value, bool):
-            literal = "TRUE" if value else "FALSE"
-            if dialect == "sqlite":
-                literal = "1" if value else "0"
-        elif isinstance(value, (int, float)):
-            literal = str(value)
-        elif isinstance(value, str):
-            literal = "'" + value.replace("'", "''") + "'"
-        else:
-            literal = None
+def _column_ddl(engine: AsyncEngine, column: Column) -> str:
+    parts = [f'"{column.name}"', column.type.compile(dialect=engine.dialect)]
+    default = column.default
+    if default is not None and default.is_scalar:
+        literal = _literal(default.arg, engine.dialect.name)
         if literal is not None:
             parts.append(f"DEFAULT {literal}")
     return " ".join(parts)
 
 
-async def add_missing_columns(connection: AsyncConnection) -> None:
-    dialect = connection.dialect.name
+def _collect(sync_connection) -> dict[str, set[str]]:
+    inspector = inspect(sync_connection)
+    return {
+        name: {column["name"] for column in inspector.get_columns(name)}
+        for name in inspector.get_table_names()
+    }
 
-    def collect(sync_connection) -> dict[str, set[str]]:
-        inspector = inspect(sync_connection)
-        existing: dict[str, set[str]] = {}
-        for table in inspector.get_table_names():
-            existing[table] = {column["name"] for column in inspector.get_columns(table)}
-        return existing
 
-    existing = await connection.run_sync(collect)
+async def add_missing_columns(engine: AsyncEngine) -> None:
+    async with engine.connect() as connection:
+        existing = await connection.run_sync(_collect)
 
+    pending: list[tuple[Table, Column]] = []
     for table in Base.metadata.sorted_tables:
-        if table.name not in existing:
+        present = existing.get(table.name)
+        if present is None:
             continue
-        present = existing[table.name]
-        for column in table.columns:
-            if column.name in present:
-                continue
-            ddl = f'ALTER TABLE "{table.name}" ADD COLUMN {_column_ddl(dialect, column)}'
-            try:
-                await connection.execute(text(ddl))
-                logger.info("column added", table=table.name, column=column.name)
-            except Exception as exc:
-                logger.warning(
-                    "column add failed", table=table.name, column=column.name, error=str(exc)
-                )
+        pending.extend(
+            (table, column) for column in table.columns if column.name not in present
+        )
+
+    for table, column in pending:
+        statement = f'ALTER TABLE "{table.name}" ADD COLUMN {_column_ddl(engine, column)}'
+        try:
+            async with engine.begin() as connection:
+                await connection.execute(text(statement))
+            logger.info("column added", table=table.name, column=column.name)
+        except Exception as exc:
+            logger.warning(
+                "column add failed", table=table.name, column=column.name, error=str(exc)
+            )

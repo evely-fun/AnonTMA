@@ -33,4 +33,4 @@ async def init_models() -> None:
 
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
-        await add_missing_columns(connection)
+    await add_missing_columns(engine)
