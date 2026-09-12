@@ -7,6 +7,7 @@ from app.db.models import Friendship, FriendRequest, RequestStatus, User, UserSt
 from app.realtime import presence
 from app.realtime.hub import hub
 from app.schemas.social import FriendRequestCreate, FriendRequestView, FriendView
+from app.services.shop import equipped_of
 from app.services.moderation import is_blocked
 from app.services.progression import title_for_level
 
@@ -43,6 +44,8 @@ async def list_friends(user: CurrentUser, session: SessionDep) -> list[FriendVie
                     "id": friend.id,
                     "anonName": link.alias or friend.anon_name,
                     "avatarSeed": friend.avatar_seed,
+                    "avatarStyle": equipped_of(friend)["avatar"],
+                    "frame": equipped_of(friend)["frame"],
                     "alias": link.alias,
                     "level": stats.level,
                     "title": title_for_level(stats.level),
@@ -86,6 +89,7 @@ async def list_requests(user: CurrentUser, session: SessionDep) -> list[FriendRe
                     "userId": counterpart.id,
                     "anonName": counterpart.anon_name,
                     "avatarSeed": counterpart.avatar_seed,
+                    "avatarStyle": equipped_of(counterpart)["avatar"],
                     "level": stats.level,
                     "direction": "incoming" if incoming else "outgoing",
                     "message": item.message,

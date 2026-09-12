@@ -16,12 +16,16 @@ LIKES_KEY = "dialog:likes:{dialog_id}"
 DIALOG_TTL = 60 * 60 * 6
 
 
-def mask_for(dialog_id: int, user_id: int, language: str = "en") -> dict:
+def mask_for(
+    dialog_id: int, user_id: int, language: str = "en", cosmetics: dict | None = None
+) -> dict:
     seed = f"{dialog_id}:{user_id}"
     return {
         "name": identity.mask_name(seed, language),
         "seed": identity.stable_seed(seed),
         "style": identity.avatar_style(seed),
+        "avatarStyle": (cosmetics or {}).get("avatar", "geometric"),
+        "frame": (cosmetics or {}).get("frame", "none"),
     }
 
 

@@ -142,7 +142,13 @@ const VoiceStage = () => {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-7">
       <VoiceOrb level={micLevel} muted={muted} tone={muted ? "warn" : "live"} size={236}>
-        <Avatar seed={partner?.seed ?? "anon"} size={86} speaking={!muted && micLevel > 0.12} />
+        <Avatar
+          seed={partner?.seed ?? "anon"}
+          style={partner?.avatarStyle}
+          frame={partner?.frame}
+          size={86}
+          speaking={!muted && micLevel > 0.12}
+        />
       </VoiceOrb>
 
       <div className="flex flex-col items-center gap-1.5">
@@ -353,7 +359,7 @@ export const ChatPage = () => {
           <>
             {revealed && (
               <div className="mx-4 mb-1 flex items-center gap-3 rounded-[16px] bg-surface px-4 py-3">
-                <Avatar seed={partner?.seed ?? "anon"} size={34} />
+                <Avatar seed={partner?.seed ?? "anon"} style={partner?.avatarStyle} size={34} />
                 <div className="min-w-0">
                   <p className="truncate font-display text-[13.5px] font-bold">
                     {revealed.anonName}

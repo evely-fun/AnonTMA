@@ -144,7 +144,10 @@
   --veil: oklch(0.115 var(--ground-chroma) var(--ground-hue) / 0.72);
   --island: oklch(0.145 var(--ground-chroma) var(--ground-hue) / 0.94);
   --bar: oklch(0.115 var(--ground-chroma) var(--ground-hue) / 0.62);
+  --bar-solid: oklch(0.135 var(--ground-chroma) var(--ground-hue));
   --sheen: oklch(1 0 0 / 0.06);
+  --panel-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05);
+  --panel-hairline: transparent;
   --hero-tint: 0.3;
   --orb-lightness: 0.42;
   --orb-alpha: 0.8;
@@ -179,7 +182,10 @@
   --veil: oklch(0.4 0.02 var(--ground-hue) / 0.35);
   --island: oklch(1 0 0 / 0.9);
   --bar: oklch(0.975 0.004 var(--ground-hue) / 0.78);
+  --bar-solid: oklch(0.975 0.004 var(--ground-hue));
   --sheen: oklch(0.3 0.02 var(--ground-hue) / 0.05);
+  --panel-shadow: 0 1px 2px oklch(0.3 0.02 var(--ground-hue) / 0.07);
+  --panel-hairline: oklch(0.3 0.02 var(--ground-hue) / 0.07);
   --hero-tint: 0.12;
   --orb-lightness: 0.9;
   --orb-alpha: 0.26;
@@ -260,16 +266,18 @@
     position: absolute;
     display: block;
     border-radius: 50%;
-    filter: blur(65px);
-    will-change: transform, opacity;
+    filter: blur(52px);
+    will-change: transform;
+    transform: translateZ(0);
     backface-visibility: hidden;
+    contain: strict;
   }
 
   .ambient__orb--deep {
-    top: -90px;
-    left: -70px;
-    width: 360px;
-    height: 360px;
+    top: -80px;
+    left: -60px;
+    width: 300px;
+    height: 300px;
     background: radial-gradient(
       circle,
       oklch(var(--orb-lightness) calc(var(--accent-chroma) * 1.1) var(--accent-hue)) 0%,
@@ -277,46 +285,21 @@
       transparent 75%
     );
     opacity: var(--orb-alpha);
-    animation: ambient-deep 22s ease-in-out infinite alternate;
+    animation: ambient-deep 26s ease-in-out infinite alternate;
   }
 
   .ambient__orb--signal {
-    top: 180px;
-    right: -80px;
-    width: 300px;
-    height: 300px;
+    top: 260px;
+    right: -70px;
+    width: 280px;
+    height: 280px;
     background: radial-gradient(
       circle,
       oklch(calc(var(--orb-lightness) * 1.25) calc(var(--accent-chroma) * 1.2) calc(var(--accent-hue) - 14)) 0%,
       transparent 72%
     );
     opacity: calc(var(--orb-alpha) * 0.8);
-    animation: ambient-signal 26s ease-in-out infinite alternate;
-  }
-
-  .ambient__orb--steel {
-    top: 460px;
-    left: -100px;
-    width: 420px;
-    height: 420px;
-    background: radial-gradient(
-      ellipse,
-      oklch(calc(var(--orb-lightness) * 0.85) calc(var(--ground-chroma) * 2.4) var(--ground-hue)) 0%,
-      transparent 78%
-    );
-    opacity: calc(var(--orb-alpha) * 0.7);
-    animation: ambient-steel 30s ease-in-out infinite alternate;
-  }
-
-  .ambient__orb--haze {
-    top: 10px;
-    left: 24%;
-    width: 240px;
-    height: 180px;
-    background: radial-gradient(ellipse, var(--sheen) 0%, transparent 70%);
-    filter: blur(45px);
-    opacity: 0.8;
-    animation: ambient-haze 18s ease-in-out infinite alternate;
+    animation: ambient-signal 32s ease-in-out infinite alternate;
   }
 
   .ambient__mist {
@@ -336,67 +319,32 @@
 
   @keyframes ambient-deep {
     0% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    50% {
-      transform: translate3d(55px, 70px, 0) scale(1.14);
+      transform: translate3d(0, 0, 0);
     }
     100% {
-      transform: translate3d(-30px, 115px, 0) scale(0.94);
+      transform: translate3d(40px, 120px, 0);
     }
   }
 
   @keyframes ambient-signal {
     0% {
-      transform: translate3d(0, 0, 0) scale(1);
-      opacity: calc(var(--orb-alpha) * 0.65);
-    }
-    50% {
-      transform: translate3d(-75px, -45px, 0) scale(1.2);
-      opacity: calc(var(--orb-alpha) * 0.9);
+      transform: translate3d(0, 0, 0);
     }
     100% {
-      transform: translate3d(-40px, 85px, 0) scale(0.96);
-      opacity: calc(var(--orb-alpha) * 0.58);
-    }
-  }
-
-  @keyframes ambient-steel {
-    0% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    50% {
-      transform: translate3d(65px, -55px, 0) scale(1.1);
-    }
-    100% {
-      transform: translate3d(-30px, -20px, 0) scale(0.95);
-    }
-  }
-
-  @keyframes ambient-haze {
-    0% {
-      transform: translate3d(0, 0, 0) scale(1);
-      opacity: 0.7;
-    }
-    50% {
-      transform: translate3d(40px, 55px, 0) scale(1.26);
-      opacity: 0.4;
-    }
-    100% {
-      transform: translate3d(-25px, 25px, 0) scale(0.92);
-      opacity: 0.76;
+      transform: translate3d(-60px, -70px, 0);
     }
   }
 
   .top-status-bar {
     background: var(--bar);
-    backdrop-filter: blur(18px) saturate(135%);
-    -webkit-backdrop-filter: blur(18px) saturate(135%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
   .panel {
     background: var(--color-surface);
-    border: 1px solid var(--color-separator);
+    border: 1px solid var(--panel-hairline);
+    box-shadow: var(--panel-shadow);
   }
 
   .panel-hero {
@@ -409,24 +357,40 @@
         transparent 100%
       ),
       var(--color-surface);
-    box-shadow: inset 0 1px 0 var(--sheen);
-    border: 1px solid var(--color-separator);
+    box-shadow: var(--panel-shadow);
+    border: 1px solid var(--panel-hairline);
   }
 
   .glass {
     background: color-mix(in oklab, var(--color-bg) 94%, transparent);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
   .nav-island {
     background: linear-gradient(160deg, var(--sheen), transparent), var(--island);
-    backdrop-filter: blur(18px) saturate(135%);
-    -webkit-backdrop-filter: blur(18px) saturate(135%);
-    box-shadow: 0 -16px 42px -30px oklch(0 0 0 / 0.9);
-    border-top: 1px solid var(--color-separator);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 -16px 42px -32px oklch(0 0 0 / 0.7);
+    border-top: 1px solid var(--panel-hairline);
     isolation: isolate;
-    will-change: transform;
+  }
+
+  .dock-scrim {
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      color-mix(in oklab, var(--color-bg) 70%, transparent) 45%,
+      var(--color-bg) 100%
+    );
+  }
+
+  .quiet-panel {
+    background: color-mix(in oklab, var(--color-surface) 55%, transparent);
+  }
+
+  .lift {
+    box-shadow: var(--panel-shadow);
   }
 
   .veil {
@@ -536,5 +500,23 @@
     background: var(--color-bg);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer utilities {
+  .list-window > * {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 84px;
   }
 }

@@ -1,5 +1,5 @@
 import { m } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { VOICE_PRESETS, type VoicePreset } from "@/features/voice/changer";
@@ -23,6 +23,7 @@ import {
 } from "@/shared/ui";
 import { CheckIcon, CrownIcon, LockIcon } from "@/shared/ui/icons";
 import { useSession } from "@/store/session";
+import { useShop } from "@/store/shop";
 import { toast } from "@/store/ui";
 import { useVoice } from "@/store/voice";
 
@@ -62,8 +63,14 @@ export const SettingsPage = () => {
   const setVoiceLevel = useVoice((state) => state.setLevel);
   const setVoicePreset = useVoice((state) => state.setPreset);
   const [saving, setSaving] = useState(false);
+  const shopItems = useShop((store) => store.items);
+  const loadShop = useShop((store) => store.load);
 
   useBackButton("/profile");
+
+  useEffect(() => {
+    void loadShop();
+  }, [loadShop]);
 
   if (!profile) return null;
   const preferences = profile.preferences;
@@ -71,6 +78,11 @@ export const SettingsPage = () => {
   const palette = (profile.palette ?? "auto") as Palette;
   const scheme = resolveScheme(theme);
   const premium = profile.premium?.active ?? false;
+  const lockedPalettes = new Set(
+    shopItems
+      .filter((item) => item.category === "palette" && !item.owned)
+      .map((item) => item.value),
+  );
 
   const save = async (body: Record<string, unknown>) => {
     setSaving(true);
@@ -134,12 +146,19 @@ export const SettingsPage = () => {
                 {PALETTES.map((item) => {
                   const swatch = paletteSwatch(item, scheme);
                   const active = palette === item;
+                  const locked = lockedPalettes.has(item);
                   return (
                     <m.button
                       key={item}
                       type="button"
                       onPointerDown={() => haptic.select()}
-                      onClick={() => void save({ palette: item })}
+                      onClick={() => {
+                        if (locked) {
+                          navigate("/shop");
+                          return;
+                        }
+                        void save({ palette: item });
+                      }}
                       whileTap={{ scale: 0.94 }}
                       transition={spring.snappy}
                       className="flex flex-col items-center gap-1.5"
@@ -148,7 +167,7 @@ export const SettingsPage = () => {
                         className={`relative flex size-12 items-center justify-center overflow-hidden rounded-full transition-[box-shadow] duration-200 ${
                           active
                             ? "shadow-[0_0_0_2px_var(--color-accent)]"
-                            : "shadow-[0_0_0_1px_var(--color-separator)]"
+                            : "shadow-[0_0_0_1px_var(--sheen)]"
                         }`}
                         style={{ background: swatch.ground }}
                       >
@@ -156,7 +175,7 @@ export const SettingsPage = () => {
                           className="absolute inset-x-0 bottom-0 h-1/2"
                           style={{ background: swatch.accent, opacity: 0.9 }}
                         />
-                        {active && (
+                        {active && !locked && (
                           <m.span
                             initial={{ scale: 0.6, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -166,10 +185,15 @@ export const SettingsPage = () => {
                             <CheckIcon size={12} />
                           </m.span>
                         )}
+                        {locked && (
+                          <span className="relative z-10 flex size-5 items-center justify-center rounded-full bg-[oklch(0_0_0/0.45)] text-[oklch(1_0_0/0.85)]">
+                            <LockIcon size={11} />
+                          </span>
+                        )}
                       </span>
                       <span
                         className={`text-[10.5px] font-semibold ${
-                          active ? "text-label" : "text-hint"
+                          locked ? "text-hint/70" : active ? "text-label" : "text-hint"
                         }`}
                       >
                         {t(`palettes.${item}`)}

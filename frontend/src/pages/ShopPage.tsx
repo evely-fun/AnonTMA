@@ -1,0 +1,228 @@
+import { m } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { useBackButton } from "@/shared/hooks/useBackButton";
+import { useT } from "@/shared/i18n";
+import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { haptic } from "@/shared/lib/telegram";
+import type { ShopItem } from "@/shared/lib/types";
+import { Avatar, Button, PushScreen, ScreenHeader } from "@/shared/ui";
+import { CheckIcon, CoinIcon, CrownIcon, LockIcon, SparkleIcon } from "@/shared/ui/icons";
+import { useEconomy } from "@/store/economy";
+import { useSession } from "@/store/session";
+import { useShop } from "@/store/shop";
+import { toast } from "@/store/ui";
+
+type Category = ShopItem["category"];
+
+const ORDER: Category[] = ["avatar", "frame", "effect", "palette", "boost", "premium"];
+
+const RARITY_TONE: Record<ShopItem["rarity"], string> = {
+  base: "text-hint",
+  common: "text-secondary",
+  rare: "text-accent",
+  epic: "text-warn",
+  legendary: "text-destructive",
+};
+
+const Preview = ({ item, seed }: { item: ShopItem; seed: string }) => {
+  if (item.category === "avatar") {
+    return <Avatar seed={seed} style={item.value} size={46} />;
+  }
+  if (item.category === "frame") {
+    return <Avatar seed={seed} frame={item.value} size={46} />;
+  }
+  if (item.category === "palette") {
+    return (
+      <span
+        className="size-11 rounded-full"
+        data-palette={item.value}
+        style={{
+          background: `linear-gradient(150deg, oklch(0.72 var(--accent-chroma) var(--accent-hue)), oklch(0.24 var(--ground-chroma) var(--ground-hue)))`,
+        }}
+      />
+    );
+  }
+  if (item.category === "premium") {
+    return (
+      <span className="flex size-11 items-center justify-center rounded-[14px] bg-accent-quiet text-accent">
+        <CrownIcon size={21} />
+      </span>
+    );
+  }
+  if (item.category === "boost") {
+    return (
+      <span className="flex size-11 items-center justify-center rounded-[14px] bg-warn/15 text-warn">
+        <SparkleIcon size={20} />
+      </span>
+    );
+  }
+  return (
+    <span className="flex size-11 items-center justify-center rounded-[14px] bg-elevated text-secondary">
+      <span className="font-display text-[13px] font-extrabold">Aa</span>
+    </span>
+  );
+};
+
+export const ShopPage = () => {
+  const { t } = useT();
+  const navigate = useNavigate();
+  const profile = useSession((state) => state.profile);
+  const refreshProfile = useSession((state) => state.refreshProfile);
+  const loadEconomy = useEconomy((store) => store.load);
+  const items = useShop((store) => store.items);
+  const coins = useShop((store) => store.coins);
+  const equipped = useShop((store) => store.equipped);
+  const busy = useShop((store) => store.busy);
+  const load = useShop((store) => store.load);
+  const buy = useShop((store) => store.buy);
+  const equip = useShop((store) => store.equip);
+  const [tab, setTab] = useState<Category>("avatar");
+
+  useBackButton("/");
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const seed = profile?.avatarSeed ?? "anon";
+  const shown = useMemo(() => items.filter((item) => item.category === tab), [items, tab]);
+
+  const onBuy = async (item: ShopItem) => {
+    haptic.impact("medium");
+    const result = await buy(item.key);
+    if (result === "poor") {
+      toast(t("shop.notEnough"), { tone: "danger" });
+      return;
+    }
+    if (result === "error") {
+      toast(t("shop.failed"), { tone: "danger" });
+      return;
+    }
+    haptic.notify("success");
+    toast(t("shop.bought"), {
+      description: t(`shop.items.${item.category}.${item.value}`),
+      tone: "success",
+    });
+    void refreshProfile();
+    void loadEconomy();
+  };
+
+  const onEquip = async (item: ShopItem) => {
+    haptic.select();
+    if (await equip(item.key)) {
+      toast(t("shop.equippedToast"), { tone: "success" });
+      void refreshProfile();
+    }
+  };
+
+  const isWorn = (item: ShopItem) =>
+    (item.category === "avatar" && equipped.avatar === item.value) ||
+    (item.category === "frame" && equipped.frame === item.value) ||
+    (item.category === "effect" && equipped.effect === item.value);
+
+  return (
+    <PushScreen>
+      <ScreenHeader
+        title={t("shop.title")}
+        subtitle={t("shop.subtitle")}
+        onBack={() => navigate("/")}
+        trailing={
+          <span className="flex items-center gap-1.5 rounded-full bg-elevated px-3 py-1.5 font-display text-[13px] font-extrabold tabular">
+            <CoinIcon size={14} className="text-warn" />
+            {coins.toLocaleString("en-US")}
+          </span>
+        }
+      />
+
+      <div className="flex-1 overflow-y-auto pb-[calc(28px+env(safe-area-inset-bottom))] pt-3">
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-8 pb-1">
+          {ORDER.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onPointerDown={() => haptic.select()}
+              onClick={() => setTab(category)}
+              className={`h-9 shrink-0 rounded-full px-4 font-display text-[12.5px] font-bold tracking-[-0.01em] transition-colors ${
+                tab === category ? "bg-label text-bg" : "bg-elevated text-secondary"
+              }`}
+            >
+              {t(`shop.categories.${category}`)}
+            </button>
+          ))}
+        </div>
+
+        <m.div
+          key={tab}
+          className="list-window mt-4 space-y-2.5 px-4"
+          variants={listStagger}
+          initial="initial"
+          animate="animate"
+        >
+          {shown.map((item) => {
+            const worn = isWorn(item);
+            const pending = busy === item.key;
+            return (
+              <m.div
+                key={item.key}
+                variants={rise}
+                className={`flex items-center gap-3.5 rounded-[18px] px-4 py-3.5 ${
+                  worn ? "panel-hero" : "panel"
+                }`}
+              >
+                <Preview item={item} seed={seed} />
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-display text-[14.5px] font-bold tracking-[-0.01em]">
+                    {t(`shop.items.${item.category}.${item.value}`)}
+                  </p>
+                  <p
+                    className={`mt-0.5 font-display text-[10.5px] font-bold uppercase tracking-[0.1em] ${
+                      RARITY_TONE[item.rarity]
+                    }`}
+                  >
+                    {t(`shop.rarity.${item.rarity}`)}
+                  </p>
+                </div>
+
+                {worn ? (
+                  <span className="flex items-center gap-1.5 font-display text-[12px] font-bold text-accent">
+                    <CheckIcon size={15} />
+                    {t("shop.equipped")}
+                  </span>
+                ) : item.owned && !item.consumable ? (
+                  <Button size="sm" variant="surface" loading={pending} onClick={() => void onEquip(item)}>
+                    {t("shop.equip")}
+                  </Button>
+                ) : (
+                  <m.button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => void onBuy(item)}
+                    whileTap={{ scale: 0.95 }}
+                    transition={spring.snappy}
+                    className={`flex h-9 shrink-0 items-center gap-1.5 rounded-[12px] px-3.5 font-display text-[13px] font-extrabold tabular ${
+                      item.affordable ? "primary-action" : "bg-elevated text-hint"
+                    }`}
+                  >
+                    {item.affordable ? (
+                      <CoinIcon size={13} />
+                    ) : (
+                      <LockIcon size={12} />
+                    )}
+                    {item.price.toLocaleString("en-US")}
+                  </m.button>
+                )}
+              </m.div>
+            );
+          })}
+        </m.div>
+
+        <p className="px-6 pt-5 text-center text-[12px] leading-snug text-hint">
+          {t("shop.howToEarn")}
+        </p>
+      </div>
+    </PushScreen>
+  );
+};

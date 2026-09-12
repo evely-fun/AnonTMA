@@ -59,7 +59,7 @@ export const LeaderboardPage = () => {
           </div>
         ) : (
           <m.div
-            className="mt-4 space-y-2 px-4"
+            className="list-window mt-4 space-y-2 px-4"
             variants={listStagger}
             initial="initial"
             animate="animate"
@@ -90,7 +90,7 @@ export const LeaderboardPage = () => {
                     </span>
                   )}
                 </span>
-                <Avatar seed={entry.avatarSeed} size={38} />
+                <Avatar seed={entry.avatarSeed} style={entry.avatarStyle} frame={entry.frame} size={38} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-display text-[14.5px] font-bold tracking-[-0.01em]">
                     {entry.anonName}

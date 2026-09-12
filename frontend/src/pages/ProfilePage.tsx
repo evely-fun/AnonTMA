@@ -32,9 +32,12 @@ import {
   HeartIcon,
   LinkIcon,
   MaskIcon,
+  GridIcon,
   MicIcon,
   SettingsIcon,
+  ShieldIcon,
 } from "@/shared/ui/icons";
+import { useAdmin } from "@/store/admin";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { useSocial } from "@/store/social";
@@ -55,6 +58,15 @@ const INTERESTS = [
   "night talks",
 ];
 
+const NAME_EFFECT: Record<string, string> = {
+  none: "",
+  gradient:
+    "bg-[linear-gradient(100deg,var(--color-accent),var(--color-live))] bg-clip-text text-transparent",
+  glow: "text-accent drop-shadow-[0_0_10px_var(--accent-soft)]",
+  aurora:
+    "bg-[linear-gradient(100deg,var(--color-accent),var(--color-warn),var(--color-live))] bg-clip-text text-transparent",
+};
+
 export const ProfilePage = () => {
   const { t, locale } = useT();
   const navigate = useNavigate();
@@ -62,6 +74,8 @@ export const ProfilePage = () => {
   const patchProfile = useSession((state) => state.patchProfile);
   const inviteLink = useSocial((state) => state.inviteLink);
   const economy = useEconomy((store) => store.state);
+  const isAdmin = useAdmin((store) => store.allowed) === true;
+  const checkAdmin = useAdmin((store) => store.check);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [editing, setEditing] = useState(false);
   const [bio, setBio] = useState("");
@@ -73,6 +87,10 @@ export const ProfilePage = () => {
       .then(setAchievements)
       .catch(() => setAchievements([]));
   }, []);
+
+  useEffect(() => {
+    void checkAdmin();
+  }, [checkAdmin]);
 
   useEffect(() => {
     setBio(profile?.bio ?? "");
@@ -120,9 +138,18 @@ export const ProfilePage = () => {
         <m.section className="px-4" variants={rise}>
           <div className="panel-hero rounded-[24px] px-5 py-5">
             <div className="flex items-center gap-4">
-              <Avatar seed={profile.avatarSeed} size={68} />
+              <Avatar
+                seed={profile.avatarSeed}
+                style={profile.equipped?.avatar}
+                frame={profile.equipped?.frame}
+                size={68}
+              />
               <div className="min-w-0 flex-1">
-                <h2 className="truncate font-display text-[21px] font-extrabold tracking-[-0.025em]">
+                <h2
+                  className={`truncate font-display text-[21px] font-extrabold tracking-[-0.025em] ${
+                    NAME_EFFECT[profile.equipped?.effect ?? "none"] ?? ""
+                  }`}
+                >
                   {profile.anonName}
                 </h2>
                 <p className="font-display text-[11.5px] font-bold uppercase tracking-[0.12em] text-accent">
@@ -211,7 +238,7 @@ export const ProfilePage = () => {
               <div
                 key={item.key}
                 className={`flex items-center gap-3.5 rounded-[16px] px-4 py-3 ${
-                  item.unlocked ? "panel" : "border border-separator"
+                  item.unlocked ? "panel" : "quiet-panel"
                 }`}
               >
                 <IconTile tone={item.unlocked ? "accent" : "neutral"} size={36}>
@@ -300,6 +327,30 @@ export const ProfilePage = () => {
               chevron
               onClick={() => navigate("/leaderboard")}
             />
+            <ListRow
+              leading={
+                <IconTile tone="warn">
+                  <GridIcon size={18} />
+                </IconTile>
+              }
+              title={t("shop.title")}
+              subtitle={t("shop.hint")}
+              chevron
+              onClick={() => navigate("/shop")}
+            />
+            {isAdmin && (
+              <ListRow
+                leading={
+                  <IconTile tone="danger">
+                    <ShieldIcon size={18} />
+                  </IconTile>
+                }
+                title={t("admin.title")}
+                subtitle={t("admin.subtitle")}
+                chevron
+                onClick={() => navigate("/admin")}
+              />
+            )}
             <ListRow
               leading={
                 <IconTile>

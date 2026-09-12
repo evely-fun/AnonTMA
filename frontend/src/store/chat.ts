@@ -30,6 +30,7 @@ interface ChatState {
   searchSeconds: number;
   summary: Summary | null;
 
+  setMode: (mode: "text" | "voice") => void;
   startSearch: (mode: "text" | "voice") => void;
   cancelSearch: () => void;
   matched: (payload: Record<string, unknown>) => void;
@@ -62,7 +63,7 @@ const systemMessage = (text: string): ChatMessage => ({
 
 export const useChat = create<ChatState>((set, get) => ({
   phase: "idle",
-  mode: "text",
+  mode: "voice",
   dialogId: null,
   partnerId: null,
   partner: null,
@@ -77,6 +78,8 @@ export const useChat = create<ChatState>((set, get) => ({
   queue: 0,
   searchSeconds: 0,
   summary: null,
+
+  setMode: (mode) => set({ mode }),
 
   startSearch: (mode) => {
     set({ phase: "searching", mode, searchSeconds: 0, summary: null, messages: [] });

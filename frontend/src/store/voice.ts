@@ -19,6 +19,7 @@ interface VoiceState {
   enable: (level?: NoiseLevel) => Promise<boolean>;
   disable: () => Promise<void>;
   toggleMute: () => void;
+  mute: () => Promise<void>;
   setLevel: (level: NoiseLevel) => void;
   setPreset: (preset: VoicePreset) => void;
   setPeerLevels: (levels: Map<number, number>) => void;
@@ -74,6 +75,13 @@ export const useVoice = create<VoiceState>((set, get) => ({
     voicePipeline.setMuted(muted);
     realtime.send("dialog.signal", { event: muted ? "mic_off" : "mic_on" });
     set({ muted });
+  },
+
+  mute: async () => {
+    if (get().muted) return;
+    voicePipeline.setMuted(true);
+    realtime.send("dialog.signal", { event: "mic_off" });
+    set({ muted: true });
   },
 
   setLevel: (level) => {

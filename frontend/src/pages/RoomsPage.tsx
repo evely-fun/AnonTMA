@@ -103,7 +103,7 @@ export const RoomsPage = () => {
         )}
 
         <m.div
-          className="space-y-2.5 px-4"
+          className="list-window space-y-2.5 px-4"
           variants={listStagger}
           initial="initial"
           animate="animate"
@@ -148,9 +148,9 @@ export const RoomsPage = () => {
                         <span
                           key={member.userId}
                           style={{ marginLeft: index === 0 ? 0 : -9 }}
-                          className="rounded-[8px] ring-2 ring-surface"
+                          className="rounded-full ring-2 ring-[var(--color-surface)]"
                         >
-                          <Avatar seed={member.avatarSeed} size={22} />
+                          <Avatar seed={member.avatarSeed} style={member.avatarStyle} size={22} />
                         </span>
                       ))}
                     </span>

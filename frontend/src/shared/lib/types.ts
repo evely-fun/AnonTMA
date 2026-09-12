@@ -48,6 +48,7 @@ export interface Profile {
   createdAt: string;
   lastSeenAt: string | null;
   referralCode: string;
+  equipped: { avatar: string; frame: string; effect: string };
   palette: string;
   uiLanguage: string;
   premium: { active: boolean; until: string | null };
@@ -72,6 +73,8 @@ export interface Friend {
   id: number;
   anonName: string;
   avatarSeed: string;
+  avatarStyle?: string;
+  frame?: string;
   alias: string | null;
   level: number;
   title: string;
@@ -96,6 +99,9 @@ export interface RoomMember {
   userId: number;
   anonName: string;
   avatarSeed: string;
+  avatarStyle?: string;
+  frame?: string;
+  forcedMute?: boolean;
   level: number;
   role: string;
   muted: boolean;
@@ -150,6 +156,8 @@ export interface LeaderboardEntry {
   userId: number;
   anonName: string;
   avatarSeed: string;
+  avatarStyle?: string;
+  frame?: string;
   level: number;
   value: number;
   isMe: boolean;
@@ -159,6 +167,8 @@ export interface Mask {
   name: string;
   seed: string;
   style: { palette: string; shape: number; pattern: number };
+  avatarStyle?: string;
+  frame?: string;
 }
 
 export interface ChatMessage {
@@ -236,4 +246,73 @@ export interface Product {
   days: number;
   energy: number;
   recurring: boolean;
+}
+
+export interface ShopItem {
+  key: string;
+  category: "avatar" | "frame" | "effect" | "palette" | "boost" | "premium";
+  value: string;
+  price: number;
+  rarity: "base" | "common" | "rare" | "epic" | "legendary";
+  owned: boolean;
+  affordable: boolean;
+  consumable: boolean;
+}
+
+export interface ModerationTarget {
+  userId: number;
+  anonName: string;
+  avatarSeed: string;
+  level: number;
+  createdAt: string | null;
+  trustScore: number;
+  warnings: number;
+  isBanned: boolean;
+  bannedUntil: string | null;
+  mutedUntil: string | null;
+  reportsReceived: number;
+  priorSanctions: number;
+  dialogsTotal: number;
+}
+
+export interface ModerationCase {
+  id: number;
+  state: string;
+  priority: number;
+  reportCount: number;
+  reporterCount: number;
+  reasons: Record<string, number>;
+  lastReportAt: string | null;
+  resolution: string | null;
+  target: ModerationTarget;
+}
+
+export interface EvidenceMessage {
+  id: number;
+  from: number;
+  byTarget: boolean;
+  text: string;
+  at: string | null;
+}
+
+export interface ModerationReport {
+  id: number;
+  reason: string;
+  details: string | null;
+  scope: string;
+  weight: number;
+  createdAt: string | null;
+  evidence: {
+    scope?: string;
+    scopeId?: number | null;
+    messages?: EvidenceMessage[];
+    dialog?: { mode: string; durationSeconds: number; revealed: boolean };
+    note?: string;
+  };
+}
+
+export interface ModerationCaseDetail extends Omit<ModerationCase, "lastReportAt" | "resolution"> {
+  note: string | null;
+  reports: ModerationReport[];
+  history: { action: string; durationHours: number; note: string | null; createdAt: string | null }[];
 }

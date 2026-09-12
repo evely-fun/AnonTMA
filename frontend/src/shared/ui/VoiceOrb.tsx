@@ -1,4 +1,5 @@
 import { m } from "motion/react";
+import { useMemo } from "react";
 import type { ReactNode } from "react";
 
 const TICKS = 56;
@@ -33,6 +34,28 @@ export const VoiceOrb = ({
   const inner = 78;
   const outer = 92;
 
+  const ticks = useMemo(
+    () =>
+      Array.from({ length: TICKS }, (_, index) => {
+        const angle = (index / TICKS) * Math.PI * 2 - Math.PI / 2;
+        const active = index < lit;
+        const reach = active ? outer : inner + 5;
+        return (
+          <line
+            key={index}
+            x1={center + Math.cos(angle) * inner}
+            y1={center + Math.sin(angle) * inner}
+            x2={center + Math.cos(angle) * reach}
+            y2={center + Math.sin(angle) * reach}
+            stroke={active ? colors.ring : "var(--color-separator)"}
+            strokeWidth={active ? 2.6 : 1.6}
+            strokeLinecap="round"
+          />
+        );
+      }),
+    [lit, colors.ring, center, inner, outer],
+  );
+
   return (
     <div
       className="relative flex shrink-0 items-center justify-center"
@@ -61,27 +84,7 @@ export const VoiceOrb = ({
           stroke="var(--color-separator)"
           strokeWidth="1"
         />
-        {Array.from({ length: TICKS }, (_, index) => {
-          const angle = (index / TICKS) * Math.PI * 2 - Math.PI / 2;
-          const active = index < lit;
-          const x1 = center + Math.cos(angle) * inner;
-          const y1 = center + Math.sin(angle) * inner;
-          const x2 = center + Math.cos(angle) * (active ? outer : inner + 5);
-          const y2 = center + Math.sin(angle) * (active ? outer : inner + 5);
-          return (
-            <line
-              key={index}
-              x1={x1}
-              y1={y1}
-              x2={x2}
-              y2={y2}
-              stroke={active ? colors.ring : "var(--color-separator)"}
-              strokeWidth={active ? 2.6 : 1.6}
-              strokeLinecap="round"
-              style={{ transition: "stroke 120ms linear" }}
-            />
-          );
-        })}
+        {ticks}
       </svg>
 
       <m.div
@@ -100,12 +103,13 @@ export const LevelBars = ({ level, bars = 24 }: { level: number; bars?: number }
   <div className="flex h-8 items-center justify-center gap-[3px]">
     {Array.from({ length: bars }, (_, index) => {
       const distance = Math.abs(index - (bars - 1) / 2) / ((bars - 1) / 2);
-      const height = 4 + level * 28 * (1 - distance * 0.7);
+      const reach = Math.max(0.12, Math.min(1, (4 + level * 28 * (1 - distance * 0.7)) / 32));
       return (
         <m.span
           key={index}
-          className="w-[3px] rounded-full bg-accent"
-          animate={{ height: Math.max(4, Math.min(32, height)) }}
+          className="h-8 w-[3px] origin-center rounded-full bg-accent"
+          style={{ willChange: "transform" }}
+          animate={{ scaleY: reach }}
           transition={{ duration: 0.12, ease: "easeOut" }}
         />
       );

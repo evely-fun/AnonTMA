@@ -208,7 +208,7 @@ export const FlappyGame = ({ view }: { view: View }) => {
         }
       />
 
-      <div className="relative flex-1 overflow-hidden rounded-[20px] border border-separator">
+      <div className="panel relative flex-1 overflow-hidden rounded-[20px]">
         <canvas ref={canvasRef} className="block size-full" />
 
         {view.phase === "countdown" && (

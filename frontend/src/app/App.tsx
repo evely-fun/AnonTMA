@@ -8,11 +8,13 @@ import { DailyPage } from "@/pages/DailyPage";
 import { FriendsPage } from "@/pages/FriendsPage";
 import { GamePage } from "@/pages/GamePage";
 import { GamesPage } from "@/pages/GamesPage";
-import { HomePage } from "@/pages/HomePage";
+import { AdminPage } from "@/pages/AdminPage";
+import { HomeDock, HomePage } from "@/pages/HomePage";
 import { LeaderboardPage } from "@/pages/LeaderboardPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { PremiumPage } from "@/pages/PremiumPage";
 import { ProfilePage } from "@/pages/ProfilePage";
+import { ShopPage } from "@/pages/ShopPage";
 import { RoomPage } from "@/pages/RoomPage";
 import { RoomsPage } from "@/pages/RoomsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -23,7 +25,7 @@ import { isTelegram, setHapticsEnabled } from "@/shared/lib/telegram";
 import { applyAppearance, watchScheme, type Palette, type ThemeMode } from "@/shared/lib/theme";
 import { realtime } from "@/shared/lib/socket";
 import { AmbientBackground, Avatar, Button, Toaster } from "@/shared/ui";
-import { BoltIcon, InfinityIcon, MaskIcon } from "@/shared/ui/icons";
+import { BoltIcon, CoinIcon, InfinityIcon, MaskIcon } from "@/shared/ui/icons";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 
@@ -102,32 +104,55 @@ const Failure = ({
   );
 };
 
-const EnergyPill = () => {
+const CurrencyPill = ({
+  label,
+  to,
+  tone,
+  children,
+}: {
+  label: string;
+  to: string;
+  tone: "energy" | "coins";
+  children: React.ReactNode;
+}) => {
   const navigate = useNavigate();
-  const state = useEconomy((store) => store.state);
-  if (!state) return null;
-
   return (
     <m.button
       type="button"
-      onClick={() => navigate("/daily")}
-      whileTap={{ scale: 0.95 }}
+      onClick={() => navigate(to)}
+      whileTap={{ scale: 0.94 }}
       transition={spring.snappy}
       className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 font-display text-[12.5px] font-bold tabular ${
-        state.unlimited ? "bg-accent-quiet text-accent" : "bg-elevated text-label"
+        tone === "energy" ? "bg-warn/12 text-label" : "bg-elevated text-label"
       }`}
-      aria-label="Energy"
+      aria-label={label}
     >
-      <BoltIcon size={13} className={state.unlimited ? "text-accent" : "text-warn"} />
-      {state.unlimited ? <InfinityIcon size={14} /> : state.energy}
+      {children}
     </m.button>
+  );
+};
+
+const Currencies = () => {
+  const state = useEconomy((store) => store.state);
+  const coins = useSession((session) => session.profile?.stats.coins ?? 0);
+
+  return (
+    <>
+      <CurrencyPill label="Energy" to="/daily" tone="energy">
+        <BoltIcon size={13} className={state?.unlimited ? "text-accent" : "text-warn"} />
+        {state?.unlimited ? <InfinityIcon size={14} className="text-accent" /> : (state?.energy ?? 0)}
+      </CurrencyPill>
+      <CurrencyPill label="Coins" to="/shop" tone="coins">
+        <CoinIcon size={13} className="text-secondary" />
+        {coins > 9999 ? `${Math.floor(coins / 1000)}k` : coins}
+      </CurrencyPill>
+    </>
   );
 };
 
 const TopBar = () => {
   const navigate = useNavigate();
   const profile = useSession((state) => state.profile);
-  const presence = useSession((state) => state.presence);
   const connection = useSession((state) => state.connection);
 
   return (
@@ -144,21 +169,26 @@ const TopBar = () => {
           ANTEIKU
         </m.button>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-full bg-elevated px-2.5 py-1.5 font-display text-[12.5px] font-bold tabular">
-            <span
-              className={`size-1.5 rounded-full ${connection === "online" ? "bg-live" : "bg-hint"}`}
-            />
-            {presence.online}
-          </div>
-          <EnergyPill />
+          <Currencies />
           <m.button
             type="button"
             onClick={() => navigate("/profile")}
             whileTap={{ scale: 0.95 }}
             transition={spring.snappy}
+            className="relative"
             aria-label="Profile"
           >
-            <Avatar seed={profile?.avatarSeed ?? "anon"} size={30} />
+            <Avatar
+              seed={profile?.avatarSeed ?? "anon"}
+              style={profile?.equipped?.avatar}
+              frame={profile?.equipped?.frame}
+              size={30}
+            />
+            <span
+              className={`absolute -bottom-0.5 -right-0.5 size-2 rounded-full ring-2 ring-[var(--bar-solid)] ${
+                connection === "online" ? "bg-live" : "bg-hint"
+              }`}
+            />
           </m.button>
         </div>
       </div>
@@ -275,10 +305,13 @@ export const App = () => {
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/daily" element={<DailyPage />} />
                 <Route path="/premium" element={<PremiumPage />} />
+                <Route path="/shop" element={<ShopPage />} />
+                <Route path="/admin" element={<AdminPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="*" element={<HomePage />} />
               </Routes>
             </main>
+            {location.pathname === "/" && <HomeDock />}
             {showChrome && <BottomNav />}
           </m.div>
         )}

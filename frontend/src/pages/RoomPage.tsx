@@ -1,11 +1,12 @@
 import { m } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { AudioSheet } from "@/features/voice/AudioSheet";
+import { useLongPress } from "@/shared/hooks/useLongPress";
 import { useT } from "@/shared/i18n";
-import { listStagger, rise } from "@/shared/lib/motion";
-import { Avatar, Button, IconButton, PushScreen, ScreenHeader, Sheet } from "@/shared/ui";
+import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { Avatar, Button, IconButton, OptionRow, PushScreen, ScreenHeader, Sheet } from "@/shared/ui";
 import {
   ChatIcon,
   CloseIcon,
@@ -18,8 +19,36 @@ import {
 } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
+import { useSocial } from "@/store/social";
+import { toast } from "@/store/ui";
 import { useSession } from "@/store/session";
 import { useVoice } from "@/store/voice";
+
+
+const MemberTile = ({
+  own,
+  speaking,
+  onHold,
+  children,
+}: {
+  own: boolean;
+  speaking: boolean;
+  onHold: () => void;
+  children: ReactNode;
+}) => {
+  const press = useLongPress(onHold);
+  return (
+    <m.div
+      variants={rise}
+      {...(own ? {} : press)}
+      animate={{ scale: speaking ? 1.03 : 1 }}
+      transition={spring.snappy}
+      className="flex select-none flex-col items-center gap-2"
+    >
+      {children}
+    </m.div>
+  );
+};
 
 export const RoomPage = () => {
   const { t } = useT();
@@ -35,6 +64,11 @@ export const RoomPage = () => {
   const sendMessage = useRooms((state) => state.sendMessage);
   const setRoomMuted = useRooms((state) => state.setMuted);
   const raiseHand = useRooms((state) => state.raiseHand);
+  const moderate = useRooms((state) => state.moderate);
+  const kicked = useRooms((state) => state.kicked);
+  const reset = useRooms((state) => state.reset);
+  const reportMember = useRooms((state) => state.reportMember);
+  const addFriend = useSocial((state) => state.sendRequest);
 
   const profile = useSession((state) => state.profile);
   const games = useSession((state) => state.games);
@@ -50,6 +84,7 @@ export const RoomPage = () => {
   const [draft, setDraft] = useState("");
   const [hand, setHand] = useState(false);
   const [audioOpen, setAudioOpen] = useState(false);
+  const [picked, setPicked] = useState<number | null>(null);
 
   useEffect(() => {
     const id = Number(roomId);
@@ -65,12 +100,32 @@ export const RoomPage = () => {
     if (gameId && gameKey) navigate(`/games/${gameKey}`);
   }, [gameId, gameKey, navigate]);
 
+  useEffect(() => {
+    if (kicked) {
+      reset();
+      navigate("/rooms", { replace: true });
+    }
+  }, [kicked, reset, navigate]);
+
   const exit = () => {
     leave();
     navigate("/rooms");
   };
 
   const roomGame = games.find((game) => game.key === room?.gameKey);
+  const target = useMemo(
+    () => members.find((member) => member.userId === picked) ?? null,
+    [members, picked],
+  );
+  const self = members.find((member) => member.userId === profile?.id);
+  const isHost = self?.role === "host";
+  const canModerate = isHost || self?.role === "cohost";
+
+  const act = (action: string) => {
+    if (!target) return;
+    moderate(target.userId, action);
+    setPicked(null);
+  };
 
   return (
     <PushScreen>
@@ -97,13 +152,20 @@ export const RoomPage = () => {
             const level = own ? micLevel : (peerLevels[member.userId] ?? 0);
             const speaking = !member.muted && level > 0.12;
             return (
-              <m.div
+              <MemberTile
                 key={member.userId}
-                variants={rise}
-                className="flex flex-col items-center gap-2"
+                own={own}
+                speaking={speaking}
+                onHold={() => !own && setPicked(member.userId)}
               >
                 <div className="relative">
-                  <Avatar seed={member.avatarSeed} size={64} speaking={speaking} />
+                  <Avatar
+                    seed={member.avatarSeed}
+                    style={member.avatarStyle}
+                    frame={member.frame}
+                    size={64}
+                    speaking={speaking}
+                  />
                   {member.muted && (
                     <span className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-bg text-hint ring-2 ring-bg">
                       <MicOffIcon size={13} />
@@ -118,12 +180,13 @@ export const RoomPage = () => {
                 <span className="w-full truncate text-center font-display text-[12px] font-bold tracking-[-0.01em]">
                   {own ? t("common.you") : member.anonName.split(" ").slice(0, 2).join(" ")}
                 </span>
-                {member.role === "host" && (
+                {member.role !== "member" && (
                   <span className="flex items-center gap-1 font-display text-[9.5px] font-bold uppercase tracking-[0.1em] text-warn">
-                    <CrownIcon size={10} /> {t("rooms.host")}
+                    <CrownIcon size={10} />{" "}
+                    {member.role === "host" ? t("rooms.host") : t("moderation.cohost")}
                   </span>
                 )}
-              </m.div>
+              </MemberTile>
             );
           })}
 
@@ -240,6 +303,60 @@ export const RoomPage = () => {
           >
             <SendIcon size={18} />
           </IconButton>
+        </div>
+      </Sheet>
+
+
+      <Sheet
+        open={target !== null}
+        onClose={() => setPicked(null)}
+        title={target?.anonName ?? ""}
+        description={
+          target
+            ? t(`moderation.${target.role === "host" ? "host" : target.role === "cohost" ? "cohost" : "member"}`)
+            : undefined
+        }
+      >
+        <div className="flex flex-col gap-2 pb-2">
+          {canModerate && target && target.role !== "host" && (
+            <>
+              <OptionRow
+                title={target.forcedMute ? t("moderation.unmute") : t("moderation.mute")}
+                onClick={() => act(target.forcedMute ? "unmute" : "mute")}
+              />
+              {isHost && (
+                <OptionRow
+                  title={
+                    target.role === "cohost" ? t("moderation.demote") : t("moderation.promote")
+                  }
+                  onClick={() => act(target.role === "cohost" ? "demote" : "promote")}
+                />
+              )}
+              {isHost && (
+                <OptionRow title={t("moderation.transfer")} onClick={() => act("transfer")} />
+              )}
+              <OptionRow title={t("moderation.kick")} muted onClick={() => act("kick")} />
+            </>
+          )}
+          <OptionRow
+            title={t("moderation.addFriend")}
+            onClick={() => {
+              if (!target) return;
+              void addFriend(target.userId);
+              setPicked(null);
+              toast(t("friends.sent"));
+            }}
+          />
+          <OptionRow
+            title={t("moderation.report")}
+            muted
+            onClick={() => {
+              if (!target) return;
+              reportMember(target.userId, "abuse");
+              setPicked(null);
+              toast(t("moderation.reported"));
+            }}
+          />
         </div>
       </Sheet>
 

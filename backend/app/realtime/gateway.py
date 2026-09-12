@@ -17,6 +17,7 @@ from app.realtime import matchmaking, presence, rooms, sessions, signaling
 from app.realtime.hub import Connection, hub
 from app.realtime.protocol import decode, error, event
 from app.services import economy
+from app.services.shop import equipped_of
 from app.services.moderation import blocked_ids, looks_like_spam, sanitize_text, submit_report
 from app.services.users import touch_presence
 
@@ -138,6 +139,7 @@ async def _pair(first_id: int, second_id: int, mode: str) -> None:
         dialog = await sessions.create_dialog(db, first_id, second_id, mode, first.language)
         await db.commit()
         dialog_id = dialog.id
+        cosmetics = {first_id: equipped_of(first), second_id: equipped_of(second)}
 
     await signaling.link_peers(first_id, second_id)
     await presence.set_activity(first_id, f"chatting:{mode}")
@@ -152,8 +154,8 @@ async def _pair(first_id: int, second_id: int, mode: str) -> None:
                     "dialogId": dialog_id,
                     "mode": mode,
                     "partnerId": partner,
-                    "partner": sessions.mask_for(dialog_id, partner),
-                    "you": sessions.mask_for(dialog_id, owner),
+                    "partner": sessions.mask_for(dialog_id, partner, cosmetics=cosmetics[partner]),
+                    "you": sessions.mask_for(dialog_id, owner, cosmetics=cosmetics[owner]),
                     "polite": polite,
                     "iceReady": True,
                 },

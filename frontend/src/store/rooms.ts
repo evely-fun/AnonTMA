@@ -19,6 +19,7 @@ interface RoomsState {
   members: RoomMember[];
   messages: RoomChatMessage[];
   joining: boolean;
+  kicked: boolean;
 
   loadList: (filters?: { kind?: string; language?: string }) => Promise<void>;
   create: (payload: Partial<Room> & { title: string }) => Promise<Room | null>;
@@ -32,8 +33,19 @@ interface RoomsState {
   sendMessage: (text: string) => void;
   setMuted: (muted: boolean) => void;
   raiseHand: (hand: boolean) => void;
+  moderate: (userId: number, action: string) => void;
+  reportMember: (userId: number, reason: string) => void;
   reset: () => void;
+  setKicked: (kicked: boolean) => void;
 }
+
+export type RoomAction =
+  | "mute"
+  | "unmute"
+  | "kick"
+  | "promote"
+  | "demote"
+  | "transfer";
 
 export const useRooms = create<RoomsState>((set, get) => ({
   list: [],
@@ -42,6 +54,7 @@ export const useRooms = create<RoomsState>((set, get) => ({
   members: [],
   messages: [],
   joining: false,
+  kicked: false,
 
   loadList: async (filters) => {
     set({ loading: true });
@@ -129,5 +142,22 @@ export const useRooms = create<RoomsState>((set, get) => ({
     }
   },
 
-  reset: () => set({ current: null, members: [], messages: [], joining: false }),
+  moderate: (userId, action) => {
+    const room = get().current;
+    if (room) {
+      realtime.send("room.moderate", { roomId: room.id, userId, action });
+    }
+  },
+
+  reportMember: (userId, reason) => {
+    const room = get().current;
+    if (room) {
+      realtime.send("room.report", { roomId: room.id, userId, reason });
+    }
+  },
+
+  setKicked: (kicked) => set({ kicked }),
+
+  reset: () =>
+    set({ current: null, members: [], messages: [], joining: false, kicked: false }),
 }));

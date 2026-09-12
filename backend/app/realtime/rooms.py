@@ -8,6 +8,7 @@ from app.core.redis_client import get_redis
 from app.db.base import utcnow
 from app.db.models import Room, RoomMember, User, UserStats
 from app.realtime.hub import hub
+from app.services.shop import equipped_of
 
 MEMBERS_KEY = "room:{room_id}:members"
 USER_ROOM_KEY = "room:user:{user_id}"
@@ -60,10 +61,13 @@ async def kick(room_id: int, user_id: int) -> None:
 async def join(session: AsyncSession, room: Room, user: User) -> dict:
     client = get_redis()
     stats = await session.get(UserStats, user.id)
+    cosmetics = equipped_of(user)
     entry = {
         "userId": user.id,
         "anonName": user.anon_name,
         "avatarSeed": user.avatar_seed,
+        "avatarStyle": cosmetics["avatar"],
+        "frame": cosmetics["frame"],
         "level": stats.level if stats else 1,
         "role": "host" if room.owner_id == user.id else "member",
         "muted": False,

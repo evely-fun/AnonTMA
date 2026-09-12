@@ -167,6 +167,23 @@ export const bindRealtime = (): void => {
     useRooms.getState().upsertMember(payload.member as RoomMember);
   });
 
+  realtime.on("room.kicked", () => {
+    haptics.notify("warning");
+    toast(translate("moderation.kicked"), { tone: "danger" });
+    useRooms.getState().setKicked(true);
+  });
+
+  realtime.on("room.moderation", (payload) => {
+    const action = String(payload.action ?? "");
+    if (action === "mute") {
+      haptics.notify("warning");
+      toast(translate("moderation.forceMuted"), { tone: "danger" });
+      void useVoice.getState().mute();
+    } else if (action === "unmute") {
+      toast(translate("moderation.unmutedByHost"), { tone: "success" });
+    }
+  });
+
   realtime.on("room.member_left", (payload) => {
     const userId = Number(payload.userId);
     useRooms.getState().removeMember(userId);

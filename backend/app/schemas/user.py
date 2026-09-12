@@ -76,6 +76,8 @@ class PublicProfileView(ApiModel):
     id: int
     anon_name: str = Field(alias="anonName")
     avatar_seed: str = Field(alias="avatarSeed")
+    avatar_style: str = Field(default="geometric", alias="avatarStyle")
+    frame: str = "none"
     bio: str | None = None
     level: int
     title: str
@@ -118,6 +120,8 @@ class LeaderboardEntry(ApiModel):
     user_id: int = Field(alias="userId")
     anon_name: str = Field(alias="anonName")
     avatar_seed: str = Field(alias="avatarSeed")
+    avatar_style: str = Field(default="geometric", alias="avatarStyle")
+    frame: str = "none"
     level: int
     value: int
     is_me: bool = Field(default=False, alias="isMe")

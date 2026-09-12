@@ -10,6 +10,13 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@dicebear/core": "^9.4.3",
+    "@dicebear/lorelei": "^9.4.2",
+    "@dicebear/notionists": "^9.4.2",
+    "@dicebear/open-peeps": "^9.4.2",
+    "@dicebear/pixel-art": "^9.4.2",
+    "@dicebear/shapes": "^9.4.2",
+    "@dicebear/thumbs": "^9.4.2",
     "@tailwindcss/vite": "^4.3.3",
     "motion": "^11.18.2",
     "react": "^18.3.1",

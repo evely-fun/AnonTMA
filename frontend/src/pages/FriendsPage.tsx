@@ -130,7 +130,13 @@ export const FriendsPage = () => {
                   <m.div key={friend.id} variants={rise} layout>
                     <div className="flex items-center gap-3.5 px-4 py-3.5">
                       <button type="button" onClick={() => setSelected(friend.id)}>
-                        <Avatar seed={friend.avatarSeed} size={42} online={friend.isOnline} />
+                        <Avatar
+                          seed={friend.avatarSeed}
+                          style={friend.avatarStyle}
+                          frame={friend.frame}
+                          size={42}
+                          online={friend.isOnline}
+                        />
                       </button>
                       <button
                         type="button"
@@ -190,7 +196,13 @@ export const FriendsPage = () => {
       <Sheet open={active !== null} onClose={() => setSelected(null)} title={active?.anonName ?? ""}>
         {active && (
           <div className="flex flex-col items-center gap-3 pb-2">
-            <Avatar seed={active.avatarSeed} size={84} online={active.isOnline} />
+            <Avatar
+              seed={active.avatarSeed}
+              style={active.avatarStyle}
+              frame={active.frame}
+              size={84}
+              online={active.isOnline}
+            />
             <p className="font-display text-[12px] font-bold uppercase tracking-[0.12em] text-hint">
               {t(`titles.${active.title}`)} · {t("common.level")} {active.level}
             </p>
