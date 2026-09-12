@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { request } from "@/shared/lib/api";
+import { peerManager } from "@/features/voice/webrtc";
 import { realtime } from "@/shared/lib/socket";
 import type { Friend, FriendRequest } from "@/shared/lib/types";
 
@@ -103,6 +104,7 @@ export const useSocial = create<SocialState>((set, get) => ({
   setActiveCall: (activeCall) => set({ activeCall }),
 
   callFriend: (userId) => {
+    void peerManager.unlock();
     realtime.send("call.invite", { userId, mode: "voice" });
   },
 
@@ -110,6 +112,9 @@ export const useSocial = create<SocialState>((set, get) => ({
     const call = get().incomingCall;
     if (!call) {
       return;
+    }
+    if (accept) {
+      void peerManager.unlock();
     }
     realtime.send("call.answer", { callId: call.callId, accept });
     set({ incomingCall: null });

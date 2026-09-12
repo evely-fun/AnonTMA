@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import { peerManager } from "@/features/voice/webrtc";
 import { request } from "@/shared/lib/api";
 import type { GameMeta, PresenceSnapshot, Profile } from "@/shared/lib/types";
 import type { SocketStatus } from "@/shared/lib/socket";
@@ -40,6 +41,7 @@ export const useSession = create<SessionState>((set, get) => ({
         ),
         request<{ iceServers: RTCIceServer[] }>("/config/ice"),
       ]);
+      peerManager.configure(ice.iceServers ?? []);
       set({
         profile,
         games: bootstrap.games,

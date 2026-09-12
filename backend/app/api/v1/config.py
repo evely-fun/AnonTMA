@@ -8,6 +8,20 @@ from app.realtime import presence
 router = APIRouter(prefix="/config", tags=["config"], dependencies=[Depends(rate_limit_default)])
 
 
+# Phones on mobile carriers sit behind symmetric NAT, where STUN alone never
+# produces a working pair. Open Relay is a free community TURN service and acts
+# as the fallback until a dedicated TURN server is configured.
+FALLBACK_TURN = {
+    "urls": [
+        "turn:openrelay.metered.ca:80",
+        "turn:openrelay.metered.ca:443",
+        "turn:openrelay.metered.ca:443?transport=tcp",
+    ],
+    "username": "openrelayproject",
+    "credential": "openrelayproject",
+}
+
+
 @router.get("/ice")
 async def ice_servers(user: CurrentUser) -> dict:
     servers: list[dict] = [{"urls": settings.stun_urls}]
@@ -19,6 +33,8 @@ async def ice_servers(user: CurrentUser) -> dict:
                 "credential": settings.turn_credential,
             }
         )
+    else:
+        servers.append(dict(FALLBACK_TURN))
     return {"iceServers": servers, "iceTransportPolicy": "all"}
 
 

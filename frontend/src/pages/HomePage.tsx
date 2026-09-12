@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useT } from "@/shared/i18n";
 import { clockFormat } from "@/shared/lib/format";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { peerManager } from "@/features/voice/webrtc";
 import { haptic } from "@/shared/lib/telegram";
 import {
   AnimatedNumber,
@@ -132,6 +133,7 @@ export const HomeDock = () => {
       return;
     }
     haptic.impact("medium");
+    void peerManager.unlock();
     startSearch(mode);
     navigate("/chat");
   };

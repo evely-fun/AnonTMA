@@ -38,7 +38,24 @@ export const bindRealtime = (): void => {
   }
   bound = true;
 
-  realtime.onStatus((status) => useSession.getState().setConnection(status));
+  let wasOnline = false;
+
+  realtime.onStatus((status) => {
+    useSession.getState().setConnection(status);
+    // A backgrounded webview drops the socket. Nothing re-enters the room on
+    // its own, so the roster would stay frozen and the room would look empty.
+    if (status === "online") {
+      if (wasOnline) {
+        const room = useRooms.getState().current;
+        if (room) {
+          realtime.send("room.join", { roomId: room.id });
+        }
+      }
+      wasOnline = true;
+    }
+  });
+
+  peerManager.onBlocked((blocked) => useVoice.getState().setPlaybackBlocked(blocked));
 
   realtime.on("ready", (payload) => {
     useSession.getState().setPresence(payload.presence as PresenceSnapshot);

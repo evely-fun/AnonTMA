@@ -86,6 +86,8 @@ export const ru: Dictionary = {
     end: "Завершить",
     like: "Нравится",
     audioSettings: "Звук",
+    tapToHear: "Нажмите, чтобы слышать",
+    tapToHearHint: "Браузер заблокировал звук до касания",
     revealRequested: "Запрос на раскрытие",
     revealRequestedBody: "Нажмите «Раскрыться», чтобы показать профиль",
     revealed: "Профили раскрыты",

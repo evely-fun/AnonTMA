@@ -10,6 +10,9 @@ from aiogram.types import (
     WebAppInfo,
 )
 
+from urllib.parse import quote
+
+from app.bot.links import INVITE_TEXT, mini_app_url
 from app.core.config import settings
 from app.core.logging import get_logger
 
@@ -35,9 +38,7 @@ _dispatcher: Dispatcher | None = None
 
 
 def app_url(start_param: str | None = None) -> str:
-    username = settings.telegram_bot_username or "your_bot"
-    base = f"https://t.me/{username}/app"
-    return f"{base}?startapp={start_param}" if start_param else base
+    return mini_app_url(start_param)
 
 
 def keyboard(start_param: str | None = None) -> InlineKeyboardMarkup:
@@ -46,7 +47,10 @@ def keyboard(start_param: str | None = None) -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(
                 text="🤝  Invite a friend",
-                url=f"https://t.me/share/url?url={app_url(start_param)}",
+                url=(
+                    "https://t.me/share/url?url="
+                    f"{quote(app_url(start_param), safe='')}&text={quote(INVITE_TEXT)}"
+                ),
             )
         ],
     ]

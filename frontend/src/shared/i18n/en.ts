@@ -86,6 +86,8 @@ export const en = {
     end: "End",
     like: "Like",
     audioSettings: "Audio",
+    tapToHear: "Tap to hear",
+    tapToHearHint: "Your browser blocked the sound until you tap",
     revealRequested: "Reveal requested",
     revealRequestedBody: "Tap reveal to share your profile",
     revealed: "Identities revealed",

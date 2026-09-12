@@ -29,6 +29,9 @@ export class PeerManager {
   private levelListeners = new Set<LevelListener>();
   private levelTimer: number | null = null;
   private outputMuted = new Set<number>();
+  private blockedListeners = new Set<(blocked: boolean) => void>();
+  private playbackBlocked = false;
+  private silence: HTMLAudioElement | null = null;
 
   configure(servers: RTCIceServer[]): void {
     if (servers.length > 0) {
@@ -56,6 +59,54 @@ export class PeerManager {
     return this.context;
   }
 
+  onBlocked(listener: (blocked: boolean) => void): () => void {
+    this.blockedListeners.add(listener);
+    return () => {
+      this.blockedListeners.delete(listener);
+    };
+  }
+
+  private announceBlocked(blocked: boolean): void {
+    if (this.playbackBlocked === blocked) {
+      return;
+    }
+    this.playbackBlocked = blocked;
+    this.blockedListeners.forEach((listener) => listener(blocked));
+  }
+
+  private async play(entry: PeerEntry): Promise<void> {
+    try {
+      await entry.audio.play();
+      this.announceBlocked(false);
+    } catch {
+      // Telegram webviews and iOS Safari refuse playback that did not start
+      // from a user gesture, so the call surfaces a tap to hear affordance.
+      this.announceBlocked(true);
+    }
+  }
+
+  /** Must run inside a user gesture: primes playback and the audio context. */
+  async unlock(): Promise<void> {
+    const context = this.ensureContext();
+    if (context.state === "suspended") {
+      await context.resume().catch(() => undefined);
+    }
+    if (!this.silence) {
+      const element = document.createElement("audio");
+      element.setAttribute("playsinline", "");
+      element.muted = true;
+      element.loop = true;
+      element.style.display = "none";
+      // A one sample silent wav is enough to mark the element as user started.
+      element.src =
+        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
+      document.body.appendChild(element);
+      this.silence = element;
+    }
+    await this.silence.play().catch(() => undefined);
+    await Promise.all([...this.peers.values()].map((entry) => this.play(entry)));
+  }
+
   private createPeer(peerId: number, polite: boolean): PeerEntry {
     const connection = new RTCPeerConnection({
       iceServers: this.iceServers,
@@ -64,10 +115,14 @@ export class PeerManager {
     });
 
     const stream = new MediaStream();
-    const audio = new Audio();
+    const audio = document.createElement("audio");
     audio.autoplay = true;
     audio.srcObject = stream;
-    (audio as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
+    audio.setAttribute("playsinline", "");
+    audio.setAttribute("autoplay", "");
+    audio.style.display = "none";
+    // Some webviews refuse to start playback on a detached element.
+    document.body.appendChild(audio);
 
     const entry: PeerEntry = {
       connection,
@@ -128,7 +183,7 @@ export class PeerManager {
           stream.addTrack(track);
         }
       });
-      void audio.play().catch(() => undefined);
+      void this.play(entry);
       this.attachAnalyser(peerId, entry);
       this.streamListeners.forEach((listener) => listener(peerId, stream));
     };
@@ -225,6 +280,13 @@ export class PeerManager {
     }
   }
 
+  debugPeers(): { peerId: number; connection: RTCPeerConnection }[] {
+    return [...this.peers.entries()].map(([peerId, entry]) => ({
+      peerId,
+      connection: entry.connection,
+    }));
+  }
+
   setPeerMuted(peerId: number, muted: boolean): void {
     const entry = this.peers.get(peerId);
     if (!entry) {
@@ -247,6 +309,9 @@ export class PeerManager {
 
   disconnect(peerId: number): void {
     const entry = this.peers.get(peerId);
+    if (entry) {
+      entry.audio.remove();
+    }
     if (!entry) {
       return;
     }
@@ -330,6 +395,10 @@ export class PeerManager {
 }
 
 export const peerManager = new PeerManager();
+
+if (import.meta.env.DEV) {
+  (window as unknown as { __peerManager?: PeerManager }).__peerManager = peerManager;
+}
 
 realtime.on("rtc.offer", (payload) => {
   void peerManager.handleSignal(

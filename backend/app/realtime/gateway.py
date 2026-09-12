@@ -382,7 +382,11 @@ async def handle_room_join(session: Session, payload: dict, ack: str | None) -> 
         if room is None or not room.is_active:
             await session.send(error("not_found", "Room is closed", ack))
             return
-        if await rooms.population(room_id) >= min(room.max_participants, settings.max_room_participants):
+        members = await rooms.member_map(room_id)
+        rejoining = session.user_id in members
+        if not rejoining and len(members) >= min(
+            room.max_participants, settings.max_room_participants
+        ):
             await session.send(error("room_full", "Room is full", ack))
             return
         if await rooms.is_kicked(room_id, session.user_id):

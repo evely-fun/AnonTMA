@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     telegram_bot_token: str = ""
     telegram_bot_username: str = ""
+    mini_app_short_name: str = ""
     telegram_webhook_secret: str = ""
     public_web_url: str = "http://localhost:5173"
     public_api_url: str = "http://localhost:8000"

@@ -1,7 +1,10 @@
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete, select
 
 from app.api.deps import CurrentUser, SessionDep, rate_limit_default
+from app.bot.links import INVITE_TEXT, mini_app_url
 from app.core.config import settings
 from app.db.models import Friendship, FriendRequest, RequestStatus, User, UserStats
 from app.realtime import presence
@@ -261,11 +264,9 @@ async def toggle_favourite(friend_id: int, user: CurrentUser, session: SessionDe
 
 @router.get("/invite")
 async def invite_link(user: CurrentUser) -> dict:
-    bot = settings.telegram_bot_username or "your_bot"
+    target = mini_app_url(f"ref_{user.referral_code}")
     return {
-        "url": f"https://t.me/{bot}/app?startapp=ref_{user.referral_code}",
-        "shareUrl": (
-            f"https://t.me/share/url?url=https://t.me/{bot}/app?startapp=ref_{user.referral_code}"
-        ),
+        "url": target,
+        "shareUrl": f"https://t.me/share/url?url={quote(target, safe='')}&text={quote(INVITE_TEXT)}",
         "code": user.referral_code,
     }

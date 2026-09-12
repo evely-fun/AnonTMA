@@ -13,6 +13,7 @@ interface VoiceState {
   micLevel: number;
   speaking: boolean;
   permission: "unknown" | "granted" | "denied";
+  playbackBlocked: boolean;
   peerLevels: Record<number, number>;
   error: string | null;
 
@@ -22,6 +23,8 @@ interface VoiceState {
   mute: () => Promise<void>;
   setLevel: (level: NoiseLevel) => void;
   setPreset: (preset: VoicePreset) => void;
+  setPlaybackBlocked: (blocked: boolean) => void;
+  unlockPlayback: () => Promise<void>;
   setPeerLevels: (levels: Map<number, number>) => void;
 }
 
@@ -33,6 +36,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
   micLevel: 0,
   speaking: false,
   permission: "unknown",
+  playbackBlocked: false,
   peerLevels: {},
   error: null,
 
@@ -94,6 +98,13 @@ export const useVoice = create<VoiceState>((set, get) => ({
     set({ preset });
   },
 
+  setPlaybackBlocked: (playbackBlocked) => set({ playbackBlocked }),
+
+  unlockPlayback: async () => {
+    await peerManager.unlock();
+    set({ playbackBlocked: false });
+  },
+
   setPeerLevels: (levels) => {
     const next: Record<number, number> = {};
     levels.forEach((value, key) => {
@@ -102,3 +113,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
     set({ peerLevels: next });
   },
 }));
+
+if (import.meta.env.DEV) {
+  (window as unknown as { __voiceStore?: typeof useVoice }).__voiceStore = useVoice;
+}

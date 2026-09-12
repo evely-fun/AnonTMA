@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useT } from "@/shared/i18n";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { peerManager } from "@/features/voice/webrtc";
 import { haptic } from "@/shared/lib/telegram";
 import {
   Avatar,
@@ -117,7 +118,10 @@ export const RoomsPage = () => {
                 type="button"
                 variants={rise}
                 onPointerDown={() => haptic.select()}
-                onClick={() => navigate(`/rooms/${room.id}`)}
+                onClick={() => {
+                  void peerManager.unlock();
+                  navigate(`/rooms/${room.id}`);
+                }}
                 whileTap={{ scale: 0.985 }}
                 transition={spring.snappy}
                 className="panel flex w-full items-start gap-3.5 rounded-[20px] px-4 py-4 text-left"
