@@ -61,6 +61,7 @@ Everything else is generated or derived.
 | `PUBLIC_API_URL` | your Render URL | `https://anontma-api.onrender.com` |
 | `PUBLIC_WEB_URL` | your Pages URL | `https://anontma.pages.dev` |
 | `CORS_ORIGINS` | same as `PUBLIC_WEB_URL`, comma separated | `https://anontma.pages.dev` |
+| `PAYMENTS_MODE` | `test` or `live` | `test` grants instantly, `live` charges Telegram Stars |
 | `TURN_URLS` | optional, comma separated | `turn:turn.example.com:3478` |
 | `TURN_USERNAME` / `TURN_CREDENTIAL` | optional | for the TURN server |
 
@@ -124,3 +125,28 @@ The API is stateless. Every cross-process message goes through Redis pub/sub, so
 raising the instance count works without changes. Live state is keyed in Redis
 (`presence:*`, `matchmaking:*`, `dialog:*`, `room:*`, `game:*`) and games are
 guarded by per-game locks, so two workers never advance the same match.
+
+
+## Telegram Stars payments
+
+Premium is sold through Telegram Stars and ships in test mode.
+
+- `PAYMENTS_MODE=test` (the default) grants the plan straight away and takes
+  no payment. Use it to try the premium screen, the voice changer and the
+  unlimited energy state.
+- `PAYMENTS_MODE=live` makes the backend ask Telegram for an invoice link and
+  wait for `successful_payment`. Nothing else changes, so switching is a
+  single environment variable on `anontma-api` plus a redeploy.
+
+Before switching to live, open [@BotFather](https://t.me/BotFather), pick the
+bot and confirm that payments are enabled for it. Stars are credited to the
+bot owner's balance. The monthly plan is created as a recurring subscription
+(`subscription_period` of 30 days); the weekly plan and the energy pack are
+one time purchases.
+
+## What the app stores per user
+
+The economy adds a few columns to `users` and `user_stats`. They are created
+automatically on boot: the service compares the models against the live
+schema and adds whatever is missing, so no manual migration step is needed
+when deploying an update.
