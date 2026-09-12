@@ -11,7 +11,7 @@ import { MicIcon, MicOffIcon, PhoneEndIcon, PhoneIcon, SlidersIcon } from "@/sha
 import { useSocial } from "@/store/social";
 import { useVoice } from "@/store/voice";
 
-const ActiveCall = () => {
+const ActiveCall = ({ onOpenAudio }: { onOpenAudio: () => void }) => {
   const { t } = useT();
   const call = useSocial((state) => state.activeCall);
   const friends = useSocial((state) => state.friends);
@@ -20,7 +20,6 @@ const ActiveCall = () => {
   const muted = useVoice((state) => state.muted);
   const toggleMute = useVoice((state) => state.toggleMute);
   const seconds = useElapsed(call?.status === "active");
-  const [audioOpen, setAudioOpen] = useState(false);
 
   if (!call) return null;
   const friend = friends.find((item) => item.id === call.userId);
@@ -47,7 +46,7 @@ const ActiveCall = () => {
         label={t("chat.audioSettings")}
         tone="surface"
         size={38}
-        onClick={() => setAudioOpen(true)}
+        onClick={onOpenAudio}
       >
         <SlidersIcon size={16} />
       </IconButton>
@@ -62,7 +61,6 @@ const ActiveCall = () => {
       <IconButton label={t("chat.end")} tone="danger" size={38} onClick={endCall}>
         <PhoneEndIcon size={16} />
       </IconButton>
-      <AudioSheet open={audioOpen} onClose={() => setAudioOpen(false)} />
     </m.div>
   );
 };
@@ -112,11 +110,15 @@ const IncomingCall = () => {
 export const CallOverlay = () => {
   const activeCall = useSocial((state) => state.activeCall);
   const incomingCall = useSocial((state) => state.incomingCall);
+  const [audioOpen, setAudioOpen] = useState(false);
 
   return (
     <>
-      <AnimatePresence>{activeCall && <ActiveCall />}</AnimatePresence>
+      <AnimatePresence>
+        {activeCall && <ActiveCall onOpenAudio={() => setAudioOpen(true)} />}
+      </AnimatePresence>
       <AnimatePresence>{incomingCall && <IncomingCall />}</AnimatePresence>
+      <AudioSheet open={audioOpen && Boolean(activeCall)} onClose={() => setAudioOpen(false)} />
     </>
   );
 };
