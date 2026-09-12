@@ -127,3 +127,49 @@ export const paletteSwatch = (
     ),
   };
 };
+
+interface RoleColours {
+  accent: string;
+  live: string;
+  warn: string;
+  danger: string;
+  ink: string;
+  surface: string;
+  line: string;
+}
+
+/**
+ * Canvas libraries cannot parse the oklch tokens the stylesheet uses, so the
+ * same values are resolved to hex from the palette geometry on the root.
+ */
+export const roleColours = (): RoleColours => {
+  const computed = getComputedStyle(document.documentElement);
+  const number = (token: string, fallback: number): number => {
+    const value = Number.parseFloat(computed.getPropertyValue(token));
+    return Number.isNaN(value) ? fallback : value;
+  };
+  const dark = (document.documentElement.dataset.theme ?? "dark") !== "light";
+
+  const accentHue = number("--accent-hue", 236);
+  const accentChroma = number("--accent-chroma", 0.115);
+  const groundHue = number("--ground-hue", 265);
+  const groundChroma = number("--ground-chroma", 0.018);
+
+  return {
+    accent: oklchToHex(dark ? 0.72 : 0.55, accentChroma, accentHue),
+    live: dark ? oklchToHex(0.8, 0.15, 150) : oklchToHex(0.56, 0.15, 152),
+    warn: dark ? oklchToHex(0.83, 0.17, 78) : oklchToHex(0.62, 0.15, 62),
+    danger: dark ? oklchToHex(0.66, 0.19, 26) : oklchToHex(0.55, 0.2, 26),
+    ink: dark ? oklchToHex(0.97, 0.005, groundHue) : oklchToHex(0.24, groundChroma * 1.4, groundHue),
+    surface: dark
+      ? oklchToHex(0.215, groundChroma * 1.1, groundHue)
+      : oklchToHex(1, 0, groundHue),
+    line: dark ? "#ffffff14" : "#1a1a1f14",
+  };
+};
+
+/** Appends an 8 bit alpha channel to a #rrggbb value. */
+export const withAlpha = (hex: string, alpha: number): string =>
+  `${hex}${Math.round(Math.min(1, Math.max(0, alpha)) * 255)
+    .toString(16)
+    .padStart(2, "0")}`;

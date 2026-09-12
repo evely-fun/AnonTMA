@@ -5,6 +5,17 @@ import type { ChatMessage, Mask, Reward } from "@/shared/lib/types";
 
 export type ChatPhase = "idle" | "searching" | "connected" | "ended";
 
+export interface RevealedProfile {
+  userId: number;
+  anonName: string;
+  avatarSeed: string;
+  name: string | null;
+  username: string | null;
+  photoUrl: string | null;
+  level: number;
+  friend: boolean;
+}
+
 interface Summary {
   durationSeconds: number;
   reward: Reward;
@@ -24,8 +35,9 @@ interface ChatState {
   partnerTyping: boolean;
   liked: boolean;
   partnerLiked: boolean;
-  revealed: { userId: number; anonName: string; username: string | null } | null;
+  revealed: RevealedProfile | null;
   revealPending: boolean;
+  revealIncoming: boolean;
   queue: number;
   searchSeconds: number;
   summary: Summary | null;
@@ -41,8 +53,11 @@ interface ChatState {
   like: () => void;
   setPartnerLiked: () => void;
   requestReveal: () => void;
-  setRevealed: (payload: { userId: number; anonName: string; username: string | null }) => void;
+  setRevealed: (payload: RevealedProfile) => void;
   setRevealPending: (pending: boolean) => void;
+  setRevealIncoming: (incoming: boolean) => void;
+  acceptReveal: () => void;
+  declineReveal: () => void;
   next: () => void;
   end: () => void;
   report: (reason: string) => void;
@@ -75,6 +90,7 @@ export const useChat = create<ChatState>((set, get) => ({
   partnerLiked: false,
   revealed: null,
   revealPending: false,
+  revealIncoming: false,
   queue: 0,
   searchSeconds: 0,
   summary: null,
@@ -105,6 +121,7 @@ export const useChat = create<ChatState>((set, get) => ({
       partnerLiked: false,
       revealed: null,
       revealPending: false,
+      revealIncoming: false,
       summary: null,
     });
   },
@@ -146,8 +163,19 @@ export const useChat = create<ChatState>((set, get) => ({
     set({ revealPending: true });
   },
 
-  setRevealed: (revealed) => set({ revealed, revealPending: false }),
+  setRevealed: (revealed) => set({ revealed, revealPending: false, revealIncoming: false }),
   setRevealPending: (revealPending) => set({ revealPending }),
+  setRevealIncoming: (revealIncoming) => set({ revealIncoming }),
+
+  acceptReveal: () => {
+    realtime.send("dialog.reveal");
+    set({ revealIncoming: false, revealPending: true });
+  },
+
+  declineReveal: () => {
+    realtime.send("dialog.reveal_decline");
+    set({ revealIncoming: false, revealPending: false });
+  },
 
   next: () => {
     const mode = get().mode;
@@ -179,6 +207,7 @@ export const useChat = create<ChatState>((set, get) => ({
       partnerLiked: false,
       revealed: null,
       revealPending: false,
+      revealIncoming: false,
       summary: null,
       searchSeconds: 0,
     }),

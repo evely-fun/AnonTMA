@@ -6,7 +6,7 @@ import { useT } from "@/shared/i18n";
 import { clockFormat } from "@/shared/lib/format";
 import { pop, spring } from "@/shared/lib/motion";
 import { AudioSheet } from "@/features/voice/AudioSheet";
-import { Avatar, IconButton, VoiceOrb } from "@/shared/ui";
+import { Avatar, IconButton, VoiceBloom } from "@/shared/ui";
 import { MicIcon, MicOffIcon, PhoneEndIcon, PhoneIcon, SlidersIcon } from "@/shared/ui/icons";
 import { useSocial } from "@/store/social";
 import { useVoice } from "@/store/voice";
@@ -85,9 +85,9 @@ const IncomingCall = () => {
         initial="initial"
         animate="animate"
       >
-        <VoiceOrb level={0.35} size={190} tone="live">
-          <Avatar seed={call.from.avatarSeed} size={74} />
-        </VoiceOrb>
+        <VoiceBloom level={0.4} size={200} tone="live">
+          <Avatar seed={call.from.avatarSeed} size={78} />
+        </VoiceBloom>
         <p className="mt-4 font-display text-[20px] font-extrabold tracking-[-0.025em]">
           {call.from.anonName}
         </p>

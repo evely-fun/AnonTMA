@@ -1,4 +1,5 @@
 import { peerManager } from "@/features/voice/webrtc";
+import { celebrate, shower } from "@/shared/lib/celebrate";
 import { translate } from "@/shared/i18n";
 import { haptics } from "@/shared/lib/telegram";
 import { realtime } from "@/shared/lib/socket";
@@ -15,6 +16,16 @@ import { useVoice } from "@/store/voice";
 const rewardToast = (reward: Reward | undefined, title: string): void => {
   if (!reward || (!reward.xp && !reward.coins)) {
     return;
+  }
+  if (reward.levelUp) {
+    shower();
+    haptics.notify("success");
+    toast(translate("progression.levelUp", { level: reward.level ?? 0 }), {
+      description: translate("progression.levelUpBody"),
+      tone: "success",
+    });
+  } else if (reward.achievements?.length) {
+    celebrate("small");
   }
   toast(title, {
     description: `+${reward.xp ?? 0} XP · +${reward.coins ?? 0} ${translate("common.coins")}`,
@@ -122,17 +133,33 @@ export const bindRealtime = (): void => {
   });
 
   realtime.on("dialog.reveal_request", () => {
-    useChat.getState().setRevealPending(true);
-    toast(translate("chat.revealRequested"), { description: translate("chat.revealRequestedBody") });
+    haptics.notify("warning");
+    useChat.getState().setRevealIncoming(true);
+  });
+
+  realtime.on("dialog.reveal_declined", () => {
+    useChat.getState().setRevealIncoming(false);
+    useChat.getState().setRevealPending(false);
+    toast(translate("chat.revealDeclined"));
   });
 
   realtime.on("dialog.revealed", (payload) => {
+    haptics.notify("success");
     useChat.getState().setRevealed({
       userId: Number(payload.userId),
       anonName: String(payload.anonName),
+      avatarSeed: String(payload.avatarSeed ?? ""),
+      name: (payload.name as string | null) ?? null,
       username: (payload.username as string | null) ?? null,
+      photoUrl: (payload.photoUrl as string | null) ?? null,
+      level: Number(payload.level ?? 1),
+      friend: Boolean(payload.friend),
     });
-    toast(translate("chat.revealed"), { tone: "success" });
+    toast(translate("chat.revealed"), {
+      description: payload.friend ? translate("chat.revealedFriend") : undefined,
+      tone: "success",
+    });
+    void useSocial.getState().load();
   });
 
   realtime.on("dialog.ended", (payload) => {

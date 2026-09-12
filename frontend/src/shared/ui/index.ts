@@ -20,4 +20,7 @@ export { Segmented } from "./Segmented";
 export { Sheet } from "./Sheet";
 export { Switch } from "./Switch";
 export { Toaster } from "./Toaster";
+export { RewardBurst, type RewardLine } from "./RewardBurst";
+export { SignalWave } from "./SignalWave";
+export { VoiceBloom } from "./VoiceBloom";
 export { LevelBars, VoiceOrb } from "./VoiceOrb";

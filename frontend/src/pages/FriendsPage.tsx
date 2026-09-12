@@ -1,6 +1,7 @@
 import { AnimatePresence, m } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
+import { useLongPress } from "@/shared/hooks/useLongPress";
 import { useT } from "@/shared/i18n";
 import { relativeTime } from "@/shared/lib/format";
 import { listStagger, rise } from "@/shared/lib/motion";
@@ -11,6 +12,7 @@ import {
   Chip,
   EmptyState,
   IconButton,
+  OptionRow,
   Panel,
   SectionHead,
   Sheet,
@@ -19,6 +21,15 @@ import {
 import { CheckIcon, CloseIcon, FriendsIcon, LinkIcon, PhoneIcon, StarIcon } from "@/shared/ui/icons";
 import { useSocial } from "@/store/social";
 import { toast } from "@/store/ui";
+
+const HoldRow = ({ onHold, children }: { onHold: () => void; children: ReactNode }) => {
+  const press = useLongPress(onHold);
+  return (
+    <div {...press} className="select-none">
+      {children}
+    </div>
+  );
+};
 
 export const FriendsPage = () => {
   const { t } = useT();
@@ -32,6 +43,7 @@ export const FriendsPage = () => {
   const toggleFavourite = useSocial((state) => state.toggleFavourite);
   const inviteLink = useSocial((state) => state.inviteLink);
   const callFriend = useSocial((state) => state.callFriend);
+  const report = useSocial((state) => state.report);
   const [selected, setSelected] = useState<number | null>(null);
 
   useEffect(() => {
@@ -128,6 +140,7 @@ export const FriendsPage = () => {
               <Panel divided>
                 {friends.map((friend) => (
                   <m.div key={friend.id} variants={rise} layout>
+                    <HoldRow onHold={() => setSelected(friend.id)}>
                     <div className="flex items-center gap-3.5 px-4 py-3.5">
                       <button type="button" onClick={() => setSelected(friend.id)}>
                         <Avatar
@@ -167,6 +180,7 @@ export const FriendsPage = () => {
                         </IconButton>
                       )}
                     </div>
+                    </HoldRow>
                   </m.div>
                 ))}
               </Panel>
@@ -218,19 +232,27 @@ export const FriendsPage = () => {
               >
                 {active.isOnline ? t("friends.voiceCall") : t("friends.offline")}
               </Button>
-              <Button full variant="surface" onClick={() => void toggleFavourite(active.id)}>
-                {active.favourite ? t("friends.removeFavourite") : t("friends.addFavourite")}
-              </Button>
-              <Button
-                full
-                variant="quiet"
+              <OptionRow
+                title={active.favourite ? t("friends.removeFavourite") : t("friends.addFavourite")}
+                onClick={() => void toggleFavourite(active.id)}
+              />
+              <OptionRow
+                title={t("moderation.report")}
+                muted
+                onClick={() => {
+                  void report(active.id, "abuse");
+                  setSelected(null);
+                  toast(t("moderation.reported"));
+                }}
+              />
+              <OptionRow
+                title={t("friends.removeFriend")}
+                muted
                 onClick={() => {
                   void remove(active.id);
                   setSelected(null);
                 }}
-              >
-                {t("friends.removeFriend")}
-              </Button>
+              />
             </div>
           </div>
         )}

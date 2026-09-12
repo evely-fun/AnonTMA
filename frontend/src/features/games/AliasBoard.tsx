@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { useT } from "@/shared/i18n";
-import { Button, IconButton, VoiceOrb } from "@/shared/ui";
+import { Button, IconButton, VoiceBloom } from "@/shared/ui";
 import { FlagIcon, SendIcon, WaveIcon } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
@@ -93,9 +93,9 @@ export const AliasBoard = ({ view }: { view: View }) => {
         <>
           <WordCard label={t("games.board.explainWithout")} value={word ?? view.word ?? "…"} />
           <div className="flex justify-center">
-            <VoiceOrb level={micLevel} size={150} tone="live">
+            <VoiceBloom level={micLevel} size={150} tone="live">
               <WaveIcon size={24} />
-            </VoiceOrb>
+            </VoiceBloom>
           </div>
           <Button
             full

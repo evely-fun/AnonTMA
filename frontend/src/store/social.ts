@@ -30,6 +30,7 @@ interface SocialState {
   setIncomingCall: (call: IncomingCall | null) => void;
   setActiveCall: (call: SocialState["activeCall"]) => void;
   callFriend: (userId: number) => void;
+  report: (userId: number, reason: string) => Promise<void>;
   answerCall: (accept: boolean) => void;
   endCall: () => void;
 }
@@ -102,6 +103,13 @@ export const useSocial = create<SocialState>((set, get) => ({
 
   setIncomingCall: (incomingCall) => set({ incomingCall }),
   setActiveCall: (activeCall) => set({ activeCall }),
+
+  report: async (userId, reason) => {
+    await request(`/users/${userId}/report`, {
+      method: "POST",
+      body: { reason, scope: "profile" },
+    }).catch(() => undefined);
+  },
 
   callFriend: (userId) => {
     void peerManager.unlock();

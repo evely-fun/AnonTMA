@@ -10,13 +10,15 @@ from app.core.logging import get_logger
 from app.core.rate_limit import consume
 from app.core.security import TokenError, decode_token
 from app.db.base import utcnow
-from app.db.models import Friendship, Room, User
+from app.db.models import Dialog, Friendship, Room, User
 from app.db.session import SessionLocal
 from app.games import runtime as games
 from app.realtime import matchmaking, presence, rooms, sessions, signaling
 from app.realtime.hub import Connection, hub
 from app.realtime.protocol import decode, error, event
 from app.services import economy
+from app.services.progression import describe
+from app.services.friends import link_friends
 from app.services.shop import equipped_of
 from app.services.moderation import blocked_ids, looks_like_spam, sanitize_text, submit_report
 from app.services.users import touch_presence
@@ -287,11 +289,48 @@ async def handle_dialog_reveal(session: Session, payload: dict, ack: str | None)
         second = await db.get(User, partner_id)
         if first is None or second is None:
             return
-        payload_first = {"userId": second.id, "anonName": second.anon_name, "username": second.username}
-        payload_second = {"userId": first.id, "anonName": first.anon_name, "username": first.username}
 
+        def card(person: User) -> dict:
+            return {
+                "userId": person.id,
+                "anonName": person.anon_name,
+                "avatarSeed": person.avatar_seed,
+                "name": person.first_name,
+                "username": person.username,
+                "photoUrl": person.photo_url,
+                "level": describe(person.stats.xp).level if person.stats else 1,
+            }
+
+        payload_first = card(second)
+        payload_second = card(first)
+
+        # Revealing is a mutual, deliberate act, so the friendship follows.
+        befriended = await link_friends(db, first.id, second.id)
+        dialog = await db.get(Dialog, dialog_id)
+        if dialog is not None:
+            dialog.revealed = True
+        await db.commit()
+
+    payload_first["friend"] = befriended
+    payload_second["friend"] = befriended
     await session.send(event("dialog.revealed", payload_first, ack))
     await hub.send_to_user(partner_id, event("dialog.revealed", payload_second))
+
+
+async def handle_dialog_reveal_decline(session: Session, payload: dict, ack: str | None) -> None:
+    found = await _require_dialog(session)
+    if found is None:
+        return
+    dialog_id, state = found
+    partner_id = sessions.partner_of(state, session.user_id)
+    if partner_id is None:
+        return
+
+    from app.core.redis_client import get_redis
+
+    await get_redis().delete(f"dialog:reveal:{dialog_id}")
+    await hub.send_to_user(partner_id, event("dialog.reveal_declined", {"dialogId": dialog_id}))
+    await session.send(event("dialog.reveal_declined", {"dialogId": dialog_id}, ack))
 
 
 async def _close_dialog(user_id: int, reason: str) -> int | None:
@@ -761,6 +800,7 @@ HANDLERS = {
     "dialog.signal": handle_dialog_signal,
     "dialog.like": handle_dialog_like,
     "dialog.reveal": handle_dialog_reveal,
+    "dialog.reveal_decline": handle_dialog_reveal_decline,
     "dialog.end": handle_dialog_end,
     "dialog.next": handle_dialog_next,
     "dialog.report": handle_dialog_report,

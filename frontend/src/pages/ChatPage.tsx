@@ -6,6 +6,7 @@ import { AudioSheet } from "@/features/voice/AudioSheet";
 import { useElapsed } from "@/shared/hooks/useElapsed";
 import { useT } from "@/shared/i18n";
 import { clockFormat } from "@/shared/lib/format";
+import { openLink } from "@/shared/lib/telegram";
 import { ease, pop, rise } from "@/shared/lib/motion";
 import {
   Avatar,
@@ -15,10 +16,13 @@ import {
   PushScreen,
   ScreenHeader,
   Sheet,
-  VoiceOrb,
+  SignalWave,
+  VoiceBloom,
 } from "@/shared/ui";
 import {
+  ArrowUpRightIcon,
   CheckIcon,
+  ClockIcon,
   CloseIcon,
   FlagIcon,
   HeartIcon,
@@ -28,6 +32,7 @@ import {
   SendIcon,
   SkipIcon,
   SlidersIcon,
+  WaveIcon,
 } from "@/shared/ui/icons";
 import { useChat } from "@/store/chat";
 import { useVoice } from "@/store/voice";
@@ -46,30 +51,17 @@ const Searching = ({ mode, onCancel }: { mode: "text" | "voice"; onCancel: () =>
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, ease: ease.out }}
     >
-      <div className="relative flex size-[168px] items-center justify-center">
-        {[0, 1].map((ring) => (
-          <m.span
-            key={ring}
-            className="absolute inset-0 rounded-full border border-accent/45"
-            initial={{ scale: 0.62, opacity: 0 }}
-            animate={{ scale: [0.62, 1], opacity: [0, 0.85, 0] }}
-            transition={{
-              duration: 2.8,
-              repeat: Infinity,
-              delay: ring * 1.4,
-              ease: ease.out,
-            }}
-          />
-        ))}
-        <span className="absolute inset-[20%] rounded-full border border-accent/20" />
-        <m.span
-          className="relative flex size-[68px] items-center justify-center rounded-full bg-elevated text-accent"
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-        >
-          {mode === "voice" ? <MicIcon size={25} /> : <MaskIcon size={25} />}
-        </m.span>
+      <div className="w-full max-w-[320px]">
+        <SignalWave energy={0.35 + Math.min(0.45, queue * 0.08)} height={132} />
       </div>
+
+      <m.span
+        className="-mt-3 flex size-[54px] items-center justify-center rounded-full bg-elevated text-accent"
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        {mode === "voice" ? <MicIcon size={21} /> : <MaskIcon size={21} />}
+      </m.span>
 
       <div className="flex flex-col items-center gap-1.5">
         <h2 className="font-display text-[20px] font-extrabold tracking-[-0.025em]">
@@ -136,20 +128,21 @@ const VoiceStage = () => {
   const muted = useVoice((state) => state.muted);
   const preset = useVoice((state) => state.preset);
   const permission = useVoice((state) => state.permission);
+  const playbackBlocked = useVoice((state) => state.playbackBlocked);
+  const unlockPlayback = useVoice((state) => state.unlockPlayback);
   const toggleMute = useVoice((state) => state.toggleMute);
   const [sheet, setSheet] = useState(false);
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-7">
-      <VoiceOrb level={micLevel} muted={muted} tone={muted ? "warn" : "live"} size={236}>
+      <VoiceBloom level={micLevel} muted={muted} tone={muted ? "warn" : "live"} size={236}>
         <Avatar
           seed={partner?.seed ?? "anon"}
           style={partner?.avatarStyle}
           frame={partner?.frame}
-          size={86}
-          speaking={!muted && micLevel > 0.12}
+          size={88}
         />
-      </VoiceOrb>
+      </VoiceBloom>
 
       <div className="flex flex-col items-center gap-1.5">
         <h2 className="font-display text-[20px] font-extrabold tracking-[-0.025em]">
@@ -159,6 +152,18 @@ const VoiceStage = () => {
           {clockFormat(seconds)}
         </span>
         {permission === "denied" && <Chip tone="danger">{t("chat.micBlocked")}</Chip>}
+        {playbackBlocked && (
+          <m.button
+            type="button"
+            onClick={() => void unlockPlayback()}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-1.5 rounded-full bg-warn/15 px-3 py-1.5 font-display text-[12px] font-bold text-warn"
+          >
+            <WaveIcon size={13} />
+            {t("chat.tapToHear")}
+          </m.button>
+        )}
         {preset !== "natural" && (
           <Chip tone="accent">{t(`voice.presets.${preset}.name`)}</Chip>
         )}
@@ -288,6 +293,98 @@ const TextStage = () => {
   );
 };
 
+
+const RevealCard = () => {
+  const { t } = useT();
+  const revealed = useChat((state) => state.revealed);
+  const incoming = useChat((state) => state.revealIncoming);
+  const pending = useChat((state) => state.revealPending);
+  const partner = useChat((state) => state.partner);
+  const accept = useChat((state) => state.acceptReveal);
+  const decline = useChat((state) => state.declineReveal);
+
+  if (revealed) {
+    const handle = revealed.username ? `@${revealed.username}` : null;
+    return (
+      <m.button
+        type="button"
+        onClick={() => handle && openLink(`https://t.me/${revealed.username}`)}
+        disabled={!handle}
+        variants={pop}
+        initial="initial"
+        animate="animate"
+        className="panel-hero mx-4 mb-1 flex items-center gap-3 rounded-[18px] px-4 py-3 text-left"
+      >
+        {revealed.photoUrl ? (
+          <img
+            src={revealed.photoUrl}
+            alt=""
+            className="size-11 shrink-0 rounded-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <Avatar seed={revealed.avatarSeed || partner?.seed || "anon"} size={44} />
+        )}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-display text-[15px] font-extrabold tracking-[-0.015em]">
+            {revealed.name || revealed.anonName}
+          </span>
+          <span className="mt-0.5 flex items-center gap-2 text-[12.5px]">
+            {handle && <span className="truncate text-accent">{handle}</span>}
+            <span className="shrink-0 font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-hint">
+              {t("common.level")} {revealed.level}
+            </span>
+          </span>
+        </span>
+        {revealed.friend && <CheckIcon size={17} className="shrink-0 text-live" />}
+        {handle && <ArrowUpRightIcon size={15} className="shrink-0 text-hint" />}
+      </m.button>
+    );
+  }
+
+  if (incoming) {
+    return (
+      <m.div
+        variants={pop}
+        initial="initial"
+        animate="animate"
+        className="panel-hero mx-4 mb-1 rounded-[18px] px-4 py-3.5"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-quiet text-accent">
+            <MaskIcon size={19} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display text-[14.5px] font-bold tracking-[-0.01em]">
+              {partner?.name ?? t("chat.stranger")} {t("chat.revealAsk")}
+            </p>
+            <p className="mt-0.5 text-[12px] leading-snug text-hint">{t("chat.revealAskBody")}</p>
+          </div>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <Button full size="sm" onClick={accept}>
+            {t("chat.revealAccept")}
+          </Button>
+          <Button full size="sm" variant="surface" onClick={decline}>
+            {t("chat.revealDecline")}
+          </Button>
+        </div>
+      </m.div>
+    );
+  }
+
+  if (pending) {
+    return (
+      <div className="mx-4 mb-1 flex items-center justify-center gap-2 rounded-[16px] bg-elevated/60 px-4 py-2.5 text-[12.5px] text-hint">
+        <ClockIcon size={14} />
+        {t("chat.revealWaiting")}
+      </div>
+    );
+  }
+
+  return null;
+};
+
 export const ChatPage = () => {
   const { t } = useT();
   const navigate = useNavigate();
@@ -296,7 +393,6 @@ export const ChatPage = () => {
   const partner = useChat((state) => state.partner);
   const liked = useChat((state) => state.liked);
   const partnerLiked = useChat((state) => state.partnerLiked);
-  const revealed = useChat((state) => state.revealed);
   const cancelSearch = useChat((state) => state.cancelSearch);
   const like = useChat((state) => state.like);
   const next = useChat((state) => state.next);
@@ -357,19 +453,7 @@ export const ChatPage = () => {
 
         {phase === "connected" && (
           <>
-            {revealed && (
-              <div className="mx-4 mb-1 flex items-center gap-3 rounded-[16px] bg-surface px-4 py-3">
-                <Avatar seed={partner?.seed ?? "anon"} style={partner?.avatarStyle} size={34} />
-                <div className="min-w-0">
-                  <p className="truncate font-display text-[13.5px] font-bold">
-                    {revealed.anonName}
-                  </p>
-                  {revealed.username && (
-                    <p className="text-[12px] text-accent">@{revealed.username}</p>
-                  )}
-                </div>
-              </div>
-            )}
+            <RevealCard />
 
             {mode === "voice" ? <VoiceStage /> : <TextStage />}
 

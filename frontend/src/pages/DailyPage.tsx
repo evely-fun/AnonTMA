@@ -1,114 +1,29 @@
-import { m, useAnimationControls } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { m } from "motion/react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useBackButton } from "@/shared/hooks/useBackButton";
 import { useT } from "@/shared/i18n";
 import { clockFormat } from "@/shared/lib/format";
-import { ease, listStagger, rise, spring } from "@/shared/lib/motion";
+import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { celebrate } from "@/shared/lib/celebrate";
 import { haptic } from "@/shared/lib/telegram";
-import type { WheelPrize } from "@/shared/lib/types";
-import { Button, Meter, Panel, PushScreen, ScreenHeader, SectionHead } from "@/shared/ui";
-import { BoltIcon, CheckIcon, CrownIcon, FlameIcon, SparkleIcon } from "@/shared/ui/icons";
+import {
+  Button,
+  Meter,
+  Panel,
+  PushScreen,
+  RewardBurst,
+  ScreenHeader,
+  SectionHead,
+  type RewardLine,
+} from "@/shared/ui";
+import { BoltIcon, CheckIcon, CoinIcon, CrownIcon, FlameIcon, SparkleIcon } from "@/shared/ui/icons";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 
-const SIZE = 244;
-const RADIUS = SIZE / 2;
-
-const polar = (angle: number, radius: number) => {
-  const radians = ((angle - 90) * Math.PI) / 180;
-  return { x: RADIUS + radius * Math.cos(radians), y: RADIUS + radius * Math.sin(radians) };
-};
-
-const segmentPath = (start: number, end: number): string => {
-  const outer = RADIUS - 4;
-  const inner = RADIUS - 62;
-  const a = polar(start, outer);
-  const b = polar(end, outer);
-  const c = polar(end, inner);
-  const d = polar(start, inner);
-  return `M ${a.x} ${a.y} A ${outer} ${outer} 0 0 1 ${b.x} ${b.y} L ${c.x} ${c.y} A ${inner} ${inner} 0 0 0 ${d.x} ${d.y} Z`;
-};
-
-const prizeLabel = (prize: WheelPrize): string =>
-  prize.kind === "premium" ? `${prize.amount}d` : String(prize.amount);
-
-const Wheel = ({
-  prizes,
-  rotation,
-  spins,
-}: {
-  prizes: WheelPrize[];
-  rotation: ReturnType<typeof useAnimationControls>;
-  spins: number;
-}) => {
-  const step = 360 / Math.max(prizes.length, 1);
-
-  return (
-    <div className="relative mx-auto" style={{ width: SIZE, height: SIZE }}>
-      <span className="absolute left-1/2 top-[-3px] z-10 block size-0 -translate-x-1/2 border-x-[7px] border-t-[12px] border-x-transparent border-t-accent" />
-      <m.svg
-        width={SIZE}
-        height={SIZE}
-        viewBox={`0 0 ${SIZE} ${SIZE}`}
-        animate={rotation}
-        style={{ originX: 0.5, originY: 0.5 }}
-      >
-        <circle cx={RADIUS} cy={RADIUS} r={RADIUS - 2} className="fill-surface stroke-separator" />
-        {prizes.map((prize, index) => {
-          const start = index * step;
-          const middle = start + step / 2;
-          const label = polar(middle, RADIUS - 33);
-          const highlight = index % 2 === 0;
-          return (
-            <g key={prize.key}>
-              <path
-                d={segmentPath(start, start + step)}
-                className={highlight ? "fill-elevated" : "fill-transparent"}
-              />
-              <line
-                x1={polar(start, RADIUS - 62).x}
-                y1={polar(start, RADIUS - 62).y}
-                x2={polar(start, RADIUS - 4).x}
-                y2={polar(start, RADIUS - 4).y}
-                className="stroke-separator"
-                strokeWidth={1}
-              />
-              <text
-                x={label.x}
-                y={label.y}
-                textAnchor="middle"
-                dominantBaseline="central"
-                className={`font-display text-[13px] font-extrabold ${
-                  prize.kind === "premium"
-                    ? "fill-[var(--color-accent)]"
-                    : prize.kind === "energy"
-                      ? "fill-[var(--color-warn)]"
-                      : "fill-[var(--color-secondary)]"
-                }`}
-              >
-                {prizeLabel(prize)}
-              </text>
-            </g>
-          );
-        })}
-        <circle cx={RADIUS} cy={RADIUS} r={RADIUS - 66} className="fill-bg stroke-separator" />
-      </m.svg>
-      <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-        <span
-          className={`font-display text-[30px] font-extrabold leading-none tracking-[-0.04em] tabular ${
-            spins > 0 ? "text-accent" : "text-hint"
-          }`}
-        >
-          {spins}
-        </span>
-        <SparkleIcon size={14} className={spins > 0 ? "text-accent" : "text-hint"} />
-      </span>
-    </div>
-  );
-};
+import { PrizeWheel, type PrizeWheelHandle } from "@/features/rewards/PrizeWheel";
 
 export const DailyPage = () => {
   const { t } = useT();
@@ -119,9 +34,8 @@ export const DailyPage = () => {
   const spin = useEconomy((store) => store.spin);
   const claimStreak = useEconomy((store) => store.claimStreak);
   const refreshProfile = useSession((session) => session.refreshProfile);
-  const rotation = useAnimationControls();
-  const [turns, setTurns] = useState(0);
-  const [won, setWon] = useState<string | null>(null);
+  const wheelRef = useRef<PrizeWheelHandle | null>(null);
+  const [burst, setBurst] = useState<{ title: string; lines: RewardLine[] } | null>(null);
 
   useBackButton("/");
 
@@ -139,28 +53,30 @@ export const DailyPage = () => {
   const onSpin = async () => {
     if (spinning || spins <= 0 || prizes.length === 0) return;
     haptic.impact("medium");
-    setWon(null);
+    setBurst(null);
     const result = await spin();
     if (!result) {
       toast(t("errors.generic"), { tone: "danger" });
       return;
     }
     const index = Math.max(0, prizes.findIndex((prize) => prize.key === result.key));
-    const step = 360 / prizes.length;
-    const target = turns + 5 * 360 + (360 - (index * step + step / 2));
-    setTurns(target);
-    await rotation.start({
-      rotate: target,
-      transition: { duration: 3.4, ease: [0.16, 0.9, 0.2, 1] },
-    });
+    await wheelRef.current?.spinTo(index);
     haptic.notify("success");
-    const label =
-      result.kind === "premium"
-        ? t("economy.premiumDays", { count: result.amount })
-        : result.kind === "energy"
-          ? t("economy.energyAmount", { count: result.amount })
-          : t("economy.coinsAmount", { count: result.amount });
-    setWon(label);
+    celebrate(result.kind === "premium" ? "big" : "small");
+    const icon =
+      result.kind === "premium" ? <CrownIcon size={18} /> :
+      result.kind === "energy" ? <BoltIcon size={18} /> : <CoinIcon size={18} />;
+    setBurst({
+      title: t("economy.youWon"),
+      lines: [
+        {
+          icon,
+          label: t(`economy.${result.kind === "premium" ? "premiumTitle" : result.kind === "energy" ? "energy" : "coins"}`),
+          value: result.kind === "premium" ? `+${result.amount} d` : `+${result.amount}`,
+          tone: result.kind === "premium" ? "accent" : result.kind === "energy" ? "warn" : "live",
+        },
+      ],
+    });
     void refreshProfile();
   };
 
@@ -171,10 +87,20 @@ export const DailyPage = () => {
       return;
     }
     haptic.notify("success");
-    toast(t("economy.claimedToast"), {
-      description: `+${reward.coins} ${t("common.coins")} · +${reward.energy} ${t("common.energy")}`,
-      tone: "success",
-    });
+    celebrate(reward.premiumDays > 0 ? "big" : "small");
+    const lines: RewardLine[] = [
+      { icon: <CoinIcon size={18} />, label: t("common.coins"), value: `+${reward.coins}`, tone: "live" },
+      { icon: <BoltIcon size={18} />, label: t("common.energy"), value: `+${reward.energy}`, tone: "warn" },
+    ];
+    if (reward.premiumDays > 0) {
+      lines.push({
+        icon: <CrownIcon size={18} />,
+        label: t("common.premium"),
+        value: `+${reward.premiumDays} d`,
+        tone: "accent",
+      });
+    }
+    setBurst({ title: t("economy.claimedToast"), lines });
     void refreshProfile();
   };
 
@@ -205,19 +131,35 @@ export const DailyPage = () => {
           />
           <div className="px-4">
             <div className="panel rounded-[24px] px-4 py-6">
-              <Wheel prizes={prizes} rotation={rotation} spins={spins} />
+              <PrizeWheel
+                prizes={prizes}
+                handleRef={wheelRef}
+                spins={spins}
+                spinsLabel={t("economy.spinsLeft")}
+              />
+
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+                {[
+                  { kind: "energy", icon: <BoltIcon size={13} />, tone: "text-warn" },
+                  { kind: "coins", icon: <CoinIcon size={13} />, tone: "text-live" },
+                  { kind: "premium", icon: <CrownIcon size={13} />, tone: "text-accent" },
+                ].map((group) => {
+                  const amounts = prizes
+                    .filter((prize) => prize.kind === group.kind)
+                    .map((prize) => (group.kind === "premium" ? `${prize.amount}d` : prize.amount));
+                  if (amounts.length === 0) return null;
+                  return (
+                    <span key={group.kind} className="flex items-center gap-1.5">
+                      <span className={group.tone}>{group.icon}</span>
+                      <span className="font-display text-[11.5px] font-bold text-hint tabular">
+                        {amounts.join(" · ")}
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
 
               <div className="mt-6 flex flex-col items-center gap-2">
-                {won && (
-                  <m.p
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, ease: ease.out }}
-                    className="font-display text-[15px] font-extrabold tracking-[-0.02em] text-accent"
-                  >
-                    {t("economy.youWon")} · {won}
-                  </m.p>
-                )}
                 <Button
                   full
                   size="lg"
@@ -315,6 +257,13 @@ export const DailyPage = () => {
           </button>
         </m.section>
       </m.div>
+
+      <RewardBurst
+        open={burst !== null}
+        title={burst?.title ?? ""}
+        lines={burst?.lines ?? []}
+        onClose={() => setBurst(null)}
+      />
     </PushScreen>
   );
 };

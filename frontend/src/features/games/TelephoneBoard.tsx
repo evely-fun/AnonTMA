@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { useT } from "@/shared/i18n";
-import { Button, IconButton, VoiceOrb } from "@/shared/ui";
+import { Button, IconButton, VoiceBloom } from "@/shared/ui";
 import { MicIcon, SendIcon, WaveIcon } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
@@ -89,9 +89,9 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
         <>
           <WordCard label={t("games.board.sayOutLoud")} value={phrase ?? "…"} />
           <div className="flex justify-center">
-            <VoiceOrb level={micLevel} size={170} tone="warn">
+            <VoiceBloom level={micLevel} size={170} tone="warn">
               <MicIcon size={26} />
-            </VoiceOrb>
+            </VoiceBloom>
           </div>
           <Button full onClick={() => act("done_speaking", {})}>
             {t("games.board.iSaidIt")}
@@ -105,9 +105,9 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
               : t("games.board.typeWhatHeard")}
           </p>
           <div className="flex justify-center">
-            <VoiceOrb level={0.25} size={150} tone="live" pulse={view.phase === "speak"}>
+            <VoiceBloom level={0.3} size={150} tone="live">
               <WaveIcon size={24} />
-            </VoiceOrb>
+            </VoiceBloom>
           </div>
           {view.phase === "write" && (
             <div className="flex items-center gap-2">
