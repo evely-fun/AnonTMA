@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     turn_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
     turn_username: str = ""
     turn_credential: str = ""
+    # Set this instead of a username and password for a coturn running in
+    # shared secret mode, which is what use-auth-secret deployments need.
+    turn_secret: str = ""
     stun_urls: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: [
             "stun:stun.l.google.com:19302",

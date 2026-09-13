@@ -89,22 +89,31 @@ export class PeerManager {
     if (!transceiver) {
       return;
     }
+    this.note(
+      `attachLocalTrack track=${Boolean(this.localTrack)} tx=${entry.connection.getTransceivers().length} mid=${transceiver.mid} dir=${transceiver.direction}`,
+    );
     void transceiver.sender.replaceTrack(this.localTrack).catch(() => undefined);
-    const wanted = this.localTrack ? "sendrecv" : "recvonly";
-    if (transceiver.direction !== wanted) {
-      transceiver.direction = wanted;
+    // The direction stays sendrecv for the life of the call. Dropping it to
+    // recvonly when the mic goes away would renegotiate the m line and invite
+    // the same duplicate line the constructor comment describes; a muted call
+    // is a sender with no track, not a changed direction.
+    if (transceiver.direction !== "sendrecv") {
+      transceiver.direction = "sendrecv";
     }
   }
 
   private audioTransceiver(entry: PeerEntry): RTCRtpTransceiver | null {
-    const transceivers = entry.connection.getTransceivers();
+    const transceivers = entry.connection
+      .getTransceivers()
+      .filter((item) => item.currentDirection !== "stopped");
+    // The one that can actually send comes first. Picking by "has an audio
+    // track" would happily return a receive only line and quietly drop the
+    // microphone into a transceiver that never transmits.
     return (
       transceivers.find(
-        (item) =>
-          item.sender.track?.kind === "audio" ||
-          item.receiver.track?.kind === "audio" ||
-          item.mid === "0",
+        (item) => item.direction === "sendrecv" || item.direction === "sendonly",
       ) ??
+      transceivers.find((item) => item.receiver.track?.kind === "audio") ??
       transceivers[0] ??
       null
     );
@@ -148,7 +157,21 @@ export class PeerManager {
     this.peers.forEach((entry) => this.attachAnalyser(entry));
   }
 
+  trace: string[] = [];
+
+  /** A short negotiation log, kept only in development for diagnosing calls. */
+  private note(line: string): void {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+    this.trace.push(`${Date.now() % 100000} ${line}`);
+    if (this.trace.length > 80) {
+      this.trace.shift();
+    }
+  }
+
   private createPeer(peerId: number, polite: boolean): PeerEntry {
+    this.note(`createPeer ${peerId} polite=${polite} localTrack=${Boolean(this.localTrack)}`);
     const connection = new RTCPeerConnection({
       iceServers: this.config.iceServers,
       iceTransportPolicy: this.config.iceTransportPolicy,
@@ -184,16 +207,34 @@ export class PeerManager {
       outputMuted: false,
     };
 
-    // One audio transceiver, always. Adding a track later would open a second
-    // m line and the answer would never carry the microphone.
-    const transceiver = connection.addTransceiver("audio", {
-      direction: this.localTrack ? "sendrecv" : "recvonly",
-    });
-    if (this.localTrack) {
-      void transceiver.sender.replaceTrack(this.localTrack).catch(() => undefined);
+    // Only the side that opens the call lays out the session. The polite side
+    // used to create a transceiver of its own as well, and applying the
+    // incoming offer then left it with two: one carrying the offer and its own
+    // spare, which the answer turned into a second half duplex m line. The
+    // microphone could land on either of them, and when it landed on the
+    // receive only one the other side heard nothing at all while ICE stayed
+    // connected and the stats looked perfectly healthy.
+    //
+    // The polite side gets its transceiver from the offer instead, so there is
+    // exactly one audio m line and it is sendrecv for the life of the call. A
+    // sendrecv transceiver with no track sends nothing until replaceTrack
+    // fills it, and replaceTrack never renegotiates.
+    if (!polite) {
+      const transceiver = connection.addTransceiver("audio", { direction: "sendrecv" });
+      if (this.localTrack) {
+        void transceiver.sender.replaceTrack(this.localTrack).catch(() => undefined);
+      }
     }
 
     connection.onnegotiationneeded = () => {
+      // Only the impolite peer opens a session. Both sides build their peer the
+      // moment the roster lands, so if both offered we would collide on every
+      // single call, and resolving that collision is what left the session with
+      // two half duplex m lines rather than one duplex line. Once a remote
+      // description exists the polite side may renegotiate normally.
+      if (entry.polite && !connection.currentRemoteDescription) {
+        return;
+      }
       this.enqueue(entry, () => this.offer(peerId, entry));
     };
 
@@ -269,6 +310,7 @@ export class PeerManager {
     }
     try {
       entry.makingOffer = true;
+      this.note(`offer ${peerId} tx=${connection.getTransceivers().length}`);
       const description = await connection.createOffer();
       if (connection.signalingState !== "stable") {
         return;
@@ -341,7 +383,24 @@ export class PeerManager {
   }
 
   connect(peerId: number, polite: boolean): void {
-    if (this.peers.has(peerId) || peerId <= 0) {
+    if (peerId <= 0) {
+      return;
+    }
+    const existing = this.peers.get(peerId);
+    if (existing) {
+      // The server decides who is polite, and that decision is the only thing
+      // keeping both ends from offering at once. A peer built from an early
+      // signal has to guess the role, and an ICE candidate routinely beats the
+      // roster message, so the guess was landing on both sides at once: either
+      // both polite and nobody opened the call, or both impolite and the
+      // collision left two half duplex m lines instead of one duplex line.
+      // The real answer overwrites the guess as soon as it arrives.
+      if (existing.polite !== polite) {
+        existing.polite = polite;
+        if (!polite && !existing.connection.currentRemoteDescription) {
+          this.enqueue(existing, () => this.offer(peerId, existing));
+        }
+      }
       return;
     }
     this.createPeer(peerId, polite);
@@ -388,6 +447,9 @@ export class PeerManager {
         // is broken on mobile Safari, which is what the Telegram iOS webview
         // runs on, and would strand the call in have-local-offer.
         await connection.setRemoteDescription(description);
+        this.note(
+          `setRemote ${description.type} ${peerId} tx=${connection.getTransceivers().length}`,
+        );
         entry.settingRemoteAnswer = false;
 
         for (const candidate of entry.pendingCandidates.splice(0)) {
