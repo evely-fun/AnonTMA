@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AudioSheet } from "@/features/voice/AudioSheet";
 import { useLongPress } from "@/shared/hooks/useLongPress";
 import { useT } from "@/shared/i18n";
-import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { listStagger, spring } from "@/shared/lib/motion";
 import { Avatar, Button, IconButton, OptionRow, PushScreen, ScreenHeader, Sheet } from "@/shared/ui";
 import {
   ChatIcon,
@@ -39,9 +39,12 @@ const MemberTile = ({
   const press = useLongPress(onHold);
   return (
     <m.div
-      variants={rise}
       {...(own ? {} : press)}
-      animate={{ scale: speaking ? 1.03 : 1 }}
+      // An explicit animate object opts the element out of the parent's
+      // variant, so combining the two left every tile stuck at the variant's
+      // initial opacity of zero and the room looked empty.
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0, scale: speaking ? 1.03 : 1 }}
       transition={spring.snappy}
       className="flex select-none flex-col items-center gap-2"
     >
