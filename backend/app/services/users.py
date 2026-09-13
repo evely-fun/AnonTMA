@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.telegram_auth import TelegramUser
 from app.db.base import utcnow
-from app.db.models import User, UserStats
+from app.db.models import Friendship, User, UserStats
+from app.realtime.hub import hub
 from app.services import economy, identity
 from app.services.achievements import evaluate
 from app.services.progression import describe
@@ -64,17 +65,51 @@ async def ensure_user(
         user.photo_url = profile.photo_url
         user.is_premium = profile.is_premium
 
-    if created and start_param and start_param.startswith("ref_"):
+    # Opening someone's invitation link is the whole consent step, so it makes
+    # the two of you friends. This used to fire only for brand new accounts and
+    # only paid the inviter, which is why sending a friend your link appeared to
+    # do nothing: they arrived, nobody's list changed. It now works for anyone
+    # following the link, while the referral bonus stays a one time thing for a
+    # genuinely new account.
+    if start_param and start_param.startswith("ref_"):
         inviter = await get_by_referral(session, start_param[4:])
         if inviter and inviter.id != user.id:
-            user.referred_by_id = inviter.id
-            inviter_stats = await session.get(UserStats, inviter.id)
-            if inviter_stats:
-                inviter_stats.coins += 100
-                inviter_stats.xp += 50
+            if created:
+                user.referred_by_id = inviter.id
+                inviter_stats = await session.get(UserStats, inviter.id)
+                if inviter_stats:
+                    inviter_stats.coins += 100
+                    inviter_stats.xp += 50
+            linked = await link_friends(session, inviter.id, user.id)
+            if linked:
+                # The inviter is usually sitting in the app when this happens,
+                # so their list is told rather than left stale until a reload.
+                await hub.send_to_user(
+                    inviter.id, {"type": "friend.accepted", "payload": {"userId": user.id}}
+                )
 
     await touch_presence(session, user)
     return user
+
+
+async def link_friends(session: AsyncSession, left_id: int, right_id: int) -> bool:
+    """Make two users friends both ways. Returns whether anything was added."""
+    added = False
+    for owner_id, other_id in ((left_id, right_id), (right_id, left_id)):
+        existing = await session.execute(
+            select(Friendship.id).where(
+                (Friendship.user_id == owner_id) & (Friendship.friend_id == other_id)
+            )
+        )
+        if existing.first() is not None:
+            continue
+        session.add(Friendship(user_id=owner_id, friend_id=other_id))
+        stats = await session.get(UserStats, owner_id)
+        if stats:
+            stats.friends_count += 1
+        added = True
+    await session.flush()
+    return added
 
 
 async def touch_presence(session: AsyncSession, user: User) -> None:

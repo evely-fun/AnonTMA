@@ -54,7 +54,11 @@ async def refresh(payload: RefreshRequest, session: SessionDep) -> TokenPair:
 
 
 @router.post("/dev", response_model=TokenPair, dependencies=[Depends(rate_limit_auth)])
-async def development_login(tg_id: int, session: SessionDep) -> TokenPair:
+async def development_login(
+    tg_id: int, session: SessionDep, start_param: str | None = None
+) -> TokenPair:
+    """Mirrors the Telegram login, start parameter included, so referral and
+    deep link flows can be exercised without a real client."""
     if settings.is_production:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Not available")
     profile = TelegramUser(
@@ -66,7 +70,7 @@ async def development_login(tg_id: int, session: SessionDep) -> TokenPair:
         is_premium=False,
         photo_url=None,
     )
-    user = await ensure_user(session, profile)
+    user = await ensure_user(session, profile, start_param)
     await session.flush()
     return _issue(user.id)
 
