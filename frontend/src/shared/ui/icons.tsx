@@ -101,16 +101,20 @@ export const SparkleIcon = (p: IconProps) => <Sparkles {...p} />;
 export const CrownIcon = (p: IconProps) => <Crown {...p} />;
 export const BoltIcon = (p: IconProps) => <Zap {...p} />;
 /** Lucide's stacked coins turn to mush at the 13px used in the header chips. */
+/**
+ * The coin reduced to a mark, for the places a number sits inline and an
+ * illustration would be unreadable. A dollar sign in a circle was a different
+ * currency altogether; this is just a coin, and the mask lives on the drawn
+ * one that shows the balance.
+ */
 export const CoinIcon = ({ size = 24, ...rest }: IconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" {...rest}>
-    <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="2" />
-    <path
-      d="M12 7.6v8.8M14.4 9.4a2.6 2.6 0 0 0-2.4-1.3c-1.4 0-2.5.9-2.5 2s1.1 1.8 2.5 1.8 2.5.7 2.5 1.8-1.1 2-2.5 2a2.6 2.6 0 0 1-2.4-1.3"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <circle cx="12" cy="12" r="8.6" stroke="currentColor" strokeWidth="1.9" />
+    {/* Two concentric rings and nothing else. Anything drawn inside the coin,
+        a mask included, turns to mush at the thirteen pixels this mark is
+        actually used at, so the detail is left to the illustrated coin and the
+        mark only has to read as money. */}
+    <circle cx="12" cy="12" r="4.4" stroke="currentColor" strokeWidth="1.6" />
   </svg>
 );
 /**
