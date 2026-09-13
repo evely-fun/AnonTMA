@@ -34,6 +34,7 @@ import { useChat } from "@/store/chat";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { useSocial } from "@/store/social";
+import { useVoice } from "@/store/voice";
 
 const RING = 34;
 const CIRCUMFERENCE = 2 * Math.PI * RING;
@@ -134,6 +135,11 @@ export const HomeDock = () => {
     }
     haptic.impact("medium");
     void peerManager.unlock();
+    // Warming the microphone here means the stream is ready by the time a match
+    // lands, instead of racing the first offer.
+    if (mode === "voice") {
+      void useVoice.getState().enable();
+    }
     startSearch(mode);
     navigate("/chat");
   };
