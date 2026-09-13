@@ -1,3 +1,4 @@
+import { roleColours } from "@/shared/lib/theme";
 import { useEffect, useRef } from "react";
 
 interface SignalWaveProps {
@@ -8,10 +9,12 @@ interface SignalWaveProps {
   className?: string;
 }
 
-const readColor = (token: string, fallback: string): string => {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
-  return value || fallback;
-};
+/**
+ * Custom properties come back with their calc() intact, and canvas cannot parse
+ * that, so the palette is resolved to hex the same way every other canvas in
+ * the app does it.
+ */
+const readColor = (token: "accent" | "live"): string => roleColours()[token];
 
 /**
  * A calm travelling wave. Three phase shifted sine bands drift across the
@@ -39,8 +42,8 @@ export const SignalWave = ({
     let frame = 0;
     let width = 0;
     let pixelRatio = 1;
-    let accent = readColor("--color-accent", "#6aa9ff");
-    let live = readColor("--color-live", "#6ee7a8");
+    let accent = readColor("accent");
+    let live = readColor("live");
 
     const resize = () => {
       pixelRatio = Math.min(2, window.devicePixelRatio || 1);
@@ -48,8 +51,8 @@ export const SignalWave = ({
       canvas.width = Math.floor(width * pixelRatio);
       canvas.height = Math.floor(height * pixelRatio);
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      accent = readColor("--color-accent", "#6aa9ff");
-      live = readColor("--color-live", "#6ee7a8");
+      accent = readColor("accent");
+      live = readColor("live");
     };
 
     resize();

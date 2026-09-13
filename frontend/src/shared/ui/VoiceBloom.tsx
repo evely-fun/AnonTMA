@@ -1,3 +1,4 @@
+import { roleColours } from "@/shared/lib/theme";
 import { useEffect, useRef, type ReactNode } from "react";
 
 interface VoiceBloomProps {
@@ -8,15 +9,13 @@ interface VoiceBloomProps {
   children?: ReactNode;
 }
 
-const TOKENS: Record<string, string> = {
-  accent: "--color-accent",
-  live: "--color-live",
-  warn: "--color-warn",
-};
-
-const readColor = (token: string, fallback: string): string => {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
-  return value || fallback;
+/** Same reason as SignalWave: canvas will not take a calc() bearing oklch. */
+const readColor = (tone: string): string => {
+  const colours = roleColours();
+  if (tone === "accent") return colours.accent;
+  if (tone === "warn") return colours.warn;
+  if (tone === "danger") return colours.danger;
+  return colours.live;
 };
 
 /**
@@ -53,7 +52,7 @@ export const VoiceBloom = ({
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
     const centre = size / 2;
     const base = size * 0.3;
-    let colour = readColor(TOKENS[tone] ?? TOKENS.live, "#6ee7a8");
+    let colour = readColor(tone);
     let frame = 0;
     const start = performance.now();
 
@@ -92,7 +91,7 @@ export const VoiceBloom = ({
       const reach = 0.25 + smoothRef.current * 1.5;
 
       context.clearRect(0, 0, size, size);
-      colour = readColor(TOKENS[tone] ?? TOKENS.live, "#6ee7a8");
+      colour = readColor(tone);
 
       // Outer halo, then two nested outlines for depth.
       const halo = context.createRadialGradient(centre, centre, base * 0.5, centre, centre, base * 1.7);

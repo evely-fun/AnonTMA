@@ -17,6 +17,7 @@ import {
   ScreenHeader,
   Sheet,
   SignalWave,
+  tileArt,
   VoiceBloom,
 } from "@/shared/ui";
 import {
@@ -55,13 +56,15 @@ const Searching = ({ mode, onCancel }: { mode: "text" | "voice"; onCancel: () =>
         <SignalWave energy={0.35 + Math.min(0.45, queue * 0.08)} height={132} />
       </div>
 
-      <m.span
-        className="-mt-3 flex size-[54px] items-center justify-center rounded-full bg-elevated text-accent"
-        animate={{ scale: [1, 1.05, 1] }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-      >
-        {mode === "voice" ? <MicIcon size={21} /> : <MaskIcon size={21} />}
-      </m.span>
+      {/* The wave carries the waiting, the picture carries the mood. A pulsing
+          grey glyph did neither. */}
+      <m.img
+        src={tileArt(mode === "voice" ? "call" : "search").src}
+        alt=""
+        className="-mt-4 size-[104px] rounded-[28px] object-cover"
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+      />
 
       <div className="flex flex-col items-center gap-1.5">
         <h2 className="font-display text-[20px] font-extrabold tracking-[-0.025em]">
