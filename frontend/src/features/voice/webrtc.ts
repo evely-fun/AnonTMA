@@ -1,5 +1,7 @@
 import { realtime } from "@/shared/lib/socket";
 
+import { getAudioContext, isRunning, resumeAudio } from "./audioContext";
+
 export type PeerState = "new" | "connecting" | "connected" | "failed" | "closed";
 
 interface PeerEntry {
@@ -7,77 +9,105 @@ interface PeerEntry {
   stream: MediaStream;
   audio: HTMLAudioElement;
   analyser: AnalyserNode | null;
+  analyserSource: MediaStreamAudioSourceNode | null;
   polite: boolean;
   makingOffer: boolean;
-  ignoreOffer: boolean;
-  renegotiate: boolean;
+  settingRemoteAnswer: boolean;
   pendingCandidates: RTCIceCandidateInit[];
+  queue: Promise<void>;
+  restarts: number;
+  restartTimer: number | null;
+  lastBytes: number;
+  starvedChecks: number;
+  outputMuted: boolean;
 }
 
 type StreamListener = (peerId: number, stream: MediaStream) => void;
 type StateListener = (peerId: number, state: PeerState) => void;
 type LevelListener = (levels: Map<number, number>) => void;
 
-const DEFAULT_ICE: RTCIceServer[] = [{ urls: ["stun:stun.l.google.com:19302"] }];
+export interface IceConfig {
+  iceServers: RTCIceServer[];
+  iceTransportPolicy?: RTCIceTransportPolicy;
+  iceCandidatePoolSize?: number;
+}
+
+const DEFAULT_ICE: RTCIceServer[] = [
+  { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
+];
+
+const MAX_ICE_RESTARTS = 4;
+const STARVED_CHECKS_BEFORE_RESTART = 3;
+const HEALTH_INTERVAL_MS = 3000;
+const LEVEL_INTERVAL_MS = 120;
 
 export class PeerManager {
   private peers = new Map<number, PeerEntry>();
-  private localStream: MediaStream | null = null;
-  private iceServers: RTCIceServer[] = DEFAULT_ICE;
-  private context: AudioContext | null = null;
+  private localTrack: MediaStreamTrack | null = null;
+  private config: IceConfig = { iceServers: DEFAULT_ICE };
   private streamListeners = new Set<StreamListener>();
   private stateListeners = new Set<StateListener>();
   private levelListeners = new Set<LevelListener>();
-  private levelTimer: number | null = null;
-  private outputMuted = new Set<number>();
   private blockedListeners = new Set<(blocked: boolean) => void>();
+  private levelTimer: number | null = null;
+  private healthTimer: number | null = null;
   private playbackBlocked = false;
-  private silence: HTMLAudioElement | null = null;
+  private allowed: number[] | null = null;
 
-  configure(servers: RTCIceServer[]): void {
-    if (servers.length > 0) {
-      this.iceServers = servers;
+  configure(config: IceConfig | RTCIceServer[]): void {
+    const next = Array.isArray(config) ? { iceServers: config } : config;
+    if (!next.iceServers || next.iceServers.length === 0) {
+      return;
     }
+    this.config = {
+      iceServers: next.iceServers,
+      iceTransportPolicy: next.iceTransportPolicy ?? "all",
+      iceCandidatePoolSize: next.iceCandidatePoolSize ?? 0,
+    };
   }
 
-  setLocalStream(stream: MediaStream | null): void {
-    this.localStream = stream;
-    const track = stream?.getAudioTracks()[0] ?? null;
-    this.peers.forEach((entry) => this.attachLocalTrack(entry, track));
+  get hasRelay(): boolean {
+    return this.config.iceServers.some((server) => {
+      const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+      return urls.some((url) => url.startsWith("turn:") || url.startsWith("turns:"));
+    });
   }
 
   /**
-   * Puts the microphone on the peer's existing audio transceiver. Adding a
-   * track instead would open a second m line, and a peer built before the
-   * microphone was ready has already answered recvonly, so the direction has to
-   * be restored as well: replaceTrack never renegotiates on its own, and
-   * without that the side stays connected but is never heard.
+   * Called every time the capture pipeline swaps the outgoing track, which it
+   * does when the processing graph comes up or falls back to the raw
+   * microphone. replaceTrack never renegotiates, so the transceiver direction
+   * is restored by hand for peers that were built before the mic was ready.
    */
-  private attachLocalTrack(entry: PeerEntry, track: MediaStreamTrack | null): void {
-    const transceivers = entry.connection.getTransceivers();
-    const audio =
-      transceivers.find(
-        (item) => item.sender.track?.kind === "audio" || item.receiver.track?.kind === "audio",
-      ) ?? transceivers[0];
+  setLocalTrack(track: MediaStreamTrack | null): void {
+    this.localTrack = track;
+    this.peers.forEach((entry) => this.attachLocalTrack(entry));
+  }
 
-    if (!audio) {
-      if (track && this.localStream) {
-        entry.connection.addTrack(track, this.localStream);
-      }
+  private attachLocalTrack(entry: PeerEntry): void {
+    const transceiver = this.audioTransceiver(entry);
+    if (!transceiver) {
       return;
     }
-
-    void audio.sender.replaceTrack(track);
-    if (track && audio.direction !== "sendrecv") {
-      audio.direction = "sendrecv";
+    void transceiver.sender.replaceTrack(this.localTrack).catch(() => undefined);
+    const wanted = this.localTrack ? "sendrecv" : "recvonly";
+    if (transceiver.direction !== wanted) {
+      transceiver.direction = wanted;
     }
   }
 
-  private ensureContext(): AudioContext {
-    if (!this.context) {
-      this.context = new AudioContext();
-    }
-    return this.context;
+  private audioTransceiver(entry: PeerEntry): RTCRtpTransceiver | null {
+    const transceivers = entry.connection.getTransceivers();
+    return (
+      transceivers.find(
+        (item) =>
+          item.sender.track?.kind === "audio" ||
+          item.receiver.track?.kind === "audio" ||
+          item.mid === "0",
+      ) ??
+      transceivers[0] ??
+      null
+    );
   }
 
   onBlocked(listener: (blocked: boolean) => void): () => void {
@@ -108,208 +138,289 @@ export class PeerManager {
 
   /** Must run inside a user gesture: primes playback and the audio context. */
   async unlock(): Promise<void> {
-    const context = this.ensureContext();
-    if (context.state === "suspended") {
-      await context.resume().catch(() => undefined);
-    }
-    if (!this.silence) {
-      const element = document.createElement("audio");
-      element.setAttribute("playsinline", "");
-      element.muted = true;
-      element.loop = true;
-      element.style.display = "none";
-      // A one sample silent wav is enough to mark the element as user started.
-      element.src =
-        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
-      document.body.appendChild(element);
-      this.silence = element;
-    }
-    await this.silence.play().catch(() => undefined);
-    // play() can stay pending forever on a device with no audio output, and the
-    // tap to hear button would spin with it, so the unlock gives up on its own.
+    await resumeAudio();
+    // play() can stay pending forever on a device with no audio output, so the
+    // unlock gives up on its own rather than spinning the button.
     await Promise.race([
       Promise.all([...this.peers.values()].map((entry) => this.play(entry))),
       new Promise((resolve) => window.setTimeout(resolve, 1500)),
     ]);
-  }
-
-  private async offer(peerId: number, entry: PeerEntry): Promise<void> {
-    try {
-      entry.makingOffer = true;
-      await entry.connection.setLocalDescription();
-      const description = entry.connection.localDescription;
-      if (description) {
-        realtime.send("rtc.signal", {
-          kind: "offer",
-          to: peerId,
-          sdpType: description.type,
-          sdp: description.sdp,
-        });
-      }
-    } catch {
-      /* negotiation retried on the next event */
-    } finally {
-      entry.makingOffer = false;
-    }
+    this.peers.forEach((entry) => this.attachAnalyser(entry));
   }
 
   private createPeer(peerId: number, polite: boolean): PeerEntry {
     const connection = new RTCPeerConnection({
-      iceServers: this.iceServers,
+      iceServers: this.config.iceServers,
+      iceTransportPolicy: this.config.iceTransportPolicy,
+      iceCandidatePoolSize: this.config.iceCandidatePoolSize,
       bundlePolicy: "max-bundle",
       rtcpMuxPolicy: "require",
     });
 
-    const stream = new MediaStream();
     const audio = document.createElement("audio");
     audio.autoplay = true;
-    audio.srcObject = stream;
     audio.setAttribute("playsinline", "");
     audio.setAttribute("autoplay", "");
+    audio.volume = 1;
     audio.style.display = "none";
     // Some webviews refuse to start playback on a detached element.
     document.body.appendChild(audio);
 
     const entry: PeerEntry = {
       connection,
-      stream,
+      stream: new MediaStream(),
       audio,
       analyser: null,
+      analyserSource: null,
       polite,
       makingOffer: false,
-      ignoreOffer: false,
-      renegotiate: false,
+      settingRemoteAnswer: false,
       pendingCandidates: [],
+      queue: Promise.resolve(),
+      restarts: 0,
+      restartTimer: null,
+      lastBytes: 0,
+      starvedChecks: 0,
+      outputMuted: false,
     };
 
-    if (this.localStream) {
-      this.localStream.getAudioTracks().forEach((track) => {
-        connection.addTrack(track, this.localStream as MediaStream);
-      });
-    } else {
-      connection.addTransceiver("audio", { direction: "sendrecv" });
+    // One audio transceiver, always. Adding a track later would open a second
+    // m line and the answer would never carry the microphone.
+    const transceiver = connection.addTransceiver("audio", {
+      direction: this.localTrack ? "sendrecv" : "recvonly",
+    });
+    if (this.localTrack) {
+      void transceiver.sender.replaceTrack(this.localTrack).catch(() => undefined);
     }
 
     connection.onnegotiationneeded = () => {
-      void this.offer(peerId, entry);
+      this.enqueue(entry, () => this.offer(peerId, entry));
     };
 
     connection.onicecandidate = (event) => {
-      if (event.candidate) {
-        realtime.send("rtc.signal", {
-          kind: "ice",
-          to: peerId,
-          candidate: {
-            candidate: event.candidate.candidate,
-            sdpMid: event.candidate.sdpMid,
-            sdpMLineIndex: event.candidate.sdpMLineIndex,
-          },
-        });
-      }
+      realtime.send("rtc.signal", {
+        kind: "ice",
+        to: peerId,
+        candidate: event.candidate
+          ? {
+              candidate: event.candidate.candidate,
+              sdpMid: event.candidate.sdpMid,
+              sdpMLineIndex: event.candidate.sdpMLineIndex,
+              usernameFragment: event.candidate.usernameFragment,
+            }
+          : { candidate: "", sdpMid: null, sdpMLineIndex: null, usernameFragment: null },
+      });
     };
 
     connection.ontrack = (event) => {
-      event.streams[0]?.getTracks().forEach((track) => {
-        if (!stream.getTracks().includes(track)) {
-          stream.addTrack(track);
-        }
-      });
+      // Assigning the stream that arrived with the track is the only variant
+      // Safari and the Telegram webview reliably play. Handing them an empty
+      // MediaStream up front and filling it later leaves the element silent.
+      const stream = event.streams[0] ?? new MediaStream([event.track]);
+      entry.stream = stream;
+      entry.audio.srcObject = stream;
+      entry.outputMuted = this.allowed !== null && !this.allowed.includes(peerId);
+      entry.audio.muted = entry.outputMuted;
       void this.play(entry);
-      this.attachAnalyser(peerId, entry);
+      this.attachAnalyser(entry);
       this.streamListeners.forEach((listener) => listener(peerId, stream));
+
+      event.track.onunmute = () => {
+        void this.play(entry);
+      };
     };
 
-    connection.onsignalingstatechange = () => {
-      if (connection.signalingState !== "stable" || !entry.renegotiate) {
-        return;
+    connection.oniceconnectionstatechange = () => {
+      const state = connection.iceConnectionState;
+      if (state === "failed") {
+        this.scheduleRestart(peerId, entry, 0);
+      } else if (state === "disconnected") {
+        this.scheduleRestart(peerId, entry, 4000);
+      } else if (state === "connected" || state === "completed") {
+        this.clearRestart(entry);
+        entry.restarts = 0;
       }
-      entry.renegotiate = false;
-      void this.offer(peerId, entry);
     };
 
     connection.onconnectionstatechange = () => {
       const state = connection.connectionState as PeerState;
       this.stateListeners.forEach((listener) => listener(peerId, state));
       if (state === "failed") {
-        void connection.restartIce();
+        this.scheduleRestart(peerId, entry, 0);
       }
     };
 
     this.peers.set(peerId, entry);
-    this.startLevelLoop();
+    this.startTimers();
     return entry;
   }
 
-  private attachAnalyser(peerId: number, entry: PeerEntry): void {
-    if (entry.analyser || entry.stream.getAudioTracks().length === 0) {
+  private enqueue(entry: PeerEntry, task: () => Promise<void>): void {
+    // Offers, answers and candidates arrive interleaved over one socket.
+    // Running them concurrently corrupts the signalling state, so each peer
+    // gets a strict queue.
+    entry.queue = entry.queue.then(task).catch(() => undefined);
+  }
+
+  private async offer(peerId: number, entry: PeerEntry): Promise<void> {
+    const connection = entry.connection;
+    if (connection.signalingState === "closed") {
       return;
     }
     try {
-      const context = this.ensureContext();
+      entry.makingOffer = true;
+      const description = await connection.createOffer();
+      if (connection.signalingState !== "stable") {
+        return;
+      }
+      await connection.setLocalDescription(description);
+      realtime.send("rtc.signal", {
+        kind: "offer",
+        to: peerId,
+        sdpType: description.type,
+        sdp: connection.localDescription?.sdp ?? description.sdp,
+      });
+    } catch {
+      /* negotiation is retried by the health loop */
+    } finally {
+      entry.makingOffer = false;
+    }
+  }
+
+  private attachAnalyser(entry: PeerEntry): void {
+    if (entry.analyser || entry.stream.getAudioTracks().length === 0 || !isRunning()) {
+      return;
+    }
+    try {
+      const context = getAudioContext();
       const source = context.createMediaStreamSource(entry.stream);
       const analyser = context.createAnalyser();
       analyser.fftSize = 512;
       analyser.smoothingTimeConstant = 0.7;
       source.connect(analyser);
+      entry.analyserSource = source;
       entry.analyser = analyser;
-      void peerId;
     } catch {
       entry.analyser = null;
+      entry.analyserSource = null;
     }
   }
 
+  private clearRestart(entry: PeerEntry): void {
+    if (entry.restartTimer !== null) {
+      window.clearTimeout(entry.restartTimer);
+      entry.restartTimer = null;
+    }
+  }
+
+  private scheduleRestart(peerId: number, entry: PeerEntry, delay: number): void {
+    if (entry.restartTimer !== null || entry.restarts >= MAX_ICE_RESTARTS) {
+      return;
+    }
+    entry.restartTimer = window.setTimeout(() => {
+      entry.restartTimer = null;
+      const state = entry.connection.iceConnectionState;
+      if (state === "connected" || state === "completed" || state === "closed") {
+        return;
+      }
+      entry.restarts += 1;
+      entry.starvedChecks = 0;
+      this.enqueue(entry, async () => {
+        try {
+          entry.connection.restartIce();
+        } catch {
+          /* nothing else to try */
+        }
+        // An impolite peer drives the restart, otherwise both sides would
+        // offer at once and burn a round trip resolving the collision.
+        if (!entry.polite) {
+          await this.offer(peerId, entry);
+        }
+      });
+    }, delay);
+  }
+
   connect(peerId: number, polite: boolean): void {
-    if (this.peers.has(peerId)) {
+    if (this.peers.has(peerId) || peerId <= 0) {
       return;
     }
     this.createPeer(peerId, polite);
   }
 
-  async handleSignal(kind: string, peerId: number, data: Record<string, unknown>): Promise<void> {
+  handleSignal(kind: string, peerId: number, data: Record<string, unknown>): void {
     let entry = this.peers.get(peerId);
     if (!entry) {
+      // A peer that signals before the roster reached us is treated as polite
+      // here, the remote side already picked the opposite role.
       entry = this.createPeer(peerId, true);
     }
+    const target = entry;
+    this.enqueue(target, () => this.applySignal(kind, peerId, target, data));
+  }
+
+  private async applySignal(
+    kind: string,
+    peerId: number,
+    entry: PeerEntry,
+    data: Record<string, unknown>,
+  ): Promise<void> {
     const connection = entry.connection;
+    if (connection.signalingState === "closed") {
+      return;
+    }
 
     if (kind === "offer" || kind === "answer") {
       const description = data as unknown as RTCSessionDescriptionInit;
-      const offerCollision =
-        description.type === "offer" && (entry.makingOffer || connection.signalingState !== "stable");
-      entry.ignoreOffer = !entry.polite && offerCollision;
-      if (entry.ignoreOffer) {
-        entry.renegotiate = true;
+      if (!description?.sdp || !description.type) {
         return;
       }
+      const readyForOffer =
+        !entry.makingOffer && (connection.signalingState === "stable" || entry.settingRemoteAnswer);
+      const collision = description.type === "offer" && !readyForOffer;
+
+      if (collision && !entry.polite) {
+        return;
+      }
+
       try {
-        if (offerCollision) {
-          await connection.setLocalDescription({ type: "rollback" });
-        }
+        entry.settingRemoteAnswer = description.type === "answer";
+        // Implicit rollback. Explicit setLocalDescription({ type: "rollback" })
+        // is broken on mobile Safari, which is what the Telegram iOS webview
+        // runs on, and would strand the call in have-local-offer.
         await connection.setRemoteDescription(description);
+        entry.settingRemoteAnswer = false;
+
         for (const candidate of entry.pendingCandidates.splice(0)) {
           await connection.addIceCandidate(candidate).catch(() => undefined);
         }
+
         if (description.type === "offer") {
-          await connection.setLocalDescription();
-          const local = connection.localDescription;
-          if (local) {
-            realtime.send("rtc.signal", {
-              kind: "answer",
-              to: peerId,
-              sdpType: local.type,
-              sdp: local.sdp,
-            });
-          }
+          this.attachLocalTrack(entry);
+          const answer = await connection.createAnswer();
+          await connection.setLocalDescription(answer);
+          realtime.send("rtc.signal", {
+            kind: "answer",
+            to: peerId,
+            sdpType: answer.type,
+            sdp: connection.localDescription?.sdp ?? answer.sdp,
+          });
         }
       } catch {
-        /* ignore malformed descriptions */
+        entry.settingRemoteAnswer = false;
       }
       return;
     }
 
     if (kind === "ice") {
-      const candidate = data as RTCIceCandidateInit;
+      const raw = data as RTCIceCandidateInit;
+      const candidate: RTCIceCandidateInit = {
+        candidate: raw.candidate ?? "",
+        sdpMid: raw.sdpMid ?? undefined,
+        sdpMLineIndex: raw.sdpMLineIndex ?? undefined,
+        usernameFragment: raw.usernameFragment ?? undefined,
+      };
       if (!candidate.candidate) {
+        await connection.addIceCandidate(undefined).catch(() => undefined);
         return;
       }
       if (!connection.remoteDescription) {
@@ -332,50 +443,85 @@ export class PeerManager {
     if (!entry) {
       return;
     }
+    entry.outputMuted = muted;
     entry.audio.muted = muted;
-    if (muted) {
-      this.outputMuted.add(peerId);
-    } else {
-      this.outputMuted.delete(peerId);
-    }
   }
 
   restrictAudio(allowed: number[] | null): void {
+    this.allowed = allowed;
     this.peers.forEach((entry, peerId) => {
-      const muted = allowed !== null && !allowed.includes(peerId);
-      entry.audio.muted = muted;
+      entry.outputMuted = allowed !== null && !allowed.includes(peerId);
+      entry.audio.muted = entry.outputMuted;
+    });
+  }
+
+  /**
+   * Polls the inbound audio counters. A pair can sit in connected while the
+   * selected candidate quietly stops passing media, which is the one failure
+   * no connection state ever reports.
+   */
+  private checkHealth(): void {
+    this.peers.forEach((entry, peerId) => {
+      if (entry.connection.connectionState !== "connected") {
+        return;
+      }
+      void entry.connection
+        .getStats()
+        .then((report) => {
+          let bytes = 0;
+          report.forEach((item) => {
+            if (item.type === "inbound-rtp" && item.kind === "audio") {
+              bytes += Number(item.bytesReceived ?? 0);
+            }
+          });
+          if (bytes > entry.lastBytes) {
+            entry.lastBytes = bytes;
+            entry.starvedChecks = 0;
+            return;
+          }
+          entry.starvedChecks += 1;
+          if (entry.starvedChecks >= STARVED_CHECKS_BEFORE_RESTART) {
+            entry.starvedChecks = 0;
+            this.scheduleRestart(peerId, entry, 0);
+          }
+        })
+        .catch(() => undefined);
+
+      if (entry.audio.paused) {
+        void this.play(entry);
+      }
     });
   }
 
   disconnect(peerId: number): void {
     const entry = this.peers.get(peerId);
-    if (entry) {
-      entry.audio.remove();
-    }
     if (!entry) {
       return;
     }
+    this.clearRestart(entry);
+    entry.analyserSource?.disconnect();
+    entry.analyser?.disconnect();
     entry.connection.getSenders().forEach((sender) => {
-      try {
-        entry.connection.removeTrack(sender);
-      } catch {
-        /* already detached */
-      }
+      void sender.replaceTrack(null).catch(() => undefined);
     });
+    entry.connection.onicecandidate = null;
+    entry.connection.ontrack = null;
+    entry.connection.onnegotiationneeded = null;
     entry.connection.close();
     entry.audio.srcObject = null;
+    entry.audio.remove();
     this.peers.delete(peerId);
     this.stateListeners.forEach((listener) => listener(peerId, "closed"));
     if (this.peers.size === 0) {
-      this.stopLevelLoop();
+      this.stopTimers();
     }
   }
 
   closeAll(): void {
     [...this.peers.keys()].forEach((peerId) => this.disconnect(peerId));
-    this.stopLevelLoop();
-    void this.context?.close();
-    this.context = null;
+    this.stopTimers();
+    this.allowed = null;
+    this.announceBlocked(false);
   }
 
   get peerIds(): number[] {
@@ -384,52 +530,64 @@ export class PeerManager {
 
   onStream(listener: StreamListener): () => void {
     this.streamListeners.add(listener);
-    return () => this.streamListeners.delete(listener);
+    return () => {
+      this.streamListeners.delete(listener);
+    };
   }
 
   onState(listener: StateListener): () => void {
     this.stateListeners.add(listener);
-    return () => this.stateListeners.delete(listener);
+    return () => {
+      this.stateListeners.delete(listener);
+    };
   }
 
   onLevels(listener: LevelListener): () => void {
     this.levelListeners.add(listener);
-    this.startLevelLoop();
+    this.startTimers();
     return () => {
       this.levelListeners.delete(listener);
     };
   }
 
-  private startLevelLoop(): void {
-    if (this.levelTimer !== null) {
-      return;
-    }
-    const buffer = new Float32Array(512);
-    this.levelTimer = window.setInterval(() => {
-      if (this.levelListeners.size === 0) {
-        return;
-      }
-      const levels = new Map<number, number>();
-      this.peers.forEach((entry, peerId) => {
-        if (!entry.analyser) {
-          levels.set(peerId, 0);
+  private startTimers(): void {
+    if (this.levelTimer === null) {
+      const buffer = new Float32Array(512);
+      this.levelTimer = window.setInterval(() => {
+        if (this.levelListeners.size === 0) {
           return;
         }
-        entry.analyser.getFloatTimeDomainData(buffer);
-        let sum = 0;
-        for (let index = 0; index < buffer.length; index += 1) {
-          sum += buffer[index] * buffer[index];
-        }
-        levels.set(peerId, Math.min(1, Math.sqrt(sum / buffer.length) * 16));
-      });
-      this.levelListeners.forEach((listener) => listener(levels));
-    }, 120);
+        const levels = new Map<number, number>();
+        this.peers.forEach((entry, peerId) => {
+          if (!entry.analyser) {
+            this.attachAnalyser(entry);
+            levels.set(peerId, 0);
+            return;
+          }
+          entry.analyser.getFloatTimeDomainData(buffer);
+          let sum = 0;
+          for (let index = 0; index < buffer.length; index += 1) {
+            sum += buffer[index] * buffer[index];
+          }
+          levels.set(peerId, Math.min(1, Math.sqrt(sum / buffer.length) * 16));
+        });
+        this.levelListeners.forEach((listener) => listener(levels));
+      }, LEVEL_INTERVAL_MS);
+    }
+
+    if (this.healthTimer === null) {
+      this.healthTimer = window.setInterval(() => this.checkHealth(), HEALTH_INTERVAL_MS);
+    }
   }
 
-  private stopLevelLoop(): void {
+  private stopTimers(): void {
     if (this.levelTimer !== null) {
       window.clearInterval(this.levelTimer);
       this.levelTimer = null;
+    }
+    if (this.healthTimer !== null) {
+      window.clearInterval(this.healthTimer);
+      this.healthTimer = null;
     }
   }
 }
@@ -441,21 +599,13 @@ if (import.meta.env.DEV) {
 }
 
 realtime.on("rtc.offer", (payload) => {
-  void peerManager.handleSignal(
-    "offer",
-    Number(payload.from),
-    payload.description as Record<string, unknown>,
-  );
+  peerManager.handleSignal("offer", Number(payload.from), payload.description as Record<string, unknown>);
 });
 
 realtime.on("rtc.answer", (payload) => {
-  void peerManager.handleSignal(
-    "answer",
-    Number(payload.from),
-    payload.description as Record<string, unknown>,
-  );
+  peerManager.handleSignal("answer", Number(payload.from), payload.description as Record<string, unknown>);
 });
 
 realtime.on("rtc.ice", (payload) => {
-  void peerManager.handleSignal("ice", Number(payload.from), payload.candidate as Record<string, unknown>);
+  peerManager.handleSignal("ice", Number(payload.from), payload.candidate as Record<string, unknown>);
 });

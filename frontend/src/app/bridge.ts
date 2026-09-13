@@ -96,14 +96,12 @@ export const bindRealtime = (): void => {
     const partnerId = Number(payload.partnerId);
     const polite = Boolean(payload.polite);
     if (payload.mode === "voice") {
-      void useVoice
-        .getState()
-        .enable()
-        .then((granted) => {
-          if (granted) {
-            peerManager.connect(partnerId, polite);
-          }
-        });
+      // The peer connection is opened whatever the microphone does. A denied
+      // or missing mic used to skip this entirely, so the user heard nothing
+      // either, and the partner was left talking to a session that never
+      // answered the offer.
+      peerManager.connect(partnerId, polite);
+      void useVoice.getState().enable();
     }
   });
 
@@ -167,6 +165,7 @@ export const bindRealtime = (): void => {
     if (partnerId) {
       peerManager.disconnect(partnerId);
     }
+    peerManager.restrictAudio(null);
     void useVoice.getState().disable();
     useChat.getState().finish({
       durationSeconds: Number(payload.durationSeconds ?? 0),
@@ -183,15 +182,8 @@ export const bindRealtime = (): void => {
     useRooms.getState().setMembers(payload.members as RoomMember[]);
     const peers = (payload.peers as number[]) ?? [];
     const selfId = useSession.getState().profile?.id ?? 0;
-    void useVoice
-      .getState()
-      .enable()
-      .then((granted) => {
-        if (!granted) {
-          return;
-        }
-        peers.forEach((peerId) => peerManager.connect(peerId, selfId < peerId));
-      });
+    peers.forEach((peerId) => peerManager.connect(peerId, selfId < peerId));
+    void useVoice.getState().enable();
   });
 
   realtime.on("room.roster", (payload) => {
@@ -202,7 +194,7 @@ export const bindRealtime = (): void => {
     const member = payload.member as RoomMember;
     useRooms.getState().upsertMember(member);
     const selfId = useSession.getState().profile?.id ?? 0;
-    if (member.userId !== selfId && useVoice.getState().active) {
+    if (member.userId !== selfId) {
       peerManager.connect(member.userId, selfId < member.userId);
     }
   });
@@ -285,14 +277,10 @@ export const bindRealtime = (): void => {
       status: "active",
     });
     social.setIncomingCall(null);
-    void useVoice
-      .getState()
-      .enable()
-      .then((granted) => {
-        if (granted && peerId) {
-          peerManager.connect(peerId, polite);
-        }
-      });
+    if (peerId) {
+      peerManager.connect(peerId, polite);
+    }
+    void useVoice.getState().enable();
   });
 
   realtime.on("call.declined", () => {
@@ -305,6 +293,7 @@ export const bindRealtime = (): void => {
     if (call) {
       peerManager.disconnect(call.userId);
     }
+    peerManager.restrictAudio(null);
     void useVoice.getState().disable();
     useSocial.getState().setActiveCall(null);
     useSocial.getState().setIncomingCall(null);

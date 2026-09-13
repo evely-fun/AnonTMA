@@ -28,6 +28,10 @@ router = APIRouter()
 
 DISCONNECT_GRACE_SECONDS = 12
 MESSAGE_LIMIT = 4000
+# Trickle ICE bursts dozens of frames in the first second of a call. Sharing
+# the chat budget with them dropped candidates and left the pair silent, so
+# signalling gets its own far larger bucket.
+SIGNAL_TYPES = frozenset({"rtc.signal"})
 
 
 async def _authenticate(token: str) -> int | None:
@@ -639,7 +643,11 @@ async def handle_room_report(session: Session, payload: dict, ack: str | None) -
 
 async def handle_rtc(session: Session, payload: dict, ack: str | None) -> None:
     kind = str(payload.get("kind", ""))
-    if not await signaling.relay(session.user_id, kind, payload):
+    if await signaling.relay(session.user_id, kind, payload):
+        return
+    # A rejected candidate is routine near the end of a call and a toast for
+    # every one of them would bury the screen, only descriptions are reported.
+    if kind in ("offer", "answer"):
         await session.send(error("signal_rejected", "Peer is not reachable", ack))
 
 
@@ -912,12 +920,20 @@ async def websocket_endpoint(socket: WebSocket, token: str = Query(default="")) 
     try:
         while True:
             raw = await socket.receive_text()
-            if not await consume(f"ws:{user_id}", settings.rate_limit_ws_messages_per_10s, 10):
-                await session.send(error("rate_limited", "Slow down"))
-                continue
             envelope = decode(raw)
             if envelope is None:
                 await session.send(error("bad_frame", "Malformed message"))
+                continue
+            if envelope.type in SIGNAL_TYPES:
+                allowed = await consume(
+                    f"ws:signal:{user_id}", settings.rate_limit_ws_signal_per_10s, 10
+                )
+            else:
+                allowed = await consume(
+                    f"ws:{user_id}", settings.rate_limit_ws_messages_per_10s, 10
+                )
+            if not allowed:
+                await session.send(error("rate_limited", "Slow down"))
                 continue
             try:
                 await session.handle(envelope.type, envelope.payload, envelope.ack)

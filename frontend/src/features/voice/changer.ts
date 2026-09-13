@@ -131,10 +131,17 @@ export class VoiceChanger {
     const profile = PROFILES[preset];
     const now = context.currentTime;
 
+    // Natural is the default and every extra node is another place the chain
+    // can fail, so the plain preset is a direct wire from input to output.
+    if (preset === "natural") {
+      input.connect(output);
+      return;
+    }
+
     this.pitch?.parameters.get("pitch")?.setValueAtTime(profile.pitch, now);
 
     let node: AudioNode = input;
-    if (this.pitch) {
+    if (this.pitch && Math.abs(profile.pitch - 1) > 0.001) {
       input.connect(this.pitch);
       node = this.pitch;
     }

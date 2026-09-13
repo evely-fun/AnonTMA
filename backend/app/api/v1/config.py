@@ -8,18 +8,28 @@ from app.realtime import presence
 router = APIRouter(prefix="/config", tags=["config"], dependencies=[Depends(rate_limit_default)])
 
 
-# Phones on mobile carriers sit behind symmetric NAT, where STUN alone never
-# produces a working pair. Open Relay is a free community TURN service and acts
-# as the fallback until a dedicated TURN server is configured.
-FALLBACK_TURN = {
-    "urls": [
-        "turn:openrelay.metered.ca:80",
-        "turn:openrelay.metered.ca:443",
-        "turn:openrelay.metered.ca:443?transport=tcp",
-    ],
-    "username": "openrelayproject",
-    "credential": "openrelayproject",
-}
+# Mobile carriers put phones behind symmetric NAT, where STUN alone never
+# produces a working candidate pair. Open Relay is a free community TURN
+# service and acts as the fallback until a dedicated TURN server is set.
+# The static auth host is the only one still accepting these credentials,
+# the older openrelay.metered.ca endpoint was retired.
+FALLBACK_TURN = [
+    {
+        "urls": [
+            "turn:staticauth.openrelay.metered.ca:80",
+            "turn:staticauth.openrelay.metered.ca:80?transport=tcp",
+            "turn:staticauth.openrelay.metered.ca:443",
+            "turn:staticauth.openrelay.metered.ca:443?transport=tcp",
+        ],
+        "username": "openrelayproject",
+        "credential": "openrelayprojectsecret",
+    },
+    {
+        "urls": ["turns:staticauth.openrelay.metered.ca:443?transport=tcp"],
+        "username": "openrelayproject",
+        "credential": "openrelayprojectsecret",
+    },
+]
 
 
 @router.get("/ice")
@@ -34,8 +44,13 @@ async def ice_servers(user: CurrentUser) -> dict:
             }
         )
     else:
-        servers.append(dict(FALLBACK_TURN))
-    return {"iceServers": servers, "iceTransportPolicy": "all"}
+        servers.extend(dict(entry) for entry in FALLBACK_TURN)
+    return {
+        "iceServers": servers,
+        "iceTransportPolicy": settings.ice_transport_policy,
+        "iceCandidatePoolSize": settings.ice_candidate_pool_size,
+        "hasTurn": bool(settings.turn_urls),
+    }
 
 
 @router.get("/bootstrap")

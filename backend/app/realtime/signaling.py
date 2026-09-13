@@ -11,8 +11,10 @@ USER_CALL_KEY = "call:user:{user_id}"
 PEERS_TTL = 60 * 60 * 6
 CALL_TTL = 120
 
-SDP_LIMIT = 16000
-CANDIDATE_LIMIT = 2000
+SDP_LIMIT = 60000
+CANDIDATE_LIMIT = 1200
+UFRAG_LIMIT = 256
+MID_LIMIT = 64
 
 
 async def link_peers(*user_ids: int) -> None:
@@ -43,8 +45,55 @@ async def may_signal(user_id: int, peer_id: int) -> bool:
     return bool(await get_redis().sismember(PEERS_KEY.format(user_id=user_id), str(peer_id)))
 
 
-def _trim(value: object, limit: int) -> str:
-    return str(value or "")[:limit]
+def _text(value: object, limit: int) -> str | None:
+    if value is None:
+        return None
+    text = str(value)
+    return text[:limit] if text else None
+
+
+def _index(value: object) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _description(kind: str, payload: dict) -> dict | None:
+    sdp = payload.get("sdp")
+    if not isinstance(sdp, str) or not sdp:
+        return None
+    # Truncating an SDP produces a body the remote peer silently rejects, so an
+    # oversized one is dropped instead and the sender retries on renegotiation.
+    if len(sdp) > SDP_LIMIT:
+        return None
+    sdp_type = str(payload.get("sdpType") or kind)
+    if sdp_type not in ("offer", "answer", "pranswer", "rollback"):
+        return None
+    return {"type": sdp_type, "sdp": sdp}
+
+
+def _candidate(payload: dict) -> dict | None:
+    raw = payload.get("candidate")
+    if not isinstance(raw, dict):
+        return None
+    line = raw.get("candidate")
+    if not isinstance(line, str) or len(line) > CANDIDATE_LIMIT:
+        return None
+    mid = _text(raw.get("sdpMid"), MID_LIMIT)
+    index = _index(raw.get("sdpMLineIndex"))
+    # An empty candidate line is the end of candidates marker and has to reach
+    # the peer intact, it lets the remote side finish its ICE checks early.
+    if line and mid is None and index is None:
+        return None
+    return {
+        "candidate": line,
+        "sdpMid": mid,
+        "sdpMLineIndex": index,
+        "usernameFragment": _text(raw.get("usernameFragment"), UFRAG_LIMIT),
+    }
 
 
 async def relay(user_id: int, kind: str, payload: dict) -> bool:
@@ -53,26 +102,15 @@ async def relay(user_id: int, kind: str, payload: dict) -> bool:
         return False
 
     if kind in ("offer", "answer"):
-        body = {
-            "type": payload.get("sdpType", kind),
-            "sdp": _trim(payload.get("sdp"), SDP_LIMIT),
-        }
-        if not body["sdp"]:
+        body = _description(kind, payload)
+        if body is None:
             return False
         frame = {"type": f"rtc.{kind}", "payload": {"from": user_id, "description": body}}
     elif kind == "ice":
-        candidate = payload.get("candidate") or {}
-        frame = {
-            "type": "rtc.ice",
-            "payload": {
-                "from": user_id,
-                "candidate": {
-                    "candidate": _trim(candidate.get("candidate"), CANDIDATE_LIMIT),
-                    "sdpMid": _trim(candidate.get("sdpMid"), 64),
-                    "sdpMLineIndex": int(candidate.get("sdpMLineIndex") or 0),
-                },
-            },
-        }
+        body = _candidate(payload)
+        if body is None:
+            return False
+        frame = {"type": "rtc.ice", "payload": {"from": user_id, "candidate": body}}
     else:
         return False
 

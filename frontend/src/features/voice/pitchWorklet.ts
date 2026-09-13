@@ -26,11 +26,11 @@ class GranularPitchProcessor extends AudioWorkletProcessor {
   }
 
   process(inputs, outputs, parameters) {
-    const input = inputs[0][0];
-    const output = outputs[0][0];
+    const output = outputs[0] && outputs[0][0];
     if (!output) {
       return true;
     }
+    const input = inputs[0] && inputs[0][0];
     if (!input) {
       output.fill(0);
       return true;
@@ -40,10 +40,10 @@ class GranularPitchProcessor extends AudioWorkletProcessor {
     const mix = parameters.mix[0];
 
     if (Math.abs(pitch - 1) < 0.001 || mix <= 0.001) {
+      output.set(input);
       for (let index = 0; index < input.length; index += 1) {
         this.buffer[this.write & this.mask] = input[index];
         this.write += 1;
-        output[index] = input[index];
       }
       return true;
     }
@@ -71,7 +71,8 @@ class GranularPitchProcessor extends AudioWorkletProcessor {
       const shifted =
         this.sample(this.write - 1 - first) * gainA + this.sample(this.write - 1 - second) * gainB;
 
-      output[index] = shifted * mix + input[index] * (1 - mix);
+      const value = shifted * mix + input[index] * (1 - mix);
+      output[index] = value === value ? value : 0;
     }
 
     return true;

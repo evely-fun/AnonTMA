@@ -16,4 +16,6 @@ coverage/
 *.sqlite3
 .wrangler/
 smoke.db
+voicetest.db
+*.db
 dump.rdb

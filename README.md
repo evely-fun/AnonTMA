@@ -27,6 +27,13 @@ suppression has four levels and runs entirely on the device: a high pass and low
 pass pair, a dynamics compressor, and an adaptive expander in an AudioWorklet
 that tracks the noise floor and gates anything below the speech threshold.
 
+The unprocessed microphone track is what goes on the wire first. The processing
+graph only takes over once it has been observed producing audio, and a watchdog
+compares the raw microphone against the processed output and falls back the
+moment signal goes in without coming out. A suspended AudioContext, a blocked
+worklet or a webview that refuses Web Audio therefore costs the effects, never
+the call.
+
 **Rooms.** Public voice tables with a topic, host controls, raised hands, mute
 state, room chat and an optional game attached to the table.
 
@@ -87,7 +94,15 @@ mode so the app can be opened in a normal browser.
 ```bash
 cd backend && .venv/bin/python tests/smoke_realtime.py     # end to end realtime
 cd frontend && npx tsc --noEmit && node scripts/browser-check.mjs
+cd frontend && npm run check:gate                          # noise gate, no browser
+cd frontend && npm run check:voice                         # two browsers, real audio
 ```
+
+`check:gate` runs the suppressor worklet over two minutes of simulated speech
+and fails if the gate ever starts swallowing the voice. `check:voice` opens two
+browsers, matches them into one voice chat and fails unless both sides keep
+receiving audio, so a regression that mutes the call is caught before deploy.
+Both need the API and the dev server running.
 
 ## Deployment
 

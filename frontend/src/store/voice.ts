@@ -1,7 +1,8 @@
 import { create } from "zustand";
 
+import { resumeAudio } from "@/features/voice/audioContext";
 import type { VoicePreset } from "@/features/voice/changer";
-import { voicePipeline, type NoiseLevel } from "@/features/voice/noise";
+import { voicePipeline, type CaptureRoute, type NoiseLevel } from "@/features/voice/noise";
 import { peerManager } from "@/features/voice/webrtc";
 import { realtime } from "@/shared/lib/socket";
 
@@ -10,6 +11,7 @@ interface VoiceState {
   muted: boolean;
   level: NoiseLevel;
   preset: VoicePreset;
+  route: CaptureRoute;
   micLevel: number;
   speaking: boolean;
   permission: "unknown" | "granted" | "denied";
@@ -28,11 +30,16 @@ interface VoiceState {
   setPeerLevels: (levels: Map<number, number>) => void;
 }
 
+let releaseMeter: (() => void) | null = null;
+let releaseTrack: (() => void) | null = null;
+let releaseLevels: (() => void) | null = null;
+
 export const useVoice = create<VoiceState>((set, get) => ({
   active: false,
   muted: false,
   level: "medium",
   preset: "natural",
+  route: "raw",
   micLevel: 0,
   speaking: false,
   permission: "unknown",
@@ -44,10 +51,23 @@ export const useVoice = create<VoiceState>((set, get) => ({
     if (get().active) {
       return true;
     }
+    // Best effort: the context usually resumes here because enable runs close
+    // to a tap, and the global gesture listener catches the cases where it
+    // does not.
+    void resumeAudio();
+
     try {
-      const stream = await voicePipeline.start(level ?? get().level, get().preset);
-      peerManager.setLocalStream(stream);
-      voicePipeline.onMeter((meter) => {
+      const track = await voicePipeline.start(level ?? get().level, get().preset);
+      peerManager.setLocalTrack(track);
+
+      releaseTrack?.();
+      releaseTrack = voicePipeline.onTrack((next, route) => {
+        peerManager.setLocalTrack(next);
+        set({ route });
+      });
+
+      releaseMeter?.();
+      releaseMeter = voicePipeline.onMeter((meter) => {
         const previous = get();
         if (Math.abs(previous.micLevel - meter.level) > 0.02 || previous.speaking !== meter.speaking) {
           set({ micLevel: meter.level, speaking: meter.speaking });
@@ -56,8 +76,18 @@ export const useVoice = create<VoiceState>((set, get) => ({
           }
         }
       });
-      peerManager.onLevels((levels) => get().setPeerLevels(levels));
-      set({ active: true, permission: "granted", error: null, level: level ?? get().level });
+
+      releaseLevels?.();
+      releaseLevels = peerManager.onLevels((levels) => get().setPeerLevels(levels));
+
+      set({
+        active: true,
+        permission: "granted",
+        error: null,
+        muted: false,
+        route: voicePipeline.route,
+        level: level ?? get().level,
+      });
       return true;
     } catch (error) {
       set({
@@ -69,23 +99,29 @@ export const useVoice = create<VoiceState>((set, get) => ({
   },
 
   disable: async () => {
+    releaseMeter?.();
+    releaseTrack?.();
+    releaseLevels?.();
+    releaseMeter = null;
+    releaseTrack = null;
+    releaseLevels = null;
     await voicePipeline.stop();
-    peerManager.setLocalStream(null);
-    set({ active: false, micLevel: 0, speaking: false, peerLevels: {} });
+    peerManager.setLocalTrack(null);
+    set({ active: false, muted: false, micLevel: 0, speaking: false, peerLevels: {}, route: "raw" });
   },
 
   toggleMute: () => {
     const muted = !get().muted;
     voicePipeline.setMuted(muted);
     realtime.send("dialog.signal", { event: muted ? "mic_off" : "mic_on" });
-    set({ muted });
+    set({ muted, micLevel: muted ? 0 : get().micLevel });
   },
 
   mute: async () => {
     if (get().muted) return;
     voicePipeline.setMuted(true);
     realtime.send("dialog.signal", { event: "mic_off" });
-    set({ muted: true });
+    set({ muted: true, micLevel: 0 });
   },
 
   setLevel: (level) => {

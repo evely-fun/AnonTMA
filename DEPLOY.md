@@ -106,10 +106,24 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 
 ## 4. Voice behind strict NAT
 
-STUN alone connects most mobile networks. Some carrier NATs need a TURN relay.
-Cheapest reliable options: Cloudflare Calls TURN, Metered, or coturn on a small
-VPS. Set `TURN_URLS`, `TURN_USERNAME`, `TURN_CREDENTIAL` and redeploy — the
-client picks them up from `/api/v1/config/ice` with no code change.
+This is the setting that decides whether two people on mobile data can hear
+each other at all. Most carriers put phones behind symmetric NAT, where STUN
+never produces a working candidate pair and the call connects to nothing.
+
+With `TURN_URLS` empty the API falls back to the free Open Relay project, which
+is shared, rate limited and occasionally down. It is enough to prove voice
+works, not to run on. `GET /api/v1/config/ice` reports `hasTurn: false` while
+you are on that fallback.
+
+For anything real, point the app at your own relay: Cloudflare Calls TURN,
+Metered, Twilio, or coturn on a small VPS. Set `TURN_URLS`, `TURN_USERNAME` and
+`TURN_CREDENTIAL`, redeploy, and confirm `hasTurn` flips to `true` — the client
+picks the servers up from `/api/v1/config/ice` with no code change.
+
+To check a relay is actually reachable, open
+[the Trickle ICE page](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/),
+paste the URL and credentials and confirm a candidate of type `relay` appears.
+No relay candidate means no calls behind strict NAT, whatever the app reports.
 
 ## 5. Plan notes
 

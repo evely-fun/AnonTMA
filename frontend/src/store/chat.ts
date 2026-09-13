@@ -215,3 +215,7 @@ export const useChat = create<ChatState>((set, get) => ({
   tickSearch: () => set((state) => ({ searchSeconds: state.searchSeconds + 1 })),
   setQueue: (queue) => set({ queue }),
 }));
+
+if (import.meta.env.DEV) {
+  (window as unknown as { __chatStore?: typeof useChat }).__chatStore = useChat;
+}

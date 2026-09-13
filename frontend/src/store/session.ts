@@ -5,6 +5,12 @@ import { request } from "@/shared/lib/api";
 import type { GameMeta, PresenceSnapshot, Profile } from "@/shared/lib/types";
 import type { SocketStatus } from "@/shared/lib/socket";
 
+interface IcePayload {
+  iceServers: RTCIceServer[];
+  iceTransportPolicy?: RTCIceTransportPolicy;
+  iceCandidatePoolSize?: number;
+}
+
 interface SessionState {
   profile: Profile | null;
   presence: PresenceSnapshot;
@@ -39,9 +45,13 @@ export const useSession = create<SessionState>((set, get) => ({
         request<{ games: GameMeta[]; presence: PresenceSnapshot; botUsername: string }>(
           "/config/bootstrap",
         ),
-        request<{ iceServers: RTCIceServer[] }>("/config/ice"),
+        request<IcePayload>("/config/ice"),
       ]);
-      peerManager.configure(ice.iceServers ?? []);
+      peerManager.configure({
+        iceServers: ice.iceServers ?? [],
+        iceTransportPolicy: ice.iceTransportPolicy ?? "all",
+        iceCandidatePoolSize: ice.iceCandidatePoolSize ?? 0,
+      });
       set({
         profile,
         games: bootstrap.games,

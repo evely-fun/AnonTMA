@@ -36,6 +36,7 @@ class Settings(BaseSettings):
 
     rate_limit_http_per_minute: int = 120
     rate_limit_ws_messages_per_10s: int = 40
+    rate_limit_ws_signal_per_10s: int = 400
     rate_limit_auth_per_minute: int = 40
 
     payments_mode: Literal["test", "live"] = "test"
@@ -46,8 +47,14 @@ class Settings(BaseSettings):
     turn_username: str = ""
     turn_credential: str = ""
     stun_urls: Annotated[list[str], NoDecode] = Field(
-        default_factory=lambda: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"]
+        default_factory=lambda: [
+            "stun:stun.l.google.com:19302",
+            "stun:stun1.l.google.com:19302",
+            "stun:stun.cloudflare.com:3478",
+        ]
     )
+    ice_transport_policy: Literal["all", "relay"] = "all"
+    ice_candidate_pool_size: int = 2
 
     max_room_participants: int = 12
     matchmaking_ttl_seconds: int = 120
