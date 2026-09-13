@@ -7,7 +7,7 @@ import { FlappyGame } from "@/features/games/FlappyGame";
 import { MafiaBoard } from "@/features/games/MafiaBoard";
 import { TelephoneBoard } from "@/features/games/TelephoneBoard";
 import { TicTacToeBoard } from "@/features/games/TicTacToeBoard";
-import { gameVisual } from "@/features/games/visuals";
+import { gameCover } from "@/features/games/covers";
 import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { listStagger, rise } from "@/shared/lib/motion";
@@ -16,7 +16,6 @@ import {
   Avatar,
   Button,
   Chip,
-  IconTile,
   Panel,
   PushScreen,
   ScreenHeader,
@@ -64,7 +63,7 @@ export const GamePage = () => {
     );
   }
 
-  const { Icon, tone } = gameVisual(meta.key);
+  const cover = gameCover(meta.key);
   const playing = Boolean(gameId && activeKey === gameKey && view);
   const phase = (view?.phase as string | undefined) ?? "lobby";
   const canStartHere = room?.gameKey === gameKey && members.length >= meta.minPlayers;
@@ -104,7 +103,7 @@ export const GamePage = () => {
     <PushScreen>
       <ScreenHeader
         title={t(`games.meta.${meta.key}.title`)}
-        subtitle={playing ? phase : t(`games.meta.${meta.key}.subtitle`)}
+        subtitle={playing ? phase : undefined}
         onBack={() => {
           if (playing) leave();
           navigate("/games");
@@ -147,17 +146,30 @@ export const GamePage = () => {
             animate="animate"
           >
             <m.div className="px-4" variants={rise}>
-              <div className="panel-hero flex flex-col items-center gap-2 rounded-[24px] px-5 py-7 text-center">
-                <IconTile tone={tone} size={64}>
-                  <Icon size={30} />
-                </IconTile>
-                <h2 className="mt-2 font-display text-[22px] font-extrabold tracking-[-0.025em]">
-                  {t(`games.meta.${meta.key}.title`)}
-                </h2>
-                <p className="max-w-[290px] text-[13.5px] leading-snug text-secondary">
-                  {t(`games.meta.${meta.key}.subtitle`)}
-                </p>
-                <div className="mt-3 flex flex-wrap justify-center gap-2">
+              {/* The cover from the hub carries over, so the page you land on
+                  is visibly the card you tapped. */}
+              <div
+                className="relative aspect-[16/10] overflow-hidden rounded-[24px]"
+                style={{ backgroundColor: cover.tint }}
+              >
+                <img
+                  src={cover.src}
+                  alt=""
+                  decoding="async"
+                  className="absolute inset-0 size-full object-cover"
+                />
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/65 to-transparent" />
+                <div className="relative flex h-full flex-col justify-end p-4">
+                  <h2 className="font-display text-[22px] font-extrabold leading-tight tracking-[-0.025em] text-white">
+                    {t(`games.meta.${meta.key}.title`)}
+                  </h2>
+                  <p className="mt-1 max-w-[290px] text-[13px] leading-snug text-white/85">
+                    {t(`games.meta.${meta.key}.subtitle`)}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="flex flex-wrap gap-2">
                   <Chip>
                     <FriendsIcon size={12} />
                     {meta.minPlayers}-{meta.maxPlayers} {t("common.players")}
@@ -184,9 +196,7 @@ export const GamePage = () => {
                     key={index}
                     className="panel flex items-start gap-3 rounded-[16px] px-4 py-3.5"
                   >
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent-quiet font-display text-[11px] font-extrabold text-accent">
-                      {index + 1}
-                    </span>
+                    <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-accent" />
                     <span className="text-[13.5px] leading-snug text-secondary">{rule}</span>
                   </div>
                 ))}

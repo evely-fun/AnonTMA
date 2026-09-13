@@ -198,7 +198,7 @@ export const ShopPage = () => {
 
         <m.div
           key={tab}
-          className="list-window mt-4 space-y-2.5 px-4"
+          className="mt-4 grid grid-cols-2 gap-2.5 px-4"
           variants={listStagger}
           initial="initial"
           animate="animate"
@@ -210,35 +210,41 @@ export const ShopPage = () => {
               <m.div
                 key={item.key}
                 variants={rise}
-                className={`flex items-center gap-3.5 rounded-[18px] px-4 py-3.5 ${
+                className={`flex flex-col items-center gap-2 rounded-[20px] px-3 py-4 ${
                   worn ? "panel-hero" : "panel"
                 }`}
               >
-                <Preview item={item} seed={seed} scheme={scheme} />
+                {/* A shelf, not a list. The goods are shown at a size worth
+                    looking at and the price sits under each one. */}
+                <span className="scale-[1.45] py-3">
+                  <Preview item={item} seed={seed} scheme={scheme} />
+                </span>
 
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-[14.5px] font-bold tracking-[-0.01em]">
-                    {t(`shop.items.${item.category}.${item.value}`)}
-                  </p>
-                  <p
-                    className={`mt-0.5 font-display text-[10.5px] font-bold tracking-[0.1em] ${
-                      RARITY_TONE[item.rarity]
-                    }`}
-                  >
-                    {t(`shop.rarity.${item.rarity}`)}
-                    {item.category === "avatar" && item.value === suggested && !item.owned && (
-                      <span className="ml-2 text-accent">{t("shop.suggested")}</span>
-                    )}
-                  </p>
-                </div>
+                <p className="line-clamp-2 w-full text-center font-display text-[13px] font-bold leading-tight">
+                  {t(`shop.items.${item.category}.${item.value}`)}
+                </p>
+                <p
+                  className={`font-display text-[10px] font-bold tracking-[0.01em] ${
+                    RARITY_TONE[item.rarity]
+                  }`}
+                >
+                  {t(`shop.rarity.${item.rarity}`)}
+                </p>
 
+                <span className="mt-auto w-full pt-1">
                 {worn ? (
-                  <span className="flex items-center gap-1.5 font-display text-[12px] font-bold text-accent">
+                  <span className="flex h-9 items-center justify-center gap-1.5 font-display text-[12px] font-bold text-accent">
                     <CheckIcon size={15} />
                     {t("shop.equipped")}
                   </span>
                 ) : item.owned && !item.consumable ? (
-                  <Button size="sm" variant="surface" loading={pending} onClick={() => void onEquip(item)}>
+                  <Button
+                    full
+                    size="sm"
+                    variant="surface"
+                    loading={pending}
+                    onClick={() => void onEquip(item)}
+                  >
                     {t("shop.equip")}
                   </Button>
                 ) : (
@@ -248,17 +254,18 @@ export const ShopPage = () => {
                     onClick={() => void onBuy(item)}
                     whileTap={{ scale: 0.95 }}
                     transition={spring.snappy}
-                    className={`flex h-9 shrink-0 items-center gap-1.5 rounded-[12px] px-3.5 font-display text-[13px] font-extrabold tabular ${
+                    className={`flex h-9 w-full items-center justify-center gap-1.5 rounded-[12px] px-3 font-display text-[13px] font-extrabold tabular ${
                       item.affordable ? "primary-action" : "bg-elevated text-hint"
                     }`}
                   >
-                    {item.affordable ? (
-                      <CoinIcon size={13} />
-                    ) : (
-                      <LockIcon size={12} />
-                    )}
+                    {item.affordable ? <CoinIcon size={13} /> : <LockIcon size={12} />}
                     {item.price.toLocaleString("en-US")}
                   </m.button>
+                )}
+                </span>
+
+                {item.category === "avatar" && item.value === suggested && !item.owned && (
+                  <span className="text-[10.5px] text-accent">{t("shop.suggested")}</span>
                 )}
               </m.div>
             );

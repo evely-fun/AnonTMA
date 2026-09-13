@@ -169,11 +169,14 @@ export const SettingsPage = () => {
                             ? "shadow-[0_0_0_2px_var(--color-accent)]"
                             : "shadow-[0_0_0_1px_var(--sheen)]"
                         }`}
-                        style={{ background: swatch.ground }}
+                        style={{ background: swatch.accent }}
                       >
+                        {/* The accent fills the swatch and the ground sits in
+                            the corner. Half and half made every light palette
+                            look like the same pale disc. */}
                         <span
-                          className="absolute inset-x-0 bottom-0 h-1/2"
-                          style={{ background: swatch.accent, opacity: 0.9 }}
+                          className="absolute bottom-1 right-1 size-3.5 rounded-full"
+                          style={{ background: swatch.ground }}
                         />
                         {active && !locked && (
                           <m.span
