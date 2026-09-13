@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { peerManager } from "@/features/voice/webrtc";
+import { useVoice } from "@/store/voice";
 import { request } from "@/shared/lib/api";
 import type { GameMeta, PresenceSnapshot, Profile } from "@/shared/lib/types";
 import type { SocketStatus } from "@/shared/lib/socket";
@@ -52,6 +53,7 @@ export const useSession = create<SessionState>((set, get) => ({
         iceTransportPolicy: ice.iceTransportPolicy ?? "all",
         iceCandidatePoolSize: ice.iceCandidatePoolSize ?? 0,
       });
+      useVoice.getState().applyPreferences(profile.preferences);
       set({
         profile,
         games: bootstrap.games,
@@ -84,3 +86,7 @@ export const useSession = create<SessionState>((set, get) => ({
   setPresence: (presence) => set({ presence }),
   setConnection: (connection) => set({ connection }),
 }));
+
+if (import.meta.env.DEV) {
+  (window as unknown as { __sessionStore?: typeof useSession }).__sessionStore = useSession;
+}

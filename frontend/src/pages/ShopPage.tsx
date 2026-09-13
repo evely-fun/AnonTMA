@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useBackButton } from "@/shared/hooks/useBackButton";
 import { useT } from "@/shared/i18n";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
-import { nameEffectClass } from "@/shared/lib/cosmetics";
+import { backgroundClass, nameEffectClass } from "@/shared/lib/cosmetics";
 import { haptic } from "@/shared/lib/telegram";
 import { paletteSwatch, resolveScheme, type Palette, type ThemeMode } from "@/shared/lib/theme";
 import type { ShopItem } from "@/shared/lib/types";
@@ -19,7 +19,15 @@ import { toast } from "@/store/ui";
 
 type Category = ShopItem["category"];
 
-const ORDER: Category[] = ["avatar", "frame", "effect", "palette", "boost", "premium"];
+const ORDER: Category[] = [
+  "avatar",
+  "frame",
+  "effect",
+  "background",
+  "palette",
+  "boost",
+  "premium",
+];
 
 const RARITY_TONE: Record<ShopItem["rarity"], string> = {
   base: "text-hint",
@@ -43,6 +51,17 @@ const Preview = ({
   }
   if (item.category === "frame") {
     return <Avatar seed={seed} frame={item.value} size={46} />;
+  }
+  if (item.category === "background") {
+    // The empty skin paints nothing, so the none row needs a neutral tile of
+    // its own or it sits with no swatch while every other row has one.
+    return (
+      <span
+        className={`size-11 rounded-[14px] ${
+          backgroundClass(item.value) || "bg-elevated shadow-[inset_0_0_0_1px_var(--color-separator)]"
+        }`}
+      />
+    );
   }
   if (item.category === "palette") {
     // The swatch has to be resolved from the palette itself, not from the
@@ -143,7 +162,8 @@ export const ShopPage = () => {
   const isWorn = (item: ShopItem) =>
     (item.category === "avatar" && equipped.avatar === item.value) ||
     (item.category === "frame" && equipped.frame === item.value) ||
-    (item.category === "effect" && equipped.effect === item.value);
+    (item.category === "effect" && equipped.effect === item.value) ||
+    (item.category === "background" && equipped.background === item.value);
 
   return (
     <PushScreen>

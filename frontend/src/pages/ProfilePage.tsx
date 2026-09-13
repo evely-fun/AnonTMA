@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useT } from "@/shared/i18n";
-import { nameEffectClass } from "@/shared/lib/cosmetics";
+import { backgroundClass, nameEffectClass } from "@/shared/lib/cosmetics";
 import { request } from "@/shared/lib/api";
 import { compactNumber, durationLabel } from "@/shared/lib/format";
 import { listStagger, rise } from "@/shared/lib/motion";
@@ -131,7 +131,11 @@ export const ProfilePage = () => {
     <TabScreen>
       <m.div className="space-y-7 pb-4" variants={listStagger} initial="initial" animate="animate">
         <m.section className="px-4" variants={rise}>
-          <div className="panel-hero rounded-[24px] px-5 py-5">
+          <div
+            className={`panel-hero rounded-[24px] px-5 py-5 ${backgroundClass(
+              profile.equipped?.background,
+            )}`}
+          >
             <div className="flex items-center gap-4">
               <Avatar
                 seed={profile.avatarSeed}
@@ -169,13 +173,19 @@ export const ProfilePage = () => {
               </p>
             </button>
 
-            <div className="mt-4 flex gap-2">
-              <Button size="sm" variant="surface" onClick={() => setEditing(true)}>
+            <div className="mt-4 flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="surface"
+                className="whitespace-nowrap"
+                onClick={() => setEditing(true)}
+              >
                 {t("profile.editProfile")}
               </Button>
               <Button
                 size="sm"
                 variant="quiet"
+                className="whitespace-nowrap"
                 icon={<MaskIcon size={15} />}
                 onClick={() => void regenerate()}
               >

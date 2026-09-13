@@ -103,6 +103,7 @@ export class VoicePipeline {
   private processedEnergy = 0;
   private starvedWindows = 0;
   private releaseAudioState: (() => void) | null = null;
+  private maskListeners = new Set<(unavailable: boolean) => void>();
   private building = false;
 
   level: NoiseLevel = "medium";
@@ -111,6 +112,7 @@ export class VoicePipeline {
   ready = false;
   route: CaptureRoute = "raw";
   published: MediaStreamTrack | null = null;
+  maskUnavailable = false;
 
   async start(level: NoiseLevel = "medium", preset: VoicePreset = "natural"): Promise<MediaStreamTrack> {
     if (this.ready && this.published) {
@@ -136,9 +138,10 @@ export class VoicePipeline {
     // The unprocessed track goes on the wire first. Every effect below lives
     // in a Web Audio graph that a suspended context, a blocked worklet or a
     // hostile webview can silence, and the caller must never be left sending
-    // digital silence while all of that is being sorted out.
+    // digital silence while all of that is being sorted out. The one exception
+    // is a voice mask, handled in selectRoute.
     this.ready = true;
-    this.publish(raw, "raw");
+    this.selectRoute();
     this.startSampling();
 
     void this.buildGraph(profile);
@@ -197,11 +200,60 @@ export class VoicePipeline {
     return this.source;
   }
 
-  private demote(): void {
+  private get maskRequired(): boolean {
+    return this.preset !== "natural";
+  }
+
+  /**
+   * Decides what actually goes on the wire. Falling back to the raw
+   * microphone is the right answer for everyone except someone using a voice
+   * mask: for them the raw track is their real voice, which is the single
+   * thing the mask exists to prevent, so they get silence and a warning
+   * instead of being quietly unmasked.
+   */
+  private selectRoute(): void {
+    const processed = this.processedStream?.getAudioTracks()[0] ?? null;
+    if (processed && processed.readyState === "live" && isRunning()) {
+      this.announceMask(false);
+      this.publish(processed, "processed");
+      return;
+    }
+
+    if (this.maskRequired) {
+      this.publish(null, "raw");
+      this.announceMask(true);
+      return;
+    }
+
     const raw = this.rawStream?.getAudioTracks()[0] ?? null;
-    if (raw && this.route !== "raw") {
+    this.announceMask(false);
+    if (raw) {
       this.publish(raw, "raw");
     }
+  }
+
+  private demote(): void {
+    if (this.route !== "processed" && !this.maskRequired) {
+      return;
+    }
+    this.processedStream = null;
+    this.selectRoute();
+  }
+
+  private announceMask(unavailable: boolean): void {
+    if (this.maskUnavailable === unavailable) {
+      return;
+    }
+    this.maskUnavailable = unavailable;
+    this.maskListeners.forEach((listener) => listener(unavailable));
+  }
+
+  onMask(listener: (unavailable: boolean) => void): () => void {
+    this.maskListeners.add(listener);
+    listener(this.maskUnavailable);
+    return () => {
+      this.maskListeners.delete(listener);
+    };
   }
 
   private async buildGraph(profile: LevelProfile): Promise<void> {
@@ -298,7 +350,7 @@ export class VoicePipeline {
         return;
       }
       this.starvedWindows = 0;
-      this.publish(track, "processed");
+      this.selectRoute();
     }, PROMOTE_DELAY_MS);
   }
 
@@ -460,8 +512,12 @@ export class VoicePipeline {
   }
 
   setPreset(preset: VoicePreset): void {
+    const had = this.maskRequired;
     this.preset = preset;
     voiceChanger.setPreset(preset);
+    if (this.ready && had !== this.maskRequired) {
+      this.selectRoute();
+    }
   }
 
   setMuted(muted: boolean): void {
@@ -544,6 +600,7 @@ export class VoicePipeline {
     this.rawStream?.getTracks().forEach((track) => track.stop());
     this.rawStream = null;
     this.publish(null, "raw");
+    this.announceMask(false);
     this.meterListeners.clear();
     this.muted = false;
   }

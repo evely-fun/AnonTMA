@@ -223,7 +223,7 @@ export const Meter = ({
   };
   return (
     <div
-      className="w-full overflow-hidden rounded-full bg-elevated"
+      className="meter-track w-full overflow-hidden rounded-full bg-elevated"
       style={{ height }}
       role="progressbar"
     >

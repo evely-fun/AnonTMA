@@ -20,13 +20,21 @@ class Item:
 
 # Cosmetics are permanent unlocks, boosts are consumed on purchase.
 CATALOG: tuple[Item, ...] = (
-    Item("avatar.geometric", "avatar", 0, "geometric", "base"),
-    Item("avatar.lorelei", "avatar", 900, "lorelei", "common"),
-    Item("avatar.notionists", "avatar", 1200, "notionists", "common"),
-    Item("avatar.openPeeps", "avatar", 1600, "openPeeps", "rare"),
-    Item("avatar.thumbs", "avatar", 1100, "thumbs", "common"),
-    Item("avatar.pixelArt", "avatar", 2000, "pixelArt", "rare"),
+    # Everyone gets a real character for free, the abstract marks are the
+    # ones that cost something now.
+    Item("avatar.adventurer", "avatar", 0, "adventurer", "base"),
+    Item("avatar.notionists", "avatar", 0, "notionists", "base"),
+    Item("avatar.lorelei", "avatar", 0, "lorelei", "base"),
+    Item("avatar.openPeeps", "avatar", 0, "openPeeps", "base"),
+    Item("avatar.micah", "avatar", 0, "micah", "base"),
+    Item("avatar.personas", "avatar", 700, "personas", "common"),
+    Item("avatar.bigSmile", "avatar", 900, "bigSmile", "common"),
+    Item("avatar.avataaars", "avatar", 1200, "avataaars", "common"),
+    Item("avatar.pixelArt", "avatar", 1600, "pixelArt", "rare"),
+    Item("avatar.bottts", "avatar", 1900, "bottts", "rare"),
+    Item("avatar.thumbs", "avatar", 2200, "thumbs", "epic"),
     Item("avatar.shapes", "avatar", 2600, "shapes", "epic"),
+    Item("avatar.geometric", "avatar", 2600, "geometric", "epic"),
 
     Item("frame.none", "frame", 0, "none", "base"),
     Item("frame.halo", "frame", 500, "halo", "common"),
@@ -39,6 +47,14 @@ CATALOG: tuple[Item, ...] = (
     Item("effect.gradient", "effect", 1200, "gradient", "common"),
     Item("effect.glow", "effect", 2200, "glow", "rare"),
     Item("effect.aurora", "effect", 3500, "aurora", "epic"),
+
+    Item("background.none", "background", 0, "none", "base"),
+    Item("background.dawn", "background", 600, "dawn", "common"),
+    Item("background.tide", "background", 900, "tide", "common"),
+    Item("background.mesh", "background", 1400, "mesh", "rare"),
+    Item("background.nebula", "background", 2100, "nebula", "rare"),
+    Item("background.prism", "background", 2800, "prism", "epic"),
+    Item("background.aurora", "background", 3600, "aurora", "legendary"),
 
     Item("palette.garnet", "palette", 800, "garnet", "common"),
     Item("palette.amethyst", "palette", 1000, "amethyst", "common"),
@@ -54,8 +70,13 @@ CATALOG: tuple[Item, ...] = (
 
 BY_KEY = {item.key: item for item in CATALOG}
 FREE_KEYS = {item.key for item in CATALOG if item.price == 0}
-SLOTS = {"avatar": "avatar", "frame": "frame", "effect": "effect"}
-DEFAULT_EQUIPPED = {"avatar": "geometric", "frame": "none", "effect": "none"}
+SLOTS = {"avatar": "avatar", "frame": "frame", "effect": "effect", "background": "background"}
+DEFAULT_EQUIPPED = {
+    "avatar": "adventurer",
+    "frame": "none",
+    "effect": "none",
+    "background": "none",
+}
 
 
 def equipped_of(user: User) -> dict:

@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { ApiError, request } from "@/shared/lib/api";
 import type { ShopItem } from "@/shared/lib/types";
 
-type Equipped = { avatar: string; frame: string; effect: string };
+type Equipped = { avatar: string; frame: string; effect: string; background: string };
 
 interface ShopState {
   items: ShopItem[];
@@ -16,7 +16,12 @@ interface ShopState {
   equip: (key: string) => Promise<boolean>;
 }
 
-const DEFAULTS: Equipped = { avatar: "geometric", frame: "none", effect: "none" };
+const DEFAULTS: Equipped = {
+  avatar: "adventurer",
+  frame: "none",
+  effect: "none",
+  background: "none",
+};
 
 export const useShop = create<ShopState>((set, get) => ({
   items: [],

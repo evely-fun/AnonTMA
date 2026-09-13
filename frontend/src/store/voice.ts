@@ -1,8 +1,8 @@
 import { create } from "zustand";
 
 import { resumeAudio } from "@/features/voice/audioContext";
-import type { VoicePreset } from "@/features/voice/changer";
-import { voicePipeline, type CaptureRoute, type NoiseLevel } from "@/features/voice/noise";
+import { VOICE_PRESETS, type VoicePreset } from "@/features/voice/changer";
+import { NOISE_LEVELS, voicePipeline, type CaptureRoute, type NoiseLevel } from "@/features/voice/noise";
 import { peerManager } from "@/features/voice/webrtc";
 import { realtime } from "@/shared/lib/socket";
 
@@ -12,6 +12,7 @@ interface VoiceState {
   level: NoiseLevel;
   preset: VoicePreset;
   route: CaptureRoute;
+  maskUnavailable: boolean;
   micLevel: number;
   speaking: boolean;
   permission: "unknown" | "granted" | "denied";
@@ -19,6 +20,7 @@ interface VoiceState {
   peerLevels: Record<number, number>;
   error: string | null;
 
+  applyPreferences: (preferences: { noiseSuppression?: string; voicePreset?: string } | undefined) => void;
   enable: (level?: NoiseLevel) => Promise<boolean>;
   disable: () => Promise<void>;
   toggleMute: () => void;
@@ -33,6 +35,7 @@ interface VoiceState {
 let releaseMeter: (() => void) | null = null;
 let releaseTrack: (() => void) | null = null;
 let releaseLevels: (() => void) | null = null;
+let releaseMask: (() => void) | null = null;
 
 export const useVoice = create<VoiceState>((set, get) => ({
   active: false,
@@ -40,12 +43,38 @@ export const useVoice = create<VoiceState>((set, get) => ({
   level: "medium",
   preset: "natural",
   route: "raw",
+  maskUnavailable: false,
   micLevel: 0,
   speaking: false,
   permission: "unknown",
   playbackBlocked: false,
   peerLevels: {},
   error: null,
+
+  /**
+   * The saved level and voice mask were written to the profile but never read
+   * back, so every session silently restarted on the defaults and a paid
+   * voice mask simply did not apply.
+   */
+  applyPreferences: (preferences) => {
+    if (!preferences) {
+      return;
+    }
+    const level = preferences.noiseSuppression as NoiseLevel | undefined;
+    const preset = preferences.voicePreset as VoicePreset | undefined;
+    if (level && NOISE_LEVELS.includes(level)) {
+      set({ level });
+      if (get().active) {
+        voicePipeline.setLevel(level);
+      }
+    }
+    if (preset && VOICE_PRESETS.includes(preset)) {
+      set({ preset });
+      if (get().active) {
+        voicePipeline.setPreset(preset);
+      }
+    }
+  },
 
   enable: async (level) => {
     if (get().active) {
@@ -80,6 +109,9 @@ export const useVoice = create<VoiceState>((set, get) => ({
       releaseLevels?.();
       releaseLevels = peerManager.onLevels((levels) => get().setPeerLevels(levels));
 
+      releaseMask?.();
+      releaseMask = voicePipeline.onMask((maskUnavailable) => set({ maskUnavailable }));
+
       set({
         active: true,
         permission: "granted",
@@ -102,12 +134,22 @@ export const useVoice = create<VoiceState>((set, get) => ({
     releaseMeter?.();
     releaseTrack?.();
     releaseLevels?.();
+    releaseMask?.();
     releaseMeter = null;
     releaseTrack = null;
     releaseLevels = null;
+    releaseMask = null;
     await voicePipeline.stop();
     peerManager.setLocalTrack(null);
-    set({ active: false, muted: false, micLevel: 0, speaking: false, peerLevels: {}, route: "raw" });
+    set({
+      active: false,
+      muted: false,
+      micLevel: 0,
+      speaking: false,
+      peerLevels: {},
+      route: "raw",
+      maskUnavailable: false,
+    });
   },
 
   toggleMute: () => {
@@ -131,7 +173,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
 
   setPreset: (preset) => {
     voicePipeline.setPreset(preset);
-    set({ preset });
+    set({ preset, maskUnavailable: voicePipeline.maskUnavailable });
   },
 
   setPlaybackBlocked: (playbackBlocked) => set({ playbackBlocked }),

@@ -8,7 +8,7 @@ import { request } from "@/shared/lib/api";
 import { haptic } from "@/shared/lib/telegram";
 import type { Profile } from "@/shared/lib/types";
 import { Button, OptionRow, Segmented, Sheet } from "@/shared/ui";
-import { CrownIcon, LockIcon } from "@/shared/ui/icons";
+import { CrownIcon, LockIcon, MicOffIcon } from "@/shared/ui/icons";
 import { useSession } from "@/store/session";
 import { useVoice } from "@/store/voice";
 
@@ -21,6 +21,7 @@ export const AudioSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
   const preset = useVoice((state) => state.preset);
   const setLevel = useVoice((state) => state.setLevel);
   const setPreset = useVoice((state) => state.setPreset);
+  const maskUnavailable = useVoice((state) => state.maskUnavailable);
   const [tab, setTab] = useState<"noise" | "voice">("noise");
 
   const premium = profile?.premium?.active ?? false;
@@ -82,6 +83,15 @@ export const AudioSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
       ) : (
         <div className="flex flex-col gap-2 pt-3 pb-2">
           <p className="px-1 pb-1 text-[12.5px] leading-snug text-hint">{t("voice.changerHint")}</p>
+          {maskUnavailable && (
+            <div className="mb-1 flex items-start gap-3 rounded-[16px] bg-warn/15 px-4 py-3">
+              <MicOffIcon size={17} className="mt-0.5 shrink-0 text-warn" />
+              <p className="flex-1 text-[12.5px] leading-snug text-secondary">
+                <span className="block font-display font-bold text-warn">{t("voice.maskDown")}</span>
+                {t("voice.maskDownBody")}
+              </p>
+            </div>
+          )}
           {!premium && (
             <div className="mb-1 flex items-center gap-3 rounded-[16px] bg-accent-quiet px-4 py-3">
               <CrownIcon size={18} className="shrink-0 text-accent" />

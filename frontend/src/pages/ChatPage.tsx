@@ -129,6 +129,7 @@ const VoiceStage = () => {
   const preset = useVoice((state) => state.preset);
   const permission = useVoice((state) => state.permission);
   const playbackBlocked = useVoice((state) => state.playbackBlocked);
+  const maskUnavailable = useVoice((state) => state.maskUnavailable);
   const unlockPlayback = useVoice((state) => state.unlockPlayback);
   const toggleMute = useVoice((state) => state.toggleMute);
   const [sheet, setSheet] = useState(false);
@@ -164,9 +165,10 @@ const VoiceStage = () => {
             {t("chat.tapToHear")}
           </m.button>
         )}
-        {preset !== "natural" && (
+        {preset !== "natural" && !maskUnavailable && (
           <Chip tone="accent">{t(`voice.presets.${preset}.name`)}</Chip>
         )}
+        {maskUnavailable && <Chip tone="danger">{t("voice.maskDown")}</Chip>}
       </div>
 
       <div className="flex items-center gap-5">

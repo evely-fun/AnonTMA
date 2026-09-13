@@ -48,7 +48,7 @@ export interface Profile {
   createdAt: string;
   lastSeenAt: string | null;
   referralCode: string;
-  equipped: { avatar: string; frame: string; effect: string };
+  equipped: { avatar: string; frame: string; effect: string; background: string };
   palette: string;
   uiLanguage: string;
   premium: { active: boolean; until: string | null };
@@ -250,7 +250,7 @@ export interface Product {
 
 export interface ShopItem {
   key: string;
-  category: "avatar" | "frame" | "effect" | "palette" | "boost" | "premium";
+  category: "avatar" | "frame" | "effect" | "background" | "palette" | "boost" | "premium";
   value: string;
   price: number;
   rarity: "base" | "common" | "rare" | "epic" | "legendary";
