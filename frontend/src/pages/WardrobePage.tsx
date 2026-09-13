@@ -133,7 +133,13 @@ export const WardrobePage = () => {
             {/* The mirror stays in view while you browse the rails, so it is
                 laid out sideways: tall enough to judge a frame, short enough
                 that the shelves are not pushed off the screen. */}
-            <Avatar seed={profile.avatarSeed} style={worn.avatar} frame={worn.frame} size={76} />
+            <Avatar
+              seed={profile.avatarSeed}
+              style={worn.avatar}
+              frame={worn.frame}
+              gender={profile.gender}
+              size={76}
+            />
             <p
               className={`min-w-0 flex-1 font-display text-[19px] font-extrabold leading-tight tracking-[-0.025em] ${nameEffectClass(
                 worn.effect,
@@ -200,6 +206,7 @@ export const WardrobePage = () => {
                         seed={profile.avatarSeed}
                         name={profile.anonName}
                         style={worn.avatar}
+                        gender={profile.gender}
                       />
                       <span className="line-clamp-2 w-full text-center text-[11px] leading-tight text-secondary">
                         {t(`shop.items.${slot}.${item.value}`)}
@@ -247,6 +254,7 @@ const ShelfPreview = ({
   seed,
   name,
   style,
+  gender,
 }: {
   slot: Slot;
   value: string;
@@ -254,12 +262,13 @@ const ShelfPreview = ({
   name: string;
   /** Frames are shown around the face you are actually wearing. */
   style: string;
+  gender: string;
 }) => {
   if (slot === "avatar") {
-    return <Avatar seed={seed} style={value} size={58} />;
+    return <Avatar seed={seed} style={value} gender={gender} size={58} />;
   }
   if (slot === "frame") {
-    return <Avatar seed={seed} style={style} frame={value} size={58} />;
+    return <Avatar seed={seed} style={style} frame={value} gender={gender} size={58} />;
   }
   if (slot === "effect") {
     return (

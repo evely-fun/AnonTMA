@@ -167,7 +167,7 @@ export const OnboardingPage = () => {
             animate="animate"
             exit="exit"
           >
-            <Avatar seed={profile?.avatarSeed ?? "anon"} size={118} />
+            <Avatar seed={profile?.avatarSeed ?? "anon"} gender={profile?.gender} size={118} />
             <h1 className="mt-2 font-display text-[24px] font-extrabold tracking-[-0.03em]">
               {profile?.anonName ?? t("chat.stranger")}
             </h1>

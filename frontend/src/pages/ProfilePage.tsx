@@ -126,6 +126,7 @@ export const ProfilePage = () => {
                 seed={profile.avatarSeed}
                 style={profile.equipped?.avatar}
                 frame={profile.equipped?.frame}
+                gender={profile.gender}
                 size={68}
               />
               <div className="min-w-0 flex-1">

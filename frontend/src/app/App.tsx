@@ -205,6 +205,7 @@ const TopBar = () => {
               seed={profile?.avatarSeed ?? "anon"}
               style={profile?.equipped?.avatar}
               frame={profile?.equipped?.frame}
+              gender={profile?.gender}
               size={30}
             />
             <span
