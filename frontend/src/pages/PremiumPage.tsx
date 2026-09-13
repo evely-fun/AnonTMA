@@ -32,6 +32,12 @@ const PERKS = [
 
 export const PremiumPage = () => {
   const { t, locale } = useT();
+  // Plan copy comes from the payment provider in English. Prefer a translated
+  // string when one exists and fall back to whatever the server sent.
+  const localised = (path: string, fallback: string): string => {
+    const value = t(path);
+    return value === path ? fallback : value;
+  };
   const navigate = useNavigate();
   const profile = useSession((state) => state.profile);
   const refreshProfile = useSession((state) => state.refreshProfile);
@@ -108,7 +114,7 @@ export const PremiumPage = () => {
                 {until ? ` · ${t("economy.until", { date: until })}` : ""}
               </p>
             ) : (
-              <p className="mt-1.5 text-[13.5px] text-secondary">{t("economy.premiumSubtitle")}</p>
+              <p className="mt-1.5 text-[13.5px] text-secondary">{t("economy.inactive")}</p>
             )}
           </div>
         </m.section>
@@ -139,10 +145,10 @@ export const PremiumPage = () => {
               >
                 <span className="min-w-0 flex-1">
                   <span className="block font-display text-[15px] font-extrabold tracking-[-0.01em]">
-                    {product.title}
+                    {localised(`economy.plans.${product.key}.title`, product.title)}
                   </span>
                   <span className="mt-0.5 block text-[12.5px] leading-snug text-hint">
-                    {product.description}
+                    {localised(`economy.plans.${product.key}.body`, product.description)}
                   </span>
                   <span className="mt-1.5 block font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint">
                     {product.recurring ? t("economy.perMonth") : t("economy.oneOff")}

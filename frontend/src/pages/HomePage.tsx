@@ -140,14 +140,14 @@ export const HomeDock = () => {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 mx-auto max-w-[480px] px-4 pb-[calc(72px+env(safe-area-inset-bottom))]">
-      <span className="dock-scrim pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[130px]" />
+      <span className="dock-scrim pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[210px]" />
       <m.div
         className="nav-island pointer-events-auto flex items-center gap-2.5 rounded-[20px] p-2"
         initial={{ y: 18, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.38, ease: [0.23, 1, 0.32, 1] }}
       >
-        <div className="w-[124px] shrink-0">
+        <div className="w-[112px] shrink-0">
           <Segmented
             id="mode"
             value={mode}
@@ -163,7 +163,7 @@ export const HomeDock = () => {
           onClick={begin}
           whileTap={{ scale: 0.97 }}
           transition={spring.snappy}
-          className={`flex h-[46px] flex-1 items-center justify-center gap-2 rounded-[15px] font-display text-[15px] font-extrabold tracking-[-0.01em] ${
+          className={`flex h-[46px] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[15px] px-2 font-display text-[14.5px] font-extrabold tracking-[-0.015em] ${
             short ? "bg-elevated text-hint" : "primary-action"
           }`}
         >
@@ -197,7 +197,7 @@ export const HomePage = () => {
   return (
     <TabScreen>
       <m.div
-        className="space-y-7 pb-[168px]"
+        className="space-y-7 pb-[186px]"
         variants={listStagger}
         initial="initial"
         animate="animate"

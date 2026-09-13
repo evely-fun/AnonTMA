@@ -446,6 +446,21 @@ export const en = {
     purchaseFailed: "Purchase failed",
     purchased: "Premium activated",
     products: "Plans",
+    inactive: "Not active yet",
+    plans: {
+      premium_month: {
+        title: "Premium, one month",
+        body: "Unlimited energy, voice changer, every palette and priority matching.",
+      },
+      premium_week: {
+        title: "Premium, one week",
+        body: "The same perks for seven days, no renewal.",
+      },
+      energy_pack: {
+        title: "Energy pack",
+        body: "Refills your energy to the cap right away.",
+      },
+    },
   },
   voice: {
     changer: "Voice changer",
