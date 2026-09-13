@@ -401,6 +401,7 @@ export const ru: Dictionary = {
     rating: "Рейтинг",
     voice: "Голос",
     wins: "Победы",
+    you: "Вы",
   },
   onboarding: {
     title: "Общайтесь с людьми под маской",

@@ -184,7 +184,7 @@ export const RoomPage = () => {
                   {own ? t("common.you") : member.anonName.split(" ").slice(0, 2).join(" ")}
                 </span>
                 {member.role !== "member" && (
-                  <span className="flex items-center gap-1 font-display text-[9.5px] font-bold tracking-[0.1em] text-warn">
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-warn">
                     <CrownIcon size={10} />{" "}
                     {member.role === "host" ? t("rooms.host") : t("moderation.cohost")}
                   </span>
@@ -270,7 +270,7 @@ export const RoomPage = () => {
           )}
           {messages.map((message) => (
             <div key={message.id} className="rounded-[14px] bg-elevated/60 px-3.5 py-2.5">
-              <span className="block font-display text-[11px] font-bold tracking-[0.1em] text-accent">
+              <span className="block text-[12px] font-semibold text-accent">
                 {message.anonName.split(" ")[0]}
               </span>
               <span className="mt-0.5 block break-words text-[14px]">{message.text}</span>

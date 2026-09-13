@@ -7,7 +7,7 @@ import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { listStagger, rise } from "@/shared/lib/motion";
 import { Meter, PushScreen, ScreenHeader, SectionHead, Skeleton } from "@/shared/ui";
-import { BoltIcon, CheckIcon, CoinIcon, CrownIcon, LockIcon } from "@/shared/ui/icons";
+import { BoltIcon, CheckIcon, CoinIcon, CrownIcon } from "@/shared/ui/icons";
 
 interface Rung {
   level: number;
@@ -30,9 +30,17 @@ interface Levels {
   ladder: Rung[];
 }
 
-const Perk = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
+const Perk = ({
+  icon,
+  label,
+  tone = "text-accent",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  tone?: string;
+}) => (
   <span className="flex items-center gap-1.5 text-[12px] text-secondary">
-    <span className="text-accent">{icon}</span>
+    <span className={tone}>{icon}</span>
     {label}
   </span>
 );
@@ -83,7 +91,7 @@ export const LevelsPage = () => {
                 <div className="mt-3">
                   <Meter ratio={data.ratio} />
                 </div>
-                <p className="mt-2 font-display text-[11px] font-bold tracking-[0.1em] text-hint tabular">
+                <p className="mt-2 text-[12px] text-hint tabular">
                   {data.xpIntoLevel} / {data.xpForNext} XP
                   {next && ` · ${t("progression.needXp", { count: data.xpForNext - data.xpIntoLevel })}`}
                 </p>
@@ -93,12 +101,14 @@ export const LevelsPage = () => {
                     {data.energyBonus > 0 && (
                       <Perk
                         icon={<BoltIcon size={13} />}
+                        tone="text-warn"
                         label={t("progression.perkEnergy", { count: data.energyBonus })}
                       />
                     )}
                     {data.coinBonus > 0 && (
                       <Perk
                         icon={<CoinIcon size={13} />}
+                        tone="text-live"
                         label={t("progression.perkCoins", { count: data.coinBonus })}
                       />
                     )}
@@ -109,64 +119,82 @@ export const LevelsPage = () => {
 
             <m.section variants={rise}>
               <SectionHead title={t("progression.next")} note={t("progression.howXp")} />
-              <div className="list-window space-y-2 px-4">
-                {data.ladder.map((rung) => (
-                  <div
-                    key={rung.level}
-                    className={`flex items-start gap-3.5 rounded-[18px] px-4 py-3.5 ${
-                      rung.reached ? "panel" : "quiet-panel"
-                    }`}
-                  >
-                    <span
-                      className={`flex size-9 shrink-0 items-center justify-center rounded-[12px] font-display text-[14px] font-extrabold tabular ${
-                        rung.reached
-                          ? "bg-accent-quiet text-accent"
-                          : "bg-elevated text-hint"
-                      }`}
-                    >
-                      {rung.reached ? <CheckIcon size={16} /> : rung.level}
-                    </span>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="flex items-center gap-2 font-display text-[14.5px] font-bold tracking-[-0.01em]">
-                        {t("progression.rung", { level: rung.level })}
-                        {rung.newTitle && (
-                          <span className="rounded-full bg-accent-quiet px-2 py-0.5 font-display text-[9.5px] font-bold tracking-[0.01em] text-accent">
-                            {t(`titles.${rung.title}`)}
+              {/* One climb rather than forty identical cards each carrying its
+                  own padlock. The rail is continuous, the node says whether a
+                  rung is behind you, and only the rungs that actually give
+                  something spend a line on saying so. */}
+              <div className="list-window relative px-4">
+                <span
+                  aria-hidden
+                  className="absolute bottom-7 left-[27px] top-5 w-px bg-separator"
+                />
+                {data.ladder.map((rung) => {
+                  const current = rung.level === data.level;
+                  const perks = rung.newTitle || rung.energyBonus > 0 || rung.coinBonus > 0;
+                  return (
+                    <div key={rung.level} className="relative flex items-start gap-4 py-2.5">
+                      <span
+                        className={`relative z-10 flex size-[22px] shrink-0 items-center justify-center rounded-full ${
+                          current
+                            ? "bg-accent text-on-accent"
+                            : rung.reached
+                              ? "bg-accent-quiet text-accent"
+                              : "bg-elevated text-hint"
+                        }`}
+                      >
+                        {rung.reached && !current ? (
+                          <CheckIcon size={12} />
+                        ) : (
+                          <span className="font-display text-[10.5px] font-extrabold tabular">
+                            {rung.level}
                           </span>
                         )}
-                      </p>
-                      <p className="mt-0.5 font-display text-[11px] font-bold tracking-[0.01em] text-hint tabular">
-                        {rung.xpTotal.toLocaleString("en-US")} XP
-                      </p>
+                      </span>
 
-                      {(rung.energyBonus > 0 || rung.coinBonus > 0 || rung.newTitle) && (
-                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                          {rung.newTitle && (
-                            <Perk
-                              icon={<CrownIcon size={12} />}
-                              label={t("progression.perkTitle", { title: t(`titles.${rung.title}`) })}
-                            />
-                          )}
-                          {rung.energyBonus > 0 && (
-                            <Perk
-                              icon={<BoltIcon size={12} />}
-                              label={t("progression.perkEnergy", { count: rung.energyBonus })}
-                            />
-                          )}
-                          {rung.coinBonus > 0 && (
-                            <Perk
-                              icon={<CoinIcon size={12} />}
-                              label={t("progression.perkCoins", { count: rung.coinBonus })}
-                            />
-                          )}
-                        </div>
-                      )}
+                      <div className={`min-w-0 flex-1 ${rung.reached ? "" : "opacity-70"}`}>
+                        <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                          <span
+                            className={`font-display text-[14px] tracking-[-0.01em] ${
+                              current ? "font-extrabold" : "font-bold"
+                            }`}
+                          >
+                            {t("progression.rung", { level: rung.level })}
+                          </span>
+                          <span className="text-[12px] text-hint tabular">
+                            {rung.xpTotal.toLocaleString("en-US")} XP
+                          </span>
+                        </p>
+
+                        {perks && (
+                          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                            {rung.newTitle && (
+                              <Perk
+                                icon={<CrownIcon size={12} />}
+                                label={t("progression.perkTitle", {
+                                  title: t(`titles.${rung.title}`),
+                                })}
+                              />
+                            )}
+                            {rung.energyBonus > 0 && (
+                              <Perk
+                                icon={<BoltIcon size={12} />}
+                                tone="text-warn"
+                                label={t("progression.perkEnergy", { count: rung.energyBonus })}
+                              />
+                            )}
+                            {rung.coinBonus > 0 && (
+                              <Perk
+                                icon={<CoinIcon size={12} />}
+                                tone="text-live"
+                                label={t("progression.perkCoins", { count: rung.coinBonus })}
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-
-                    {!rung.reached && <LockIcon size={14} className="mt-1 shrink-0 text-hint/60" />}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </m.section>
           </m.div>

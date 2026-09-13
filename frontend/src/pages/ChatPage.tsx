@@ -336,7 +336,7 @@ const RevealCard = () => {
           </span>
           <span className="mt-0.5 flex items-center gap-2 text-[12.5px]">
             {handle && <span className="truncate text-accent">{handle}</span>}
-            <span className="shrink-0 font-display text-[10.5px] font-bold tracking-[0.1em] text-hint">
+            <span className="shrink-0 text-[11.5px] text-hint">
               {t("common.level")} {revealed.level}
             </span>
           </span>

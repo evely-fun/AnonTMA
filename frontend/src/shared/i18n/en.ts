@@ -401,6 +401,7 @@ export const en = {
     rating: "Rating",
     voice: "Voice",
     wins: "Wins",
+    you: "You",
   },
   onboarding: {
     title: "Talk to people behind a mask",

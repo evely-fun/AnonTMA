@@ -12,7 +12,6 @@ import type { Achievement, Profile } from "@/shared/lib/types";
 import {
   ArtTile,
   Avatar,
-  IconTile,
   Button,
   Chip,
   Meter,
@@ -25,7 +24,6 @@ import {
   ChatIcon,
   CheckIcon,
   ChevronIcon,
-  LockIcon,
   CrownIcon,
   FlameIcon,
   GamesIcon,
@@ -137,13 +135,13 @@ export const ProfilePage = () => {
               />
               <div className="min-w-0 flex-1">
                 <h2
-                  className={`truncate font-display text-[21px] font-extrabold tracking-[-0.025em] ${
+                  className={`line-clamp-2 font-display text-[20px] font-extrabold leading-tight tracking-[-0.025em] ${
                     nameEffectClass(profile.equipped?.effect)
                   }`}
                 >
                   {profile.anonName}
                 </h2>
-                <p className="font-display text-[11.5px] font-bold tracking-[0.01em] text-accent">
+                <p className="mt-0.5 text-[12.5px] font-semibold text-accent">
                   {t(`titles.${progress.title}`)} · {t("common.level")} {progress.level}
                 </p>
               </div>
@@ -159,7 +157,7 @@ export const ProfilePage = () => {
               className="mt-4 block w-full text-left"
             >
               <Meter ratio={progress.ratio} />
-              <p className="mt-2 flex items-center gap-1.5 font-display text-[11px] font-bold tracking-[0.1em] text-hint tabular">
+              <p className="mt-2 flex items-center gap-1.5 text-[12.5px] text-hint tabular">
                 {t("profile.xpTo", { current: progress.xpIntoLevel, total: progress.xpForNext, level: progress.level + 1 })}
                 <ChevronIcon size={12} />
               </p>
@@ -229,7 +227,6 @@ export const ProfilePage = () => {
               icon={<MicIcon size={15} />}
               value={durationLabel(stats.voiceSeconds)}
               label={t("profile.voice")}
-              tone="live"
             />
             <StatTile
               icon={<GamesIcon size={15} />}
@@ -245,13 +242,11 @@ export const ProfilePage = () => {
               icon={<FlameIcon size={15} />}
               value={String(stats.streakDays)}
               label={t("profile.streak")}
-              tone="warn"
             />
             <StatTile
               icon={<CrownIcon size={15} />}
               value={String(stats.rating)}
               label={t("profile.rating")}
-              tone="accent"
             />
           </div>
         </m.section>
@@ -273,9 +268,6 @@ export const ProfilePage = () => {
                   item.unlocked ? "panel" : "quiet-panel"
                 }`}
               >
-                <IconTile tone={item.unlocked ? "accent" : "neutral"} size={36}>
-                  {item.unlocked ? <CheckIcon size={16} /> : <LockIcon size={15} />}
-                </IconTile>
                 <div className="min-w-0 flex-1">
                   <p
                     className={`truncate font-display text-[14px] font-bold ${
@@ -288,11 +280,21 @@ export const ProfilePage = () => {
                     {t(`achievements.${item.key}.description`)}
                   </p>
                   {!item.unlocked && (
-                    <div className="mt-2">
-                      <Meter ratio={item.progress / item.threshold} height={4} />
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="flex-1">
+                        <Meter ratio={item.progress / item.threshold} height={4} />
+                      </span>
+                      <span className="shrink-0 text-[11px] text-hint tabular">
+                        {item.progress}/{item.threshold}
+                      </span>
                     </div>
                   )}
                 </div>
+                {item.unlocked && (
+                  <span className="shrink-0 text-accent">
+                    <CheckIcon size={17} />
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -329,7 +331,7 @@ export const ProfilePage = () => {
               wide
             />
           )}
-          <p className="px-6 pt-3 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
+          <p className="px-6 pt-3 text-[12px] text-hint">
             {t("profile.version")}
           </p>
         </m.section>

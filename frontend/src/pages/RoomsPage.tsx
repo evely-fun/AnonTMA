@@ -163,11 +163,11 @@ export const RoomsPage = () => {
                       {room.participants}/{room.maxParticipants}
                     </span>
                     {live ? (
-                      <span className="flex items-center gap-1 font-display text-[10.5px] font-bold tracking-[0.1em] text-live">
+                      <span className="flex items-center gap-1 text-[11.5px] font-semibold text-live">
                         <MicIcon size={11} /> {t("rooms.live")}
                       </span>
                     ) : (
-                      <span className="font-display text-[10.5px] font-bold tracking-[0.1em] text-hint">
+                      <span className="text-[11.5px] text-hint">
                         {t("rooms.quiet")}
                       </span>
                     )}

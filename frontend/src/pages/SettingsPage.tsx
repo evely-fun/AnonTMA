@@ -254,7 +254,7 @@ export const SettingsPage = () => {
                 <button
                   type="button"
                   onClick={() => navigate("/premium")}
-                  className="flex items-center gap-1.5 font-display text-[12px] font-bold tracking-[0.1em] text-accent"
+                  className="flex items-center gap-1.5 font-display text-[13px] font-bold text-accent"
                 >
                   <CrownIcon size={14} />
                   {t("common.premium")}

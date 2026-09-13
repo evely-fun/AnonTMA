@@ -121,7 +121,7 @@ export const FriendsPage = () => {
               <button
                 type="button"
                 onClick={() => void invite()}
-                className="flex items-center gap-1.5 font-display text-[12px] font-bold tracking-[0.1em] text-accent"
+                className="flex items-center gap-1.5 font-display text-[13px] font-bold text-accent"
               >
                 <LinkIcon size={13} />
                 {t("friends.invite")}

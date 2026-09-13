@@ -37,7 +37,7 @@ const Stat = ({ label, value }: { label: string; value: number }) => (
     <span className="font-display text-[20px] font-extrabold leading-none tracking-[-0.03em] tabular">
       {value}
     </span>
-    <span className="font-display text-[9.5px] font-bold tracking-[0.1em] text-hint">
+    <span className="text-[11px] text-hint">
       {label}
     </span>
   </div>
@@ -51,7 +51,7 @@ const Evidence = ({ report }: { report: ModerationReport }) => {
   return (
     <div className="panel rounded-[16px] px-3.5 py-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-display text-[11px] font-bold tracking-[0.1em] text-hint">
+        <span className="text-[12px] text-hint">
           {t(`chat.reasons.${report.reason}`)}
         </span>
         <span className="font-display text-[11px] font-bold text-hint tabular">
@@ -80,7 +80,7 @@ const Evidence = ({ report }: { report: ModerationReport }) => {
                   : "bg-elevated/70 text-secondary"
               }`}
             >
-              <span className="mr-1.5 font-display text-[9.5px] font-bold tracking-[0.1em] opacity-60">
+              <span className="mr-1.5 text-[11px] opacity-60">
                 {message.byTarget ? t("admin.fromTarget") : t("admin.fromReporter")}
               </span>
               {message.text}
@@ -249,7 +249,7 @@ export const AdminPage = () => {
             <div className="flex items-center gap-3.5">
               <Avatar seed={detail.target.avatarSeed} size={54} />
               <div className="min-w-0 flex-1">
-                <p className="font-display text-[12px] font-bold tracking-[0.1em] text-hint">
+                <p className="text-[12.5px] text-hint">
                   {t("common.level")} {detail.target.level} ·{" "}
                   {t("admin.trust", { value: detail.target.trustScore })}
                 </p>
