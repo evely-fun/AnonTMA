@@ -17,6 +17,9 @@
   --color-hint: var(--ink-3);
   --color-separator: var(--line-1);
 
+  --color-art: var(--art-ink);
+  --color-art-soft: var(--art-ink-soft);
+
   --color-accent: var(--accent-1);
   --color-accent-deep: var(--accent-2);
   --color-accent-quiet: var(--accent-soft);
@@ -37,6 +40,14 @@
   blocks below build every surface, ink and accent from them.
 */
 :root {
+  /*
+    Ink for text sitting on painted art. The stat tiles carry their own light
+    ground, so a colour that flips with the theme would leave the figures white
+    on a pale wash at night. These two never flip.
+  */
+  --art-ink: oklch(0.26 0.02 var(--ground-hue));
+  --art-ink-soft: oklch(0.45 0.018 var(--ground-hue));
+
   --ground-hue: 70;
   --ground-chroma: 0.01;
   --accent-hue: 28;

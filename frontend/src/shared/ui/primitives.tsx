@@ -215,10 +215,10 @@ export const StatTile = ({
       decoding="async"
       className="absolute inset-0 size-full object-cover"
     />
-    <span className="relative font-display text-[24px] font-extrabold leading-none tracking-[-0.03em] text-label tabular">
+    <span className="relative font-display text-[24px] font-extrabold leading-none tracking-[-0.03em] text-art tabular">
       {value}
     </span>
-    <span className="relative mt-1.5 text-[12px] text-secondary">{label}</span>
+    <span className="relative mt-1.5 text-[12px] text-art-soft">{label}</span>
   </div>
 );
 
