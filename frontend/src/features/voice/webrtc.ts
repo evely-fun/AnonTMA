@@ -1,3 +1,4 @@
+import { request } from "@/shared/lib/api";
 import { realtime } from "@/shared/lib/socket";
 
 import { getAudioContext, isRunning, resumeAudio } from "./audioContext";
@@ -36,6 +37,8 @@ const DEFAULT_ICE: RTCIceServer[] = [
   { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
 ];
 
+/** Half the six hour relay credential, so a peer never gets a stale one. */
+const ICE_MAX_AGE_MS = 3 * 60 * 60 * 1000;
 const MAX_ICE_RESTARTS = 4;
 const STARVED_CHECKS_BEFORE_RESTART = 3;
 const HEALTH_INTERVAL_MS = 3000;
@@ -53,6 +56,8 @@ export class PeerManager {
   private healthTimer: number | null = null;
   private playbackBlocked = false;
   private allowed: number[] | null = null;
+  private configuredAt = 0;
+  private icePromise: Promise<void> | null = null;
 
   configure(config: IceConfig | RTCIceServer[]): void {
     const next = Array.isArray(config) ? { iceServers: config } : config;
@@ -64,6 +69,34 @@ export class PeerManager {
       iceTransportPolicy: next.iceTransportPolicy ?? "all",
       iceCandidatePoolSize: next.iceCandidatePoolSize ?? 0,
     };
+    this.configuredAt = Date.now();
+  }
+
+  /**
+   * Relay credentials are time limited, so a session left open long enough
+   * would start building peers with a password the relay no longer accepts and
+   * calls would go quiet again in exactly the way they used to.
+   */
+  private async freshenIce(): Promise<void> {
+    if (Date.now() - this.configuredAt < ICE_MAX_AGE_MS) {
+      return;
+    }
+    if (this.icePromise) {
+      await this.icePromise;
+      return;
+    }
+    this.icePromise = (async () => {
+      try {
+        const payload = await request<IceConfig>("/config/ice");
+        this.configure(payload);
+      } catch {
+        // Keep the credentials we have rather than losing the relay entirely.
+        this.configuredAt = Date.now();
+      } finally {
+        this.icePromise = null;
+      }
+    })();
+    await this.icePromise;
   }
 
   get hasRelay(): boolean {
@@ -403,7 +436,11 @@ export class PeerManager {
       }
       return;
     }
-    this.createPeer(peerId, polite);
+    void this.freshenIce().then(() => {
+      if (!this.peers.has(peerId)) {
+        this.createPeer(peerId, polite);
+      }
+    });
   }
 
   handleSignal(kind: string, peerId: number, data: Record<string, unknown>): void {

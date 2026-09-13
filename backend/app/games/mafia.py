@@ -55,7 +55,7 @@ class Mafia(GameEngine):
         duration_minutes=15,
         tags=["voice", "party", "deduction"],
         rules=[
-            "At night the mafia picks a victim, the doctor saves, the detective checks",
+            "At night the mafia picks a victim, the doctor saves, the sheriff checks",
             "By day everyone speaks and votes for one suspect",
             "Town wins when every mafia is out, mafia wins when they equal the town",
         ],
@@ -89,6 +89,7 @@ class Mafia(GameEngine):
         state["phase"] = "intro"
         state["day"] = 1
         state["deadline"] = deadline(INTRO_SECONDS)
+        state["skips"] = []
         state["log"].append({"day": 1, "text": "intro_started"})
 
         effects: list[Effect] = []
@@ -179,9 +180,12 @@ class Mafia(GameEngine):
                 effects += self._resolve_vote(state)
             return effects
 
-        if action == "skip_phase" and state["phase"] == "discussion":
+        if action == "skip_phase" and state["phase"] in ("intro", "discussion"):
             state["skips"] = list(set(state.get("skips", []) + [user_id]))
             if len(state["skips"]) > len(state["alive"]) // 2:
+                state["skips"] = []
+                if state["phase"] == "intro":
+                    return self._open_night(state)
                 return self._open_vote(state)
             return [Effect(event={"type": "mafia.skip", "payload": {"count": len(state["skips"])}})]
 
