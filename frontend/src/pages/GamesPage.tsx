@@ -71,31 +71,26 @@ export const GamesPage = () => {
                   className="absolute inset-0 size-full object-cover"
                 />
 
-                {/* The artwork is flat at the top and bottom, the scrims only
-                    deepen it so the copy keeps its contrast on every cover. */}
-                <span className="pointer-events-none absolute inset-x-0 top-0 h-[42%] bg-gradient-to-b from-black/45 to-transparent" />
-                <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[34%] bg-gradient-to-t from-black/55 to-transparent" />
+                {/* The cover is the pitch, so nothing sits on top of it. The
+                    words live in a band at the bottom over a single scrim, and
+                    the illustration above it is never covered by a floating
+                    box of translucent grey. */}
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black/80 via-black/45 to-transparent" />
 
-                <span className="relative flex flex-1 flex-col p-3">
-                  <span className="font-display text-[10px] font-bold tracking-[0.01em] text-white/70">
-                    anteiku
-                  </span>
-                  <span className="mt-1 font-display text-[15px] font-extrabold leading-[1.05] tracking-[-0.01em] text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)]">
+                <span className="relative mt-auto flex flex-col p-3">
+                  <span className="font-display text-[16px] font-extrabold leading-[1.05] tracking-[-0.015em] text-white">
                     {t(`games.meta.${game.key}.title`)}
                   </span>
-                  <span className="mt-1.5 self-start overflow-hidden rounded-[9px] bg-black/25 px-2 py-1">
-                    <span className="line-clamp-2 text-[10.5px] leading-tight text-white/90">
-                      {t(`games.meta.${game.key}.tagline`)}
-                    </span>
+                  <span className="mt-1 line-clamp-2 text-[11.5px] leading-tight text-white/80">
+                    {t(`games.meta.${game.key}.tagline`)}
                   </span>
-
-                  <span className="mt-auto flex items-center gap-1.5">
-                    <span className="flex items-center gap-1 rounded-full bg-black/35 px-2 py-1 font-display text-[9.5px] font-bold text-white/90 tabular">
+                  <span className="flex items-center gap-1.5 pt-2">
+                    <span className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10.5px] font-semibold text-white tabular">
                       <FriendsIcon size={10} />
                       {game.minPlayers}-{game.maxPlayers}
                     </span>
                     {game.voiceRequired && (
-                      <span className="flex items-center gap-1 rounded-full bg-black/35 px-2 py-1 font-display text-[9.5px] font-bold text-white/90">
+                      <span className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10.5px] font-semibold text-white">
                         <MicIcon size={10} />
                         {t("games.voice")}
                       </span>
@@ -104,7 +99,7 @@ export const GamesPage = () => {
                 </span>
 
                 {played > 0 && (
-                  <span className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 font-display text-[9.5px] font-bold text-white tabular">
+                  <span className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full bg-black/45 px-2 py-1 text-[11px] font-semibold text-white tabular">
                     <TrophyIcon size={10} />
                     {stats?.won ?? 0}
                   </span>

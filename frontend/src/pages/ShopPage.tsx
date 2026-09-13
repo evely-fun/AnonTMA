@@ -223,13 +223,14 @@ export const ShopPage = () => {
                 <p className="line-clamp-2 w-full text-center font-display text-[13px] font-bold leading-tight">
                   {t(`shop.items.${item.category}.${item.value}`)}
                 </p>
-                <p
-                  className={`font-display text-[10px] font-bold tracking-[0.01em] ${
-                    RARITY_TONE[item.rarity]
-                  }`}
-                >
-                  {t(`shop.rarity.${item.rarity}`)}
-                </p>
+                {/* Base is what most of the shelf is, so printing it on every
+                    tile says nothing. Rarity is only worth a line when it is
+                    something to notice. */}
+                {item.rarity !== "base" && (
+                  <p className={`text-[11px] font-semibold ${RARITY_TONE[item.rarity]}`}>
+                    {t(`shop.rarity.${item.rarity}`)}
+                  </p>
+                )}
 
                 <span className="mt-auto w-full pt-1">
                 {worn ? (
