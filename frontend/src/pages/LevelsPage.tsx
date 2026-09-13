@@ -71,7 +71,7 @@ export const LevelsPage = () => {
           <m.div variants={listStagger} initial="initial" animate="animate" className="space-y-6">
             <m.section className="px-4" variants={rise}>
               <div className="panel-hero rounded-[22px] px-5 py-4">
-                <p className="font-display text-[11px] font-bold uppercase tracking-[0.14em] text-hint">
+                <p className="font-display text-[11px] font-bold tracking-[0.01em] text-hint">
                   {t("progression.current")}
                 </p>
                 <p className="mt-1 font-display text-[30px] font-extrabold leading-none tracking-[-0.04em] tabular">
@@ -83,7 +83,7 @@ export const LevelsPage = () => {
                 <div className="mt-3">
                   <Meter ratio={data.ratio} />
                 </div>
-                <p className="mt-2 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint tabular">
+                <p className="mt-2 font-display text-[11px] font-bold tracking-[0.1em] text-hint tabular">
                   {data.xpIntoLevel} / {data.xpForNext} XP
                   {next && ` · ${t("progression.needXp", { count: data.xpForNext - data.xpIntoLevel })}`}
                 </p>
@@ -131,12 +131,12 @@ export const LevelsPage = () => {
                       <p className="flex items-center gap-2 font-display text-[14.5px] font-bold tracking-[-0.01em]">
                         {t("progression.rung", { level: rung.level })}
                         {rung.newTitle && (
-                          <span className="rounded-full bg-accent-quiet px-2 py-0.5 font-display text-[9.5px] font-bold uppercase tracking-[0.08em] text-accent">
+                          <span className="rounded-full bg-accent-quiet px-2 py-0.5 font-display text-[9.5px] font-bold tracking-[0.01em] text-accent">
                             {t(`titles.${rung.title}`)}
                           </span>
                         )}
                       </p>
-                      <p className="mt-0.5 font-display text-[11px] font-bold uppercase tracking-[0.09em] text-hint tabular">
+                      <p className="mt-0.5 font-display text-[11px] font-bold tracking-[0.01em] text-hint tabular">
                         {rung.xpTotal.toLocaleString("en-US")} XP
                       </p>
 

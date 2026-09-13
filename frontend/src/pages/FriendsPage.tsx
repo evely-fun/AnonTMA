@@ -120,7 +120,7 @@ export const FriendsPage = () => {
               <button
                 type="button"
                 onClick={() => void invite()}
-                className="flex items-center gap-1.5 font-display text-[12px] font-bold uppercase tracking-[0.1em] text-accent"
+                className="flex items-center gap-1.5 font-display text-[12px] font-bold tracking-[0.1em] text-accent"
               >
                 <LinkIcon size={13} />
                 {t("friends.invite")}
@@ -217,7 +217,7 @@ export const FriendsPage = () => {
               size={84}
               online={active.isOnline}
             />
-            <p className="font-display text-[12px] font-bold uppercase tracking-[0.12em] text-hint">
+            <p className="font-display text-[12px] font-bold tracking-[0.01em] text-hint">
               {t(`titles.${active.title}`)} · {t("common.level")} {active.level}
             </p>
             <div className="mt-4 flex w-full flex-col gap-2">

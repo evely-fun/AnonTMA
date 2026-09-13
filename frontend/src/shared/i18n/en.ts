@@ -46,6 +46,8 @@ export const en = {
     voice: "Voice",
     text: "Text",
     findNow: "Find someone now",
+    topUp: "Top up your energy to carry on",
+    friendsOnlineCount: "{count} friends are online",
     cost: "{count} energy",
     free: "free with premium",
     friendsOnline: "Friends online",
@@ -334,6 +336,13 @@ export const en = {
     leaderboard: "Leaderboard",
     leaderboardHint: "See where you stand",
     settings: "Settings",
+    deck: {
+      wardrobe: "change your look",
+      shop: "spend your coins",
+      daily: "claim today",
+      dailyTitle: "Rewards",
+    },
+
     settingsHint: "Voice, matching, privacy",
     version: "Anteiku v1.0",
     aboutYou: "About you",

@@ -17,8 +17,8 @@ export const PALETTES = [
 export type Palette = (typeof PALETTES)[number];
 export type ThemeMode = "auto" | "dark" | "light";
 
-const DARK_GROUND = 0.115;
-const LIGHT_GROUND = 0.975;
+const DARK_GROUND = 0.17;
+const LIGHT_GROUND = 0.986;
 
 const channel = (value: number): string => {
   const linear =
@@ -61,7 +61,7 @@ export const applyAppearance = (mode: ThemeMode, palette: Palette): void => {
   }
 
   const computed = getComputedStyle(root);
-  const hue = Number.parseFloat(computed.getPropertyValue("--ground-hue")) || 265;
+  const hue = Number.parseFloat(computed.getPropertyValue("--ground-hue")) || 70;
   const rawChroma = Number.parseFloat(computed.getPropertyValue("--ground-chroma"));
   const chroma = Number.isNaN(rawChroma) ? 0.018 : rawChroma;
   const shell = oklchToHex(
@@ -95,7 +95,7 @@ interface Geometry {
 }
 
 export const PALETTE_GEOMETRY: Record<Palette, Geometry> = {
-  auto: { groundHue: 265, groundChroma: 0.018, accentHue: 236, accentChroma: 0.115 },
+  auto: { groundHue: 70, groundChroma: 0.01, accentHue: 28, accentChroma: 0.17 },
   obsidian: { groundHue: 250, groundChroma: 0.008, accentHue: 172, accentChroma: 0.11 },
   indigo: { groundHue: 278, groundChroma: 0.03, accentHue: 276, accentChroma: 0.14 },
   moss: { groundHue: 155, groundChroma: 0.022, accentHue: 152, accentChroma: 0.13 },
@@ -150,10 +150,10 @@ export const roleColours = (): RoleColours => {
   };
   const dark = (document.documentElement.dataset.theme ?? "dark") !== "light";
 
-  const accentHue = number("--accent-hue", 236);
-  const accentChroma = number("--accent-chroma", 0.115);
-  const groundHue = number("--ground-hue", 265);
-  const groundChroma = number("--ground-chroma", 0.018);
+  const accentHue = number("--accent-hue", 28);
+  const accentChroma = number("--accent-chroma", 0.17);
+  const groundHue = number("--ground-hue", 70);
+  const groundChroma = number("--ground-chroma", 0.01);
 
   return {
     accent: oklchToHex(dark ? 0.72 : 0.55, accentChroma, accentHue),

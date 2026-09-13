@@ -13,7 +13,7 @@ export const GameStatus = ({
 }) => (
   <div className="panel flex items-center justify-between gap-3 rounded-[18px] px-4 py-3.5">
     <div className="min-w-0">
-      <span className="block font-display text-[10.5px] font-bold uppercase tracking-[0.12em] text-hint">
+      <span className="block font-display text-[10.5px] font-bold tracking-[0.01em] text-hint">
         {eyebrow}
       </span>
       <span className="mt-0.5 block truncate font-display text-[16px] font-extrabold tracking-[-0.02em]">
@@ -48,7 +48,7 @@ export const ScoreRow = ({
         >
           {item.value}
         </span>
-        <span className="font-display text-[10px] font-bold uppercase tracking-[0.12em] text-hint">
+        <span className="font-display text-[10px] font-bold tracking-[0.01em] text-hint">
           {item.label}
         </span>
       </div>
@@ -58,7 +58,7 @@ export const ScoreRow = ({
 
 export const WordCard = ({ label, value }: { label: string; value: string }) => (
   <div className="panel-hero flex flex-col items-center gap-1.5 rounded-[22px] px-5 py-7 text-center">
-    <span className="font-display text-[10.5px] font-bold uppercase tracking-[0.14em] text-hint">
+    <span className="font-display text-[10.5px] font-bold tracking-[0.01em] text-hint">
       {label}
     </span>
     <span className="font-display text-[24px] font-extrabold leading-tight tracking-[-0.03em]">

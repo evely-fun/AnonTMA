@@ -127,7 +127,7 @@ export const WardrobePage = () => {
               >
                 {profile.anonName}
               </p>
-              <p className="mt-1 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-hint">
+              <p className="mt-1 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
                 {t("wardrobe.preview")}
               </p>
             </div>
@@ -140,7 +140,7 @@ export const WardrobePage = () => {
               onChange={setSlot}
               options={SLOTS.map((value) => ({ value, label: t(`wardrobe.slots.${value}`) }))}
             />
-            <p className="mt-2.5 px-1 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint tabular">
+            <p className="mt-2.5 px-1 font-display text-[11px] font-bold tracking-[0.1em] text-hint tabular">
               {t("wardrobe.owned", { count: ownedCount, total: slotItems.length })}
             </p>
           </m.section>
@@ -165,7 +165,7 @@ export const WardrobePage = () => {
                       {t(`shop.items.${slot}.${item.value}`)}
                     </span>
                     <span
-                      className={`font-display text-[9.5px] font-bold uppercase tracking-[0.08em] ${
+                      className={`font-display text-[9.5px] font-bold tracking-[0.01em] ${
                         RARITY_TONE[item.rarity]
                       }`}
                     >

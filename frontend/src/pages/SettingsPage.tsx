@@ -139,7 +139,7 @@ export const SettingsPage = () => {
             />
 
             <div>
-              <p className="mb-2.5 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-hint">
+              <p className="mb-2.5 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
                 {t("settings.palette")}
               </p>
               <div className="grid grid-cols-4 gap-2.5">
@@ -206,7 +206,7 @@ export const SettingsPage = () => {
             </div>
 
             <div>
-              <p className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-hint">
+              <p className="mb-2 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
                 {t("settings.interfaceLanguage")}
               </p>
               <Segmented
@@ -251,7 +251,7 @@ export const SettingsPage = () => {
                 <button
                   type="button"
                   onClick={() => navigate("/premium")}
-                  className="flex items-center gap-1.5 font-display text-[12px] font-bold uppercase tracking-[0.1em] text-accent"
+                  className="flex items-center gap-1.5 font-display text-[12px] font-bold tracking-[0.1em] text-accent"
                 >
                   <CrownIcon size={14} />
                   {t("common.premium")}
@@ -294,7 +294,7 @@ export const SettingsPage = () => {
           <SectionHead title={t("settings.matching")} />
           <div className="space-y-4 px-4">
             <div>
-              <p className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-hint">
+              <p className="mb-2 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
                 {t("settings.language")}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -310,7 +310,7 @@ export const SettingsPage = () => {
               </div>
             </div>
             <div>
-              <p className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-hint">
+              <p className="mb-2 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
                 {t("settings.showMe")}
               </p>
               <div className="flex flex-wrap gap-2">

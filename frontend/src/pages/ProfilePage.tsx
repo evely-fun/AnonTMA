@@ -6,17 +6,15 @@ import { useT } from "@/shared/i18n";
 import { backgroundClass, nameEffectClass } from "@/shared/lib/cosmetics";
 import { request } from "@/shared/lib/api";
 import { compactNumber, durationLabel } from "@/shared/lib/format";
-import { listStagger, rise } from "@/shared/lib/motion";
-import { openLink } from "@/shared/lib/telegram";
+import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { haptic, openLink } from "@/shared/lib/telegram";
 import type { Achievement, Profile } from "@/shared/lib/types";
 import {
   Avatar,
+  IconTile,
   Button,
   Chip,
-  IconTile,
-  ListRow,
   Meter,
-  Panel,
   SectionHead,
   Sheet,
   StatTile,
@@ -32,15 +30,11 @@ import {
   FlameIcon,
   GamesIcon,
   HeartIcon,
-  LinkIcon,
   MaskIcon,
   GridIcon,
   MicIcon,
-  SettingsIcon,
-  ShieldIcon,
 } from "@/shared/ui/icons";
 import { useAdmin } from "@/store/admin";
-import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { useSocial } from "@/store/social";
 import { toast } from "@/store/ui";
@@ -60,13 +54,55 @@ const INTERESTS = [
   "night talks",
 ];
 
+const DECK_HUE: Record<string, string> = {
+  profile: "oklch(0.72 var(--chroma-profile) var(--hue-profile))",
+  games: "oklch(0.66 var(--chroma-games) var(--hue-games))",
+  search: "oklch(0.66 var(--chroma-search) var(--hue-search))",
+};
+
+const DeckTile = ({
+  hue,
+  icon,
+  title,
+  note,
+  onClick,
+}: {
+  hue: keyof typeof DECK_HUE;
+  icon: React.ReactNode;
+  title: string;
+  note: string;
+  onClick: () => void;
+}) => (
+  <m.button
+    type="button"
+    onClick={onClick}
+    onPointerDown={() => haptic.select()}
+    whileTap={{ scale: 0.95 }}
+    transition={spring.snappy}
+    className="panel flex flex-col gap-2 rounded-[20px] px-3 py-4 text-left"
+  >
+    <span style={{ color: DECK_HUE[hue] }}>{icon}</span>
+    <span className="font-display text-[13.5px] font-bold leading-tight">{title}</span>
+    <span className="text-[11.5px] leading-tight text-hint">{note}</span>
+  </m.button>
+);
+
+const QuietLink = ({ label, onClick }: { label: string; onClick: () => void }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="rounded-full bg-elevated px-3.5 py-2 text-[12.5px] text-secondary"
+  >
+    {label}
+  </button>
+);
+
 export const ProfilePage = () => {
-  const { t, locale } = useT();
+  const { t } = useT();
   const navigate = useNavigate();
   const profile = useSession((state) => state.profile);
   const patchProfile = useSession((state) => state.patchProfile);
   const inviteLink = useSocial((state) => state.inviteLink);
-  const economy = useEconomy((store) => store.state);
   const isAdmin = useAdmin((store) => store.allowed) === true;
   const checkAdmin = useAdmin((store) => store.check);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
@@ -151,7 +187,7 @@ export const ProfilePage = () => {
                 >
                   {profile.anonName}
                 </h2>
-                <p className="font-display text-[11.5px] font-bold uppercase tracking-[0.12em] text-accent">
+                <p className="font-display text-[11.5px] font-bold tracking-[0.01em] text-accent">
                   {t(`titles.${progress.title}`)} · {t("common.level")} {progress.level}
                 </p>
               </div>
@@ -167,7 +203,7 @@ export const ProfilePage = () => {
               className="mt-4 block w-full text-left"
             >
               <Meter ratio={progress.ratio} />
-              <p className="mt-2 flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint tabular">
+              <p className="mt-2 flex items-center gap-1.5 font-display text-[11px] font-bold tracking-[0.1em] text-hint tabular">
                 {t("profile.xpTo", { current: progress.xpIntoLevel, total: progress.xpForNext, level: progress.level + 1 })}
                 <ChevronIcon size={12} />
               </p>
@@ -194,6 +230,57 @@ export const ProfilePage = () => {
             </div>
           </div>
         </m.section>
+
+        <m.section variants={rise} className="px-4">
+          {/* Three destinations instead of eight identical rows. Each says what
+              it does, and colour tells them apart before the label is read. */}
+          <div className="grid grid-cols-3 gap-2.5">
+            <DeckTile
+              hue="profile"
+              icon={<MaskIcon size={22} />}
+              title={t("wardrobe.title")}
+              note={t("profile.deck.wardrobe")}
+              onClick={() => navigate("/wardrobe")}
+            />
+            <DeckTile
+              hue="games"
+              icon={<GridIcon size={22} />}
+              title={t("shop.title")}
+              note={t("profile.deck.shop")}
+              onClick={() => navigate("/shop")}
+            />
+            <DeckTile
+              hue="search"
+              icon={<BoltIcon size={22} />}
+              title={t("profile.deck.dailyTitle")}
+              note={t("profile.deck.daily")}
+              onClick={() => navigate("/daily")}
+            />
+          </div>
+        </m.section>
+
+        {!profile.premium?.active && (
+          <m.section variants={rise} className="px-4">
+            <m.button
+              type="button"
+              onClick={() => navigate("/premium")}
+              whileTap={{ scale: 0.985 }}
+              transition={spring.snappy}
+              className="panel flex w-full items-center gap-3.5 rounded-[20px] px-4 py-4 text-left"
+            >
+              <CrownIcon size={22} className="shrink-0 text-warn" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-[15px] font-bold">
+                  {t("profile.getPremium")}
+                </span>
+                <span className="mt-0.5 block text-[12.5px] leading-snug text-hint">
+                  {t("profile.premiumHint")}
+                </span>
+              </span>
+              <ChevronIcon size={16} className="shrink-0 text-hint" />
+            </m.button>
+          </m.section>
+        )}
 
         <m.section variants={rise}>
           <SectionHead title={t("profile.yourNumbers")} />
@@ -276,115 +363,16 @@ export const ProfilePage = () => {
           </div>
         </m.section>
 
-        <m.section variants={rise}>
-          <Panel divided>
-            <ListRow
-              leading={
-                <IconTile tone="warn">
-                  <CrownIcon size={18} />
-                </IconTile>
-              }
-              title={
-                profile.premium?.active
-                  ? t("profile.premiumActive", {
-                      date: profile.premium.until
-                        ? new Date(profile.premium.until).toLocaleDateString(
-                            locale === "ru" ? "ru-RU" : "en-GB",
-                            { day: "numeric", month: "short" },
-                          )
-                        : "",
-                    })
-                  : t("profile.getPremium")
-              }
-              subtitle={t("profile.premiumHint")}
-              chevron
-              onClick={() => navigate("/premium")}
-            />
-            <ListRow
-              leading={
-                <IconTile tone="accent">
-                  <BoltIcon size={18} />
-                </IconTile>
-              }
-              title={t("economy.dailyTitle")}
-              subtitle={
-                economy?.unlimited
-                  ? t("economy.unlimited")
-                  : `${economy?.energy ?? 0} / ${economy?.energyMax ?? 0} ${t("common.energy")}`
-              }
-              chevron
-              onClick={() => navigate("/daily")}
-            />
-            <ListRow
-              leading={
-                <IconTile tone="live">
-                  <LinkIcon size={18} />
-                </IconTile>
-              }
-              title={t("profile.invite")}
-              subtitle={t("profile.inviteHint")}
-              chevron
-              onClick={() => void invite()}
-            />
-            <ListRow
-              leading={
-                <IconTile>
-                  <CrownIcon size={18} />
-                </IconTile>
-              }
-              title={t("profile.leaderboard")}
-              subtitle={t("profile.leaderboardHint")}
-              chevron
-              onClick={() => navigate("/leaderboard")}
-            />
-            <ListRow
-              leading={
-                <IconTile tone="accent">
-                  <MaskIcon size={18} />
-                </IconTile>
-              }
-              title={t("wardrobe.title")}
-              subtitle={t("wardrobe.subtitle")}
-              chevron
-              onClick={() => navigate("/wardrobe")}
-            />
-            <ListRow
-              leading={
-                <IconTile tone="warn">
-                  <GridIcon size={18} />
-                </IconTile>
-              }
-              title={t("shop.title")}
-              subtitle={t("shop.hint")}
-              chevron
-              onClick={() => navigate("/shop")}
-            />
+        <m.section variants={rise} className="px-4">
+          <div className="flex flex-wrap gap-2">
+            <QuietLink label={t("profile.leaderboard")} onClick={() => navigate("/leaderboard")} />
+            <QuietLink label={t("profile.invite")} onClick={() => void invite()} />
+            <QuietLink label={t("profile.settings")} onClick={() => navigate("/settings")} />
             {isAdmin && (
-              <ListRow
-                leading={
-                  <IconTile tone="danger">
-                    <ShieldIcon size={18} />
-                  </IconTile>
-                }
-                title={t("admin.title")}
-                subtitle={t("admin.subtitle")}
-                chevron
-                onClick={() => navigate("/admin")}
-              />
+              <QuietLink label={t("admin.title")} onClick={() => navigate("/admin")} />
             )}
-            <ListRow
-              leading={
-                <IconTile>
-                  <SettingsIcon size={18} />
-                </IconTile>
-              }
-              title={t("profile.settings")}
-              subtitle={t("profile.settingsHint")}
-              chevron
-              onClick={() => navigate("/settings")}
-            />
-          </Panel>
-          <p className="px-6 pt-3 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-hint">
+          </div>
+          <p className="px-6 pt-3 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
             {t("profile.version")}
           </p>
         </m.section>

@@ -56,7 +56,7 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
         <div className="flex flex-col gap-2">
           {view.reveal?.history.map((entry, index) => (
             <div key={index} className="panel rounded-[16px] px-4 py-3">
-              <span className="font-display text-[10.5px] font-bold uppercase tracking-[0.12em] text-hint">
+              <span className="font-display text-[10.5px] font-bold tracking-[0.01em] text-hint">
                 {t("games.board.whispers", { from: nameOf(entry.from), to: nameOf(entry.to) })}
               </span>
               <p className="mt-1 text-[14px] leading-snug">{entry.heard}</p>

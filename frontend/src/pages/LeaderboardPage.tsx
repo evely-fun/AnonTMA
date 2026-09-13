@@ -95,7 +95,7 @@ export const LeaderboardPage = () => {
                   <span className="block truncate font-display text-[14.5px] font-bold tracking-[-0.01em]">
                     {entry.anonName}
                   </span>
-                  <span className="font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint">
+                  <span className="font-display text-[11px] font-bold tracking-[0.1em] text-hint">
                     {t("common.level")} {entry.level}
                   </span>
                 </span>

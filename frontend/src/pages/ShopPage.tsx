@@ -221,7 +221,7 @@ export const ShopPage = () => {
                     {t(`shop.items.${item.category}.${item.value}`)}
                   </p>
                   <p
-                    className={`mt-0.5 font-display text-[10.5px] font-bold uppercase tracking-[0.1em] ${
+                    className={`mt-0.5 font-display text-[10.5px] font-bold tracking-[0.1em] ${
                       RARITY_TONE[item.rarity]
                     }`}
                   >

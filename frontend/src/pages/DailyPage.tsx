@@ -222,7 +222,7 @@ export const DailyPage = () => {
                     }`}
                   >
                     <span
-                      className={`font-display text-[10px] font-bold uppercase tracking-[0.08em] ${
+                      className={`font-display text-[10px] font-bold tracking-[0.01em] ${
                         reached ? "text-accent" : "text-hint"
                       }`}
                     >

@@ -9,7 +9,7 @@ import { FriendsPage } from "@/pages/FriendsPage";
 import { GamePage } from "@/pages/GamePage";
 import { GamesPage } from "@/pages/GamesPage";
 import { AdminPage } from "@/pages/AdminPage";
-import { HomeDock, HomePage } from "@/pages/HomePage";
+import { HomePage } from "@/pages/HomePage";
 import { LeaderboardPage } from "@/pages/LeaderboardPage";
 import { LevelsPage } from "@/pages/LevelsPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
@@ -26,7 +26,7 @@ import { ease, spring } from "@/shared/lib/motion";
 import { isTelegram, setHapticsEnabled } from "@/shared/lib/telegram";
 import { applyAppearance, watchScheme, type Palette, type ThemeMode } from "@/shared/lib/theme";
 import { realtime } from "@/shared/lib/socket";
-import { AmbientBackground, Avatar, Button, Toaster } from "@/shared/ui";
+import { Avatar, Button, Toaster } from "@/shared/ui";
 import { BoltIcon, CoinIcon, InfinityIcon, MaskIcon } from "@/shared/ui/icons";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
@@ -59,7 +59,7 @@ const Splash = ({ waking }: { waking: boolean }) => {
       >
         <MaskIcon size={52} />
       </m.span>
-      <span className="font-display text-[11px] font-bold uppercase tracking-[0.24em] text-hint">
+      <span className="font-display text-[11px] font-bold tracking-[0.01em] text-hint">
         {waking ? t("boot.waking") : t("boot.brand")}
       </span>
     </m.div>
@@ -165,7 +165,7 @@ const TopBar = () => {
           onClick={() => navigate("/")}
           whileTap={{ scale: 0.95 }}
           transition={spring.snappy}
-          className="-mx-1 rounded-lg px-1 font-display text-[19px] font-extrabold uppercase tracking-[0.08em] text-label"
+          className="-mx-1 rounded-lg px-1 font-display text-[19px] font-extrabold tracking-[0.01em] text-label"
           aria-label="Home"
         >
           ANTEIKU
@@ -259,7 +259,6 @@ export const App = () => {
 
   return (
     <div className="app-shell relative mx-auto flex h-full max-w-[480px] flex-col text-label">
-      <AmbientBackground />
       <AnimatePresence mode="wait" initial={false}>
         {booting && <Splash key="splash" waking={waking} />}
 
@@ -315,7 +314,6 @@ export const App = () => {
                 <Route path="*" element={<HomePage />} />
               </Routes>
             </main>
-            {location.pathname === "/" && <HomeDock />}
             {showChrome && <BottomNav />}
           </m.div>
         )}

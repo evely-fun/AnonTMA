@@ -86,7 +86,7 @@ export const PrizeWheel = ({
         >
           {spins}
         </span>
-        <span className="font-display text-[9px] font-bold uppercase tracking-[0.14em] text-hint">
+        <span className="font-display text-[9px] font-bold tracking-[0.01em] text-hint">
           {spinsLabel}
         </span>
       </span>

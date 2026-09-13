@@ -17,7 +17,7 @@ export const SectionHead = ({
 }) => (
   <div className="mb-3 flex items-end justify-between gap-3 px-5">
     <div>
-      <h2 className="font-display text-[12px] font-extrabold uppercase tracking-[0.14em] text-hint">
+      <h2 className="font-display text-[12px] font-extrabold tracking-[0.01em] text-hint">
         {title}
       </h2>
       {note && <p className="mt-1 text-[12.5px] text-secondary">{note}</p>}
@@ -200,7 +200,7 @@ export const StatTile = ({
       >
         {value}
       </span>
-      <span className="font-display text-[10px] font-bold uppercase tracking-[0.12em] text-hint">
+      <span className="font-display text-[10px] font-bold tracking-[0.01em] text-hint">
         {label}
       </span>
     </div>

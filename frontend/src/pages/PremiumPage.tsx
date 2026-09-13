@@ -150,7 +150,7 @@ export const PremiumPage = () => {
                   <span className="mt-0.5 block text-[12.5px] leading-snug text-hint">
                     {localised(`economy.plans.${product.key}.body`, product.description)}
                   </span>
-                  <span className="mt-1.5 block font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint">
+                  <span className="mt-1.5 block font-display text-[11px] font-bold tracking-[0.1em] text-hint">
                     {product.recurring ? t("economy.perMonth") : t("economy.oneOff")}
                   </span>
                 </span>

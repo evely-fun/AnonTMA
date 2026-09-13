@@ -77,25 +77,25 @@ export const GamesPage = () => {
                 <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[34%] bg-gradient-to-t from-black/55 to-transparent" />
 
                 <span className="relative flex flex-1 flex-col p-3">
-                  <span className="font-display text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
+                  <span className="font-display text-[10px] font-bold tracking-[0.01em] text-white/70">
                     anteiku
                   </span>
-                  <span className="mt-1 font-display text-[15px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em] text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)]">
+                  <span className="mt-1 font-display text-[15px] font-extrabold leading-[1.05] tracking-[-0.01em] text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)]">
                     {t(`games.meta.${game.key}.title`)}
                   </span>
-                  <span className="mt-1.5 self-start overflow-hidden rounded-[9px] bg-black/25 px-2 py-1 backdrop-blur-[2px]">
+                  <span className="mt-1.5 self-start overflow-hidden rounded-[9px] bg-black/25 px-2 py-1">
                     <span className="line-clamp-2 text-[10.5px] leading-tight text-white/90">
                       {t(`games.meta.${game.key}.tagline`)}
                     </span>
                   </span>
 
                   <span className="mt-auto flex items-center gap-1.5">
-                    <span className="flex items-center gap-1 rounded-full bg-black/35 px-2 py-1 font-display text-[9.5px] font-bold text-white/90 tabular backdrop-blur-[2px]">
+                    <span className="flex items-center gap-1 rounded-full bg-black/35 px-2 py-1 font-display text-[9.5px] font-bold text-white/90 tabular">
                       <FriendsIcon size={10} />
                       {game.minPlayers}-{game.maxPlayers}
                     </span>
                     {game.voiceRequired && (
-                      <span className="flex items-center gap-1 rounded-full bg-black/35 px-2 py-1 font-display text-[9.5px] font-bold text-white/90 backdrop-blur-[2px]">
+                      <span className="flex items-center gap-1 rounded-full bg-black/35 px-2 py-1 font-display text-[9.5px] font-bold text-white/90">
                         <MicIcon size={10} />
                         {t("games.voice")}
                       </span>
@@ -104,7 +104,7 @@ export const GamesPage = () => {
                 </span>
 
                 {played > 0 && (
-                  <span className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 font-display text-[9.5px] font-bold text-white tabular backdrop-blur-[2px]">
+                  <span className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 font-display text-[9.5px] font-bold text-white tabular">
                     <TrophyIcon size={10} />
                     {stats?.won ?? 0}
                   </span>

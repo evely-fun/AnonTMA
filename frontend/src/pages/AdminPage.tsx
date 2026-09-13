@@ -37,7 +37,7 @@ const Stat = ({ label, value }: { label: string; value: number }) => (
     <span className="font-display text-[20px] font-extrabold leading-none tracking-[-0.03em] tabular">
       {value}
     </span>
-    <span className="font-display text-[9.5px] font-bold uppercase tracking-[0.1em] text-hint">
+    <span className="font-display text-[9.5px] font-bold tracking-[0.1em] text-hint">
       {label}
     </span>
   </div>
@@ -51,7 +51,7 @@ const Evidence = ({ report }: { report: ModerationReport }) => {
   return (
     <div className="panel rounded-[16px] px-3.5 py-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-display text-[11px] font-bold uppercase tracking-[0.1em] text-hint">
+        <span className="font-display text-[11px] font-bold tracking-[0.1em] text-hint">
           {t(`chat.reasons.${report.reason}`)}
         </span>
         <span className="font-display text-[11px] font-bold text-hint tabular">
@@ -64,7 +64,7 @@ const Evidence = ({ report }: { report: ModerationReport }) => {
       )}
 
       {dialog && (
-        <p className="mt-2 font-display text-[11px] font-bold uppercase tracking-[0.09em] text-hint tabular">
+        <p className="mt-2 font-display text-[11px] font-bold tracking-[0.01em] text-hint tabular">
           {dialog.mode} · {Math.round(dialog.durationSeconds / 60)}m
         </p>
       )}
@@ -80,7 +80,7 @@ const Evidence = ({ report }: { report: ModerationReport }) => {
                   : "bg-elevated/70 text-secondary"
               }`}
             >
-              <span className="mr-1.5 font-display text-[9.5px] font-bold uppercase tracking-[0.1em] opacity-60">
+              <span className="mr-1.5 font-display text-[9.5px] font-bold tracking-[0.1em] opacity-60">
                 {message.byTarget ? t("admin.fromTarget") : t("admin.fromReporter")}
               </span>
               {message.text}
@@ -115,7 +115,7 @@ const CaseRow = ({ item, onOpen }: { item: ModerationCase; onOpen: () => void })
             {item.target.anonName}
           </span>
           {item.target.isBanned && (
-            <span className="shrink-0 rounded-full bg-destructive-quiet px-2 py-0.5 font-display text-[9.5px] font-bold uppercase tracking-[0.08em] text-destructive">
+            <span className="shrink-0 rounded-full bg-destructive-quiet px-2 py-0.5 font-display text-[9.5px] font-bold tracking-[0.01em] text-destructive">
               {t("admin.banned")}
             </span>
           )}
@@ -128,7 +128,7 @@ const CaseRow = ({ item, onOpen }: { item: ModerationCase; onOpen: () => void })
           {reasons.slice(0, 3).map(([reason, count]) => (
             <span
               key={reason}
-              className="rounded-full bg-elevated px-2 py-0.5 font-display text-[10px] font-bold uppercase tracking-[0.07em] text-secondary"
+              className="rounded-full bg-elevated px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.07em] text-secondary"
             >
               {t(`chat.reasons.${reason}`)} {count}
             </span>
@@ -249,7 +249,7 @@ export const AdminPage = () => {
             <div className="flex items-center gap-3.5">
               <Avatar seed={detail.target.avatarSeed} size={54} />
               <div className="min-w-0 flex-1">
-                <p className="font-display text-[12px] font-bold uppercase tracking-[0.1em] text-hint">
+                <p className="font-display text-[12px] font-bold tracking-[0.1em] text-hint">
                   {t("common.level")} {detail.target.level} ·{" "}
                   {t("admin.trust", { value: detail.target.trustScore })}
                 </p>

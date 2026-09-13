@@ -46,6 +46,8 @@ export const ru: Dictionary = {
     voice: "Голос",
     text: "Текст",
     findNow: "Найти собеседника",
+    topUp: "Пополните энергию, чтобы продолжить",
+    friendsOnlineCount: "{count} друзей сейчас онлайн",
     cost: "{count} энергии",
     free: "бесплатно с премиумом",
     friendsOnline: "Друзья онлайн",
@@ -334,6 +336,13 @@ export const ru: Dictionary = {
     leaderboard: "Рейтинг",
     leaderboardHint: "Посмотреть своё место",
     settings: "Настройки",
+    deck: {
+      wardrobe: "сменить облик",
+      shop: "потратить монеты",
+      daily: "забрать за сегодня",
+      dailyTitle: "Награды",
+    },
+
     settingsHint: "Голос, подбор, приватность",
     version: "Anteiku v1.0",
     aboutYou: "О себе",

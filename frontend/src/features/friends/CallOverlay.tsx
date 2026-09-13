@@ -91,7 +91,7 @@ const IncomingCall = () => {
         <p className="mt-4 font-display text-[20px] font-extrabold tracking-[-0.025em]">
           {call.from.anonName}
         </p>
-        <p className="font-display text-[11.5px] font-bold uppercase tracking-[0.14em] text-hint">
+        <p className="font-display text-[11.5px] font-bold tracking-[0.01em] text-hint">
           {t("friends.incomingCall")}
         </p>
         <div className="mt-8 flex items-center gap-10">

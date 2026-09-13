@@ -136,7 +136,7 @@ export const RoomsPage = () => {
                       {room.title}
                     </span>
                     {game && (
-                      <span className="shrink-0 rounded-full bg-live-quiet px-2 py-0.5 font-display text-[10px] font-bold uppercase tracking-[0.08em] text-live">
+                      <span className="shrink-0 rounded-full bg-live-quiet px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.01em] text-live">
                         {t(`games.meta.${game.key}.title`)}
                       </span>
                     )}
@@ -162,11 +162,11 @@ export const RoomsPage = () => {
                       {room.participants}/{room.maxParticipants}
                     </span>
                     {live ? (
-                      <span className="flex items-center gap-1 font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-live">
+                      <span className="flex items-center gap-1 font-display text-[10.5px] font-bold tracking-[0.1em] text-live">
                         <MicIcon size={11} /> {t("rooms.live")}
                       </span>
                     ) : (
-                      <span className="font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-hint">
+                      <span className="font-display text-[10.5px] font-bold tracking-[0.1em] text-hint">
                         {t("rooms.quiet")}
                       </span>
                     )}

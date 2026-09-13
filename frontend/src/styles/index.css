@@ -37,10 +37,23 @@
   blocks below build every surface, ink and accent from them.
 */
 :root {
-  --ground-hue: 265;
-  --ground-chroma: 0.018;
-  --accent-hue: 236;
-  --accent-chroma: 0.115;
+  --ground-hue: 70;
+  --ground-chroma: 0.01;
+  --accent-hue: 28;
+  --accent-chroma: 0.17;
+
+  /* Section hues. Colour says what an area is, contrast says what is pressable,
+     so these never tint a control. */
+  --hue-search: 28;
+  --hue-rooms: 245;
+  --hue-games: 292;
+  --hue-friends: 158;
+  --hue-profile: 62;
+  --chroma-search: 0.17;
+  --chroma-rooms: 0.16;
+  --chroma-games: 0.17;
+  --chroma-friends: 0.14;
+  --chroma-profile: 0.15;
 }
 
 :root[data-palette="obsidian"] {
@@ -118,9 +131,9 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --surface-0: oklch(0.115 var(--ground-chroma) var(--ground-hue));
-  --surface-1: oklch(0.215 calc(var(--ground-chroma) * 1.1) var(--ground-hue));
-  --surface-2: oklch(0.275 calc(var(--ground-chroma) * 1.1) var(--ground-hue));
+  --surface-0: oklch(0.17 calc(var(--ground-chroma) * 1.2) var(--ground-hue));
+  --surface-1: oklch(0.225 calc(var(--ground-chroma) * 1.4) var(--ground-hue));
+  --surface-2: oklch(0.285 calc(var(--ground-chroma) * 1.4) var(--ground-hue));
   --surface-3: oklch(0.35 calc(var(--ground-chroma) * 1.2) var(--ground-hue));
 
   --ink-1: oklch(0.97 0.005 var(--ground-hue));
@@ -146,7 +159,7 @@
   --bar: oklch(0.115 var(--ground-chroma) var(--ground-hue) / 0.62);
   --bar-solid: oklch(0.135 var(--ground-chroma) var(--ground-hue));
   --sheen: oklch(1 0 0 / 0.06);
-  --panel-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05);
+  --panel-shadow: 0 1px 2px oklch(0 0 0 / 0.16), 0 8px 20px -14px oklch(0 0 0 / 0.4);
   --panel-hairline: transparent;
   --hero-tint: 0.3;
   --cosmetic-tint: 0.5;
@@ -158,7 +171,7 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --surface-0: oklch(0.975 calc(var(--ground-chroma) * 0.35) var(--ground-hue));
+  --surface-0: oklch(0.986 calc(var(--ground-chroma) * 0.6) var(--ground-hue));
   --surface-1: oklch(1 0 0);
   --surface-2: oklch(0.955 calc(var(--ground-chroma) * 0.5) var(--ground-hue));
   --surface-3: oklch(0.88 calc(var(--ground-chroma) * 0.7) var(--ground-hue));
@@ -186,7 +199,7 @@
   --bar: oklch(0.975 0.004 var(--ground-hue) / 0.78);
   --bar-solid: oklch(0.975 0.004 var(--ground-hue));
   --sheen: oklch(0.3 0.02 var(--ground-hue) / 0.05);
-  --panel-shadow: 0 1px 2px oklch(0.3 0.02 var(--ground-hue) / 0.07);
+  --panel-shadow: 0 1px 2px oklch(0.3 0.02 var(--ground-hue) / 0.06), 0 8px 20px -14px oklch(0.3 0.02 var(--ground-hue) / 0.18);
   --panel-hairline: oklch(0.3 0.02 var(--ground-hue) / 0.07);
   --hero-tint: 0.12;
   --cosmetic-tint: 0.3;
@@ -369,9 +382,7 @@
   }
 
   .top-status-bar {
-    background: var(--bar);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: var(--bar-solid);
   }
 
   .panel {
@@ -381,31 +392,20 @@
   }
 
   .panel-hero {
-    background:
-      linear-gradient(
-        148deg,
-        oklch(0.72 var(--accent-chroma) var(--accent-hue) / var(--hero-tint)) 0%,
-        oklch(0.64 var(--accent-chroma) calc(var(--accent-hue) + 6) / calc(var(--hero-tint) * 0.5))
-          44%,
-        transparent 100%
-      ),
-      var(--color-surface);
-    box-shadow: var(--panel-shadow);
-    border: 1px solid var(--panel-hairline);
+    background: color-mix(
+      in oklab,
+      oklch(0.72 var(--accent-chroma) var(--accent-hue)) calc(var(--hero-tint) * 100%),
+      var(--color-surface)
+    );
   }
 
   .glass {
-    background: color-mix(in oklab, var(--color-bg) 94%, transparent);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: var(--bar-solid);
   }
 
   .nav-island {
-    background: linear-gradient(160deg, var(--sheen), transparent), var(--island);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 -16px 42px -32px oklch(0 0 0 / 0.7);
-    border-top: 1px solid var(--panel-hairline);
+    background: var(--bar-solid);
+    box-shadow: 0 -10px 30px -24px oklch(0 0 0 / 0.5);
     isolation: isolate;
   }
 
@@ -582,13 +582,11 @@
   .primary-action {
     background: var(--action-bg);
     color: var(--action-ink);
-    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.22);
   }
 
   .accent-action {
     background: var(--color-accent);
     color: var(--on-accent);
-    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.22);
   }
 
   .skeleton {
