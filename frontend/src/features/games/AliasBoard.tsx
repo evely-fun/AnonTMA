@@ -8,7 +8,7 @@ import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 import { useVoice } from "@/store/voice";
 
-import { GameStatus, ScoreRow, WordCard } from "./shared";
+import { GameStatus, Versus, WordCard } from "./shared";
 
 interface View {
   phase: string;
@@ -62,26 +62,27 @@ export const AliasBoard = ({ view }: { view: View }) => {
         seconds={view.secondsLeft}
       />
 
-      <ScoreRow
-        items={[
-          {
-            value: view.scores.a,
-            label:
-              view.yourTeam === "a"
-                ? `${t("games.board.teamA")} · ${t("common.you")}`
-                : t("games.board.teamA"),
-            tone: view.yourTeam === "a" ? "accent" : "label",
-          },
-          { value: view.target, label: t("games.board.toWin") },
-          {
-            value: view.scores.b,
-            label:
-              view.yourTeam === "b"
-                ? `${t("games.board.teamB")} · ${t("common.you")}`
-                : t("games.board.teamB"),
-            tone: view.yourTeam === "b" ? "accent" : "label",
-          },
-        ]}
+      <Versus
+        left={{
+          name:
+            view.yourTeam === "a"
+              ? `${t("games.board.teamA")} · ${t("common.you")}`
+              : t("games.board.teamA"),
+          badge: "A",
+          score: view.scores.a,
+          active: view.turn === "a",
+        }}
+        right={{
+          name:
+            view.yourTeam === "b"
+              ? `${t("games.board.teamB")} · ${t("common.you")}`
+              : t("games.board.teamB"),
+          badge: "B",
+          score: view.scores.b,
+          active: view.turn === "b",
+        }}
+        middleLabel={t("games.board.toWin")}
+        middleValue={view.target}
       />
 
       {view.phase === "finished" ? (

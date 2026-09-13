@@ -53,16 +53,21 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
           seconds={view.secondsLeft}
         />
         <WordCard label={t("games.board.original")} value={view.reveal?.original ?? ""} />
-        <div className="flex flex-col gap-2">
+        <div className="relative pl-8">
+          <span aria-hidden className="absolute bottom-4 left-[7px] top-2 w-px bg-separator" />
           {view.reveal?.history.map((entry, index) => (
-            <div key={index} className="panel rounded-[16px] px-4 py-3">
-              <span className="font-display text-[10.5px] font-bold tracking-[0.01em] text-hint">
+            <div key={index} className="relative py-2.5">
+              <span
+                aria-hidden
+                className="absolute -left-8 top-[13px] size-[15px] rounded-full bg-elevated"
+              />
+              <p className="text-[12px] text-hint">
                 {t("games.board.whispers", { from: nameOf(entry.from), to: nameOf(entry.to) })}
-              </span>
-              <p className="mt-1 text-[14px] leading-snug">{entry.heard}</p>
-              <span className="mt-2 inline-block rounded-full bg-accent-quiet px-2.5 py-0.5 font-display text-[10.5px] font-bold text-accent tabular">
+              </p>
+              <p className="mt-1 text-[14.5px] leading-snug">{entry.heard}</p>
+              <p className="mt-1 text-[12px] text-accent tabular">
                 {t("games.board.kept", { value: entry.accuracy })}
-              </span>
+              </p>
             </div>
           ))}
         </div>
@@ -145,23 +150,27 @@ export const TelephoneBoard = ({ view }: { view: View }) => {
           <p className="text-center text-[13.5px] leading-snug text-hint">
             {t("games.board.micOffThisStep")}
           </p>
-          <div className="flex flex-col gap-2">
+          <div className="relative px-2">
+            <span aria-hidden className="absolute bottom-5 left-[19px] top-5 w-px bg-separator" />
             {view.chain.map((userId, index) => {
               const active = index === view.step || index === view.step + 1;
               return (
-                <div
-                  key={userId}
-                  className={`flex items-center gap-3 rounded-[14px] px-4 py-2.5 ${
-                    active ? "bg-accent-quiet" : "panel"
-                  }`}
-                >
-                  <span className="font-display text-[11px] font-bold text-hint tabular">
+                <div key={userId} className="relative flex items-center gap-3.5 py-2">
+                  <span
+                    className={`relative z-10 flex size-[22px] shrink-0 items-center justify-center rounded-full font-display text-[10.5px] font-extrabold tabular ${
+                      active ? "bg-accent text-on-accent" : "bg-elevated text-hint"
+                    }`}
+                  >
                     {index + 1}
                   </span>
-                  <span className="min-w-0 flex-1 truncate font-display text-[14px] font-bold">
+                  <span
+                    className={`min-w-0 flex-1 truncate text-[14px] ${
+                      active ? "font-bold" : "text-secondary"
+                    }`}
+                  >
                     {nameOf(userId)}
                   </span>
-                  <span className="font-display text-[12px] font-bold text-hint tabular">
+                  <span className="text-[12.5px] text-hint tabular">
                     {view.totals[String(userId)] ?? 0}
                   </span>
                 </div>

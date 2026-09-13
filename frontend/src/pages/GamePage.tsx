@@ -103,7 +103,7 @@ export const GamePage = () => {
     <PushScreen>
       <ScreenHeader
         title={t(`games.meta.${meta.key}.title`)}
-        subtitle={playing ? phase : undefined}
+        subtitle={undefined}
         onBack={() => {
           if (playing) leave();
           navigate("/games");
@@ -190,17 +190,16 @@ export const GamePage = () => {
 
             <m.section variants={rise}>
               <SectionHead title={t("games.howItWorks")} />
-              <div className="space-y-2 px-4">
-                {list(`games.meta.${meta.key}.rules`).map((rule, index) => (
-                  <div
-                    key={index}
-                    className="panel flex items-start gap-3 rounded-[16px] px-4 py-3.5"
-                  >
-                    <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-accent" />
-                    <span className="text-[13.5px] leading-snug text-secondary">{rule}</span>
-                  </div>
-                ))}
-              </div>
+              <Panel className="px-4 py-3.5">
+                <div className="space-y-2.5">
+                  {list(`games.meta.${meta.key}.rules`).map((rule, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-accent" />
+                      <span className="text-[13.5px] leading-snug text-secondary">{rule}</span>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
             </m.section>
 
             <m.div className="flex flex-col gap-2 px-4" variants={rise}>

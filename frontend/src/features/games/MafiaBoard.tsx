@@ -89,13 +89,17 @@ export const MafiaBoard = ({ view }: { view: View }) => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      {/* A table rather than a queue. Everyone is visible at once, which is the
+          whole point of a game about reading the room, and a stack of full
+          width cards can only ever show four of them. */}
+      <div className="grid grid-cols-3 gap-2">
         <AnimatePresence initial={false}>
           {view.players.map((userId) => {
             const alive = view.alive.includes(userId);
             const checked = view.checks[String(userId)];
             const roleTag = view.visibleRoles[String(userId)];
             const votes = Object.values(view.votes).filter((target) => target === userId).length;
+            const picked = selected === userId;
             return (
               <m.button
                 key={userId}
@@ -106,14 +110,20 @@ export const MafiaBoard = ({ view }: { view: View }) => {
                 exit="exit"
                 disabled={!canPick || !alive || userId === profile?.id}
                 onClick={() => setSelected(userId)}
-                className={`flex items-center gap-3 rounded-[16px] px-3.5 py-3 text-left transition-colors ${
-                  selected === userId ? "bg-accent-quiet" : "panel"
+                className={`relative flex flex-col items-center gap-1.5 rounded-[18px] px-2 py-3 transition-colors ${
+                  picked ? "bg-accent-quiet" : "panel"
                 } ${alive ? "" : "opacity-40 grayscale"}`}
               >
-                <Avatar seed={seedOf(userId)} size={36} />
-                <span className="min-w-0 flex-1 truncate font-display text-[14px] font-bold">
+                <Avatar seed={seedOf(userId)} size={46} />
+                <span className="w-full truncate text-center text-[12px] font-semibold">
                   {nameOf(userId)}
                 </span>
+
+                {votes > 0 && (
+                  <span className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-elevated font-display text-[11px] font-extrabold tabular">
+                    {votes}
+                  </span>
+                )}
                 {checked !== undefined && (
                   <Chip tone={checked ? "danger" : "live"}>
                     {checked ? t("games.board.mafiaTag") : t("games.board.cleanTag")}
@@ -121,11 +131,6 @@ export const MafiaBoard = ({ view }: { view: View }) => {
                 )}
                 {roleTag && userId !== profile?.id && (
                   <Chip tone="danger">{t(`games.board.roles.${roleTag}.name`)}</Chip>
-                )}
-                {votes > 0 && (
-                  <span className="font-display text-[12px] font-bold text-hint tabular">
-                    {votes}
-                  </span>
                 )}
               </m.button>
             );
