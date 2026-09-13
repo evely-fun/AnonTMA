@@ -33,6 +33,7 @@ export interface Preferences {
   matchGender: string;
   allowFriendCalls: boolean;
   voicePreset: string;
+  nameHue: number;
 }
 
 export interface Profile {

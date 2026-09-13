@@ -21,6 +21,8 @@ DEFAULT_PREFERENCES: dict = {
     "matchGender": "any",
     "allowFriendCalls": True,
     "voicePreset": "natural",
+    # The hue the owner picked for their name effect, in degrees.
+    "nameHue": 28,
 }
 
 

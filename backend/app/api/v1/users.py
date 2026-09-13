@@ -46,6 +46,7 @@ ALLOWED_PREFERENCES: dict[str, type | tuple[type, ...]] = {
     "matchGender": str,
     "allowFriendCalls": bool,
     "voicePreset": str,
+    "nameHue": int,
 }
 
 LEADERBOARD_FIELDS = {
@@ -139,8 +140,13 @@ async def update_me(payload: ProfileUpdate, user: CurrentUser, session: SessionD
         merged = dict(DEFAULT_PREFERENCES)
         merged.update(user.preferences or {})
         for key, value in payload.preferences.items():
-            if key in ALLOWED_PREFERENCES and isinstance(value, ALLOWED_PREFERENCES[key]):
-                merged[key] = value
+            if key not in ALLOWED_PREFERENCES:
+                continue
+            if isinstance(value, bool) and ALLOWED_PREFERENCES[key] is not bool:
+                continue
+            if not isinstance(value, ALLOWED_PREFERENCES[key]):
+                continue
+            merged[key] = value % 360 if key == "nameHue" else value
         user.preferences = merged
     if payload.palette is not None and payload.palette in ALLOWED_PALETTES:
         if payload.palette in PAID_PALETTES:

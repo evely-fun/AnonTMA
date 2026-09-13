@@ -271,6 +271,15 @@ export const App = () => {
     setLocale(uiLanguage === "en" || uiLanguage === "ru" ? uiLanguage : "auto");
   }, [uiLanguage, setLocale]);
 
+  // The name effects all read their colour from one hue the owner picked, so
+  // the same three effects look different on different people.
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--name-hue",
+      String(profile?.preferences?.nameHue ?? 28),
+    );
+  }, [profile?.preferences?.nameHue]);
+
   const booting = auth === null || (auth.status === "ok" && loading && !profile);
   const showChrome = TAB_ROUTES.includes(location.pathname);
   const onboarded = profile

@@ -7,7 +7,8 @@ import { useT } from "@/shared/i18n";
 import { backgroundClass, nameEffectClass } from "@/shared/lib/cosmetics";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
-import type { ShopItem } from "@/shared/lib/types";
+import { request } from "@/shared/lib/api";
+import type { Profile, ShopItem } from "@/shared/lib/types";
 import { Avatar, Button, PushScreen, ScreenHeader, Skeleton } from "@/shared/ui";
 import { CheckIcon, LockIcon } from "@/shared/ui/icons";
 import { useSession } from "@/store/session";
@@ -18,11 +19,15 @@ type Slot = "avatar" | "frame" | "effect" | "background";
 
 const SLOTS: Slot[] = ["avatar", "frame", "effect", "background"];
 
+/** A ring of hues wide enough that any two picks read as different people. */
+const HUES = [28, 62, 128, 168, 210, 250, 292, 330];
+
 export const WardrobePage = () => {
   const { t } = useT();
   const navigate = useNavigate();
   const profile = useSession((state) => state.profile);
   const refreshProfile = useSession((state) => state.refreshProfile);
+  const patchProfile = useSession((state) => state.patchProfile);
   const items = useShop((store) => store.items);
   const equipped = useShop((store) => store.equipped);
   const load = useShop((store) => store.load);
@@ -30,6 +35,22 @@ export const WardrobePage = () => {
 
   // The preview follows the tap immediately, the request catches up after.
   const [draft, setDraft] = useState<Record<Slot, string> | null>(null);
+  const nameHue = profile?.preferences?.nameHue ?? 28;
+
+  const chooseHue = async (hue: number) => {
+    haptic.select();
+    // Painted on the spot so the mirror answers the tap, then saved.
+    document.documentElement.style.setProperty("--name-hue", String(hue));
+    try {
+      const updated = await request<Profile>("/users/me", {
+        method: "PATCH",
+        body: { preferences: { ...profile?.preferences, nameHue: hue } },
+      });
+      patchProfile(updated);
+    } catch {
+      toast(t("errors.generic"), { tone: "danger" });
+    }
+  };
 
   useBackButton("/profile");
 
@@ -134,6 +155,30 @@ export const WardrobePage = () => {
                   {shelf.filter((item) => item.owned).length}/{shelf.length}
                 </span>
               </div>
+
+              {/* Picking the effect is half the choice. The colour it runs on
+                  is the other half, and without it three people wearing the
+                  same effect all look identical. */}
+              {slot === "effect" && worn.effect !== "none" && (
+                <div className="no-scrollbar mb-2.5 flex gap-2 overflow-x-auto px-4">
+                  {HUES.map((hue) => (
+                    <m.button
+                      key={hue}
+                      type="button"
+                      onClick={() => void chooseHue(hue)}
+                      whileTap={{ scale: 0.9 }}
+                      transition={spring.snappy}
+                      aria-label={`hue ${hue}`}
+                      className={`size-8 shrink-0 rounded-full transition-[box-shadow] ${
+                        nameHue === hue
+                          ? "shadow-[0_0_0_2px_var(--color-label)]"
+                          : "shadow-[0_0_0_1px_var(--color-separator)]"
+                      }`}
+                      style={{ background: `oklch(0.62 0.2 ${hue})` }}
+                    />
+                  ))}
+                </div>
+              )}
 
               <div className="no-scrollbar flex gap-2.5 overflow-x-auto px-4 pb-1">
                 {shelf.map((item) => {
