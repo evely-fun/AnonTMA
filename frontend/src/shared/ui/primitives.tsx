@@ -282,11 +282,17 @@ export const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`skeleton rounded-[16px] ${className}`} />
 );
 
+/**
+ * `grouped` drops the row's own card so a set of mutually exclusive choices can
+ * sit inside one Panel. Four options that are really one question should not
+ * look like four unrelated things stacked on top of each other.
+ */
 export const OptionRow = ({
   title,
   subtitle,
   active,
   muted,
+  grouped,
   trailing,
   onClick,
 }: {
@@ -294,17 +300,18 @@ export const OptionRow = ({
   subtitle?: string;
   active?: boolean;
   muted?: boolean;
+  grouped?: boolean;
   trailing?: ReactNode;
   onClick?: () => void;
 }) => (
   <m.button
     type="button"
     onClick={onClick}
-    whileTap={{ scale: 0.985 }}
+    whileTap={{ scale: grouped ? 1 : 0.985 }}
     transition={spring.snappy}
-    className={`flex w-full items-center gap-3 rounded-[16px] px-4 py-3.5 text-left transition-colors ${
-      active ? "bg-accent-quiet" : "panel"
-    } ${muted ? "opacity-55" : ""}`}
+    className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${
+      grouped ? "" : "rounded-[16px]"
+    } ${active ? "bg-accent-quiet" : grouped ? "" : "panel"} ${muted ? "opacity-55" : ""}`}
   >
     <span className="min-w-0 flex-1">
       <span

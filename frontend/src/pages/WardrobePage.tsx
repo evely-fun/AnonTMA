@@ -103,15 +103,18 @@ export const WardrobePage = () => {
         {/* A fitting room rather than a form: you stand in the mirror at the
             top, the rails run underneath, and nothing has to be switched on
             before it can be seen. */}
-        <div className="sticky top-0 z-10 bg-bg px-4 pb-4 pt-4">
+        <div className="sticky top-0 z-10 bg-bg px-4 pb-3 pt-3">
           <div
-            className={`flex flex-col items-center rounded-[26px] px-5 py-7 ${
+            className={`flex items-center gap-4 rounded-[26px] px-5 py-4 ${
               backgroundClass(worn.background) || "panel"
             }`}
           >
-            <Avatar seed={profile.avatarSeed} style={worn.avatar} frame={worn.frame} size={104} />
+            {/* The mirror stays in view while you browse the rails, so it is
+                laid out sideways: tall enough to judge a frame, short enough
+                that the shelves are not pushed off the screen. */}
+            <Avatar seed={profile.avatarSeed} style={worn.avatar} frame={worn.frame} size={76} />
             <p
-              className={`mt-4 font-display text-[22px] font-extrabold tracking-[-0.025em] ${nameEffectClass(
+              className={`min-w-0 flex-1 font-display text-[19px] font-extrabold leading-tight tracking-[-0.025em] ${nameEffectClass(
                 worn.effect,
               )}`}
             >

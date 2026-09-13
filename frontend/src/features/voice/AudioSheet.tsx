@@ -7,7 +7,7 @@ import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { haptic } from "@/shared/lib/telegram";
 import type { Profile } from "@/shared/lib/types";
-import { Button, OptionRow, Segmented, Sheet } from "@/shared/ui";
+import { Button, OptionRow, Panel, Segmented, Sheet } from "@/shared/ui";
 import { CrownIcon, LockIcon, MicOffIcon } from "@/shared/ui/icons";
 import { useSession } from "@/store/session";
 import { useVoice } from "@/store/voice";
@@ -70,15 +70,18 @@ export const AudioSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
       {tab === "noise" ? (
         <div className="flex flex-col gap-2 pt-3 pb-2">
           <p className="px-1 pb-1 text-[12.5px] leading-snug text-hint">{t("settings.noiseHint")}</p>
-          {NOISE_LEVELS.map((value) => (
-            <OptionRow
-              key={value}
-              title={t(`voice.noise.${value}.name`)}
-              subtitle={t(`voice.noise.${value}.hint`)}
-              active={level === value}
-              onClick={() => chooseLevel(value)}
-            />
-          ))}
+          <Panel className="mx-0" divided>
+            {NOISE_LEVELS.map((value) => (
+              <OptionRow
+                key={value}
+                grouped
+                title={t(`voice.noise.${value}.name`)}
+                subtitle={t(`voice.noise.${value}.hint`)}
+                active={level === value}
+                onClick={() => chooseLevel(value)}
+              />
+            ))}
+          </Panel>
         </div>
       ) : (
         <div className="flex flex-col gap-2 pt-3 pb-2">
@@ -109,20 +112,23 @@ export const AudioSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
               </Button>
             </div>
           )}
-          {VOICE_PRESETS.map((value) => {
-            const locked = !premium && value !== "natural";
-            return (
-              <OptionRow
-                key={value}
-                title={t(`voice.presets.${value}.name`)}
-                subtitle={t(`voice.presets.${value}.hint`)}
-                active={preset === value}
-                muted={locked}
-                trailing={locked ? <LockIcon size={15} className="text-hint" /> : undefined}
-                onClick={() => choosePreset(value)}
-              />
-            );
-          })}
+          <Panel className="mx-0" divided>
+            {VOICE_PRESETS.map((value) => {
+              const locked = !premium && value !== "natural";
+              return (
+                <OptionRow
+                  key={value}
+                  grouped
+                  title={t(`voice.presets.${value}.name`)}
+                  subtitle={t(`voice.presets.${value}.hint`)}
+                  active={preset === value}
+                  muted={locked}
+                  trailing={locked ? <LockIcon size={15} className="text-hint" /> : undefined}
+                  onClick={() => choosePreset(value)}
+                />
+              );
+            })}
+          </Panel>
         </div>
       )}
     </Sheet>

@@ -209,7 +209,7 @@ export const SettingsPage = () => {
             </div>
 
             <div>
-              <p className="mb-2 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
+              <p className="mb-2 text-[12.5px] font-semibold text-secondary">
                 {t("settings.interfaceLanguage")}
               </p>
               <Segmented
@@ -228,10 +228,11 @@ export const SettingsPage = () => {
 
         <m.section variants={rise}>
           <SectionHead title={t("settings.noise")} note={t("settings.noiseHint")} />
-          <div className="space-y-2 px-4">
+          <Panel divided>
             {NOISE_LEVELS.map((value) => (
               <OptionRow
                 key={value}
+                grouped
                 title={t(`voice.noise.${value}.name`)}
                 subtitle={t(`voice.noise.${value}.hint`)}
                 active={preferences.noiseSuppression === value}
@@ -242,7 +243,7 @@ export const SettingsPage = () => {
                 }}
               />
             ))}
-          </div>
+          </Panel>
         </m.section>
 
         <m.section variants={rise}>
@@ -297,7 +298,7 @@ export const SettingsPage = () => {
           <SectionHead title={t("settings.matching")} />
           <div className="space-y-4 px-4">
             <div>
-              <p className="mb-2 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
+              <p className="mb-2 text-[12.5px] font-semibold text-secondary">
                 {t("settings.language")}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -313,7 +314,7 @@ export const SettingsPage = () => {
               </div>
             </div>
             <div>
-              <p className="mb-2 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
+              <p className="mb-2 text-[12.5px] font-semibold text-secondary">
                 {t("settings.showMe")}
               </p>
               <div className="flex flex-wrap gap-2">
