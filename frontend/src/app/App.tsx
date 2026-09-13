@@ -27,6 +27,7 @@ import { authenticate, type AuthOutcome } from "@/shared/lib/api";
 import { ease, spring } from "@/shared/lib/motion";
 import { isTelegram, setHapticsEnabled } from "@/shared/lib/telegram";
 import { applyAppearance, watchScheme, type Palette, type ThemeMode } from "@/shared/lib/theme";
+import { useDesktopWheel } from "@/shared/hooks/useDesktopWheel";
 import { realtime } from "@/shared/lib/socket";
 import { Avatar, Button, Toaster } from "@/shared/ui";
 import { InfinityIcon, MaskIcon } from "@/shared/ui/icons";
@@ -279,6 +280,8 @@ export const App = () => {
       String(profile?.preferences?.nameHue ?? 28),
     );
   }, [profile?.preferences?.nameHue]);
+
+  useDesktopWheel();
 
   const booting = auth === null || (auth.status === "ok" && loading && !profile);
   const showChrome = TAB_ROUTES.includes(location.pathname);

@@ -9,6 +9,7 @@ import { listStagger, rise } from "@/shared/lib/motion";
 import { celebrate } from "@/shared/lib/celebrate";
 import { haptic } from "@/shared/lib/telegram";
 import {
+  ArtTile,
   Button,
   Meter,
   Panel,
@@ -194,22 +195,16 @@ export const DailyPage = () => {
           </Panel>
         </m.section>
 
+        {/* The last card on the page was still the old tinted panel with a
+            glyph on it, while every other destination in the app is drawn. */}
         <m.section className="px-4" variants={rise}>
-          <button
-            type="button"
+          <ArtTile
+            art="premium"
+            title={t("economy.premiumTitle")}
+            note={t("economy.premiumSubtitle")}
             onClick={() => navigate("/premium")}
-            className="panel-hero flex w-full items-center gap-3 rounded-[20px] px-4 py-4 text-left"
-          >
-            <CrownIcon size={20} className="shrink-0 text-accent" />
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-[15px] font-extrabold tracking-[-0.01em]">
-                {t("economy.premiumTitle")}
-              </span>
-              <span className="mt-0.5 block text-[12.5px] text-hint">
-                {t("economy.premiumSubtitle")}
-              </span>
-            </span>
-          </button>
+            wide
+          />
         </m.section>
       </m.div>
 
