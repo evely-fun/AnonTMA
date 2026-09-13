@@ -335,6 +335,7 @@ export const ru: Dictionary = {
     streak: "огонёк",
     rating: "рейтинг",
     achievements: "Достижения",
+    achievementsOf: "Открыто {done} из {total}",
     invite: "Пригласить друга",
     inviteHint: "Оба получите по 100 монет",
     leaderboard: "Рейтинг",
@@ -619,10 +620,6 @@ export const ru: Dictionary = {
         bigSmile: "Большая улыбка",
         avataaars: "Аватарс",
         pixelArt: "Пиксель-арт",
-        bottts: "Роботы",
-        thumbs: "Пальцы",
-        shapes: "Фигуры",
-        geometric: "Геометрия",
       },
       frame: {
         none: "Без рамки",

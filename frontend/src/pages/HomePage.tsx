@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import chestArt from "@/assets/tiles/chest/00.webp";
+import connectArt from "@/assets/tiles/connect.webp";
 import { peerManager } from "@/features/voice/webrtc";
 import { useT } from "@/shared/i18n";
 import { clockFormat } from "@/shared/lib/format";
@@ -95,28 +96,44 @@ export const HomePage = () => {
             ]}
           />
 
+          {/* The one action on the screen is drawn rather than labelled: two
+              masked bubbles finding each other, which is the whole product in
+              one picture, with the words sitting underneath it. */}
           <m.button
             type="button"
             onClick={begin}
             onPointerDown={() => haptic.select()}
             whileTap={{ scale: 0.97 }}
             transition={spring.snappy}
-            className={`flex w-full flex-col items-center gap-3 rounded-[28px] px-6 py-9 ${
+            className={`flex w-full flex-col overflow-hidden rounded-[28px] ${
               short ? "bg-elevated text-hint" : "primary-action"
             }`}
           >
-            <span className="flex size-[54px] items-center justify-center rounded-full bg-current/10">
-              {mode === "voice" ? <MicIcon size={26} /> : <ChatIcon size={26} />}
+            <span className="relative block w-full">
+              <img
+                src={connectArt}
+                alt=""
+                width={880}
+                height={495}
+                className={`block aspect-[16/9] w-full object-cover ${short ? "opacity-40 grayscale" : ""}`}
+              />
+              <span className="absolute bottom-0 left-0 right-0 flex h-1/3 items-end justify-center pb-1">
+                <span className="flex size-9 items-center justify-center rounded-full bg-current/12">
+                  {mode === "voice" ? <MicIcon size={18} /> : <ChatIcon size={18} />}
+                </span>
+              </span>
             </span>
-            <span className="font-display text-[21px] font-extrabold tracking-[-0.02em]">
-              {short ? t("economy.notEnough") : t("home.findNow")}
-            </span>
-            <span className="text-[13px] opacity-70">
-              {short
-                ? t("home.topUp")
-                : unlimited
-                  ? t("home.free")
-                  : t("home.cost", { count: cost })}
+            <span className="flex w-full flex-col items-center gap-1 px-6 pb-6 pt-2">
+              <span className="font-display text-[21px] font-extrabold tracking-[-0.02em]">
+                {short ? t("economy.notEnough") : t("home.findNow")}
+              </span>
+              <span className="text-[13px] opacity-70">
+                {short
+                  ? t("home.topUp")
+                  : unlimited
+                    ? t("home.free")
+                    : t("home.cost", { count: cost })}
+              </span>
             </span>
           </m.button>
 

@@ -1,5 +1,10 @@
 import { createAvatar } from "@dicebear/core";
 
+/**
+ * Every style draws a person. The abstract sets, robots, shapes, thumbs and
+ * the flat geometric fallback, are gone: a mask you wear in a conversation
+ * should be a face, and a wall of coloured polygons read as filler.
+ */
 export type AvatarStyle =
   | "adventurer"
   | "notionists"
@@ -9,39 +14,15 @@ export type AvatarStyle =
   | "personas"
   | "bigSmile"
   | "avataaars"
-  | "pixelArt"
-  | "bottts"
-  | "thumbs"
-  | "shapes"
-  | "geometric";
+  | "pixelArt";
 
-/** Everything a new account can wear without spending a coin. */
-export const FREE_AVATAR_STYLES: AvatarStyle[] = [
-  "adventurer",
-  "notionists",
-  "lorelei",
-  "openPeeps",
-  "micah",
-];
+/**
+ * One character comes free, the Seeker, and everything else is earned. A
+ * handful of free styles meant most people never looked at the shop at all.
+ */
+export const FREE_AVATAR_STYLES: AvatarStyle[] = ["adventurer"];
 
 export const AVATAR_STYLES: AvatarStyle[] = [
-  "adventurer",
-  "notionists",
-  "lorelei",
-  "openPeeps",
-  "micah",
-  "personas",
-  "bigSmile",
-  "avataaars",
-  "pixelArt",
-  "bottts",
-  "thumbs",
-  "shapes",
-  "geometric",
-];
-
-/** Styles that draw a person rather than an abstract mark. */
-export const CHARACTER_STYLES: AvatarStyle[] = [
   "adventurer",
   "notionists",
   "lorelei",
@@ -56,7 +37,7 @@ export const CHARACTER_STYLES: AvatarStyle[] = [
 type StyleModule = { create: unknown; meta: unknown; schema: unknown };
 type Loader = () => Promise<StyleModule>;
 
-const LOADERS: Record<Exclude<AvatarStyle, "geometric">, Loader> = {
+const LOADERS: Record<AvatarStyle, Loader> = {
   adventurer: () => import("@dicebear/adventurer"),
   notionists: () => import("@dicebear/notionists"),
   lorelei: () => import("@dicebear/lorelei"),
@@ -66,22 +47,26 @@ const LOADERS: Record<Exclude<AvatarStyle, "geometric">, Loader> = {
   bigSmile: () => import("@dicebear/big-smile"),
   avataaars: () => import("@dicebear/avataaars"),
   pixelArt: () => import("@dicebear/pixel-art"),
-  bottts: () => import("@dicebear/bottts"),
-  thumbs: () => import("@dicebear/thumbs"),
-  shapes: () => import("@dicebear/shapes"),
 };
 
-// A person, not a shape, is what a new account starts with.
+/** The Seeker. Everyone starts here and can reroll it as often as they like. */
 export const DEFAULT_AVATAR_STYLE: AvatarStyle = "adventurer";
 
-const GENDER_DEFAULTS: Record<string, AvatarStyle> = {
-  female: "lorelei",
-  male: "notionists",
-  unknown: DEFAULT_AVATAR_STYLE,
+export const defaultStyleFor = (_gender?: string): AvatarStyle => DEFAULT_AVATAR_STYLE;
+
+/**
+ * The Seeker is the same character for everyone, so gender is expressed inside
+ * it rather than by handing people a different style. Adventurer's hair sets
+ * split cleanly along those lines, which is enough to read as one or the other
+ * without pretending the seed alone would have done it.
+ */
+const HAIR: Record<string, string[]> = {
+  female: Array.from({ length: 26 }, (_, index) => `long${String(index + 1).padStart(2, "0")}`),
+  male: Array.from({ length: 19 }, (_, index) => `short${String(index + 1).padStart(2, "0")}`),
 };
 
-export const defaultStyleFor = (gender: string | undefined): AvatarStyle =>
-  GENDER_DEFAULTS[gender ?? "unknown"] ?? DEFAULT_AVATAR_STYLE;
+const genderOptions = (style: AvatarStyle, gender: string | undefined) =>
+  style === "adventurer" && gender && HAIR[gender] ? { hair: HAIR[gender] } : {};
 
 const BASE_OPTIONS = {
   backgroundType: ["gradientLinear"],
@@ -112,11 +97,10 @@ const loaded = new Map<AvatarStyle, StyleModule>();
 const cache = new Map<string, string>();
 const pending = new Map<AvatarStyle, Promise<unknown>>();
 
-export const isStyleReady = (style: AvatarStyle): boolean =>
-  style === "geometric" || loaded.has(style);
+export const isStyleReady = (style: AvatarStyle): boolean => loaded.has(style);
 
 export async function loadStyle(style: AvatarStyle): Promise<void> {
-  if (style === "geometric" || loaded.has(style)) return;
+  if (loaded.has(style)) return;
   const loader = LOADERS[style];
   if (!loader) return;
   let task = pending.get(style);
@@ -133,9 +117,8 @@ export async function loadStyle(style: AvatarStyle): Promise<void> {
   await task;
 }
 
-export function renderAvatar(style: AvatarStyle, seed: string): string | null {
-  if (style === "geometric") return null;
-  const key = `${style}:${seed}`;
+export function renderAvatar(style: AvatarStyle, seed: string, gender?: string): string | null {
+  const key = `${style}:${seed}:${gender ?? ""}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -144,7 +127,11 @@ export function renderAvatar(style: AvatarStyle, seed: string): string | null {
 
   let svg: string;
   try {
-    svg = createAvatar(collection as never, { ...BASE_OPTIONS, seed } as never).toString();
+    svg = createAvatar(collection as never, {
+      ...BASE_OPTIONS,
+      ...genderOptions(style, gender),
+      seed,
+    } as never).toString();
   } catch {
     return null;
   }

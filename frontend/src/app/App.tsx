@@ -2,6 +2,8 @@ import { AnimatePresence, m } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
+import coinArt from "@/assets/currency/coin.webp";
+import energyArt from "@/assets/currency/energy.webp";
 import { CallOverlay } from "@/features/friends/CallOverlay";
 import { ChatPage } from "@/pages/ChatPage";
 import { DailyPage } from "@/pages/DailyPage";
@@ -27,7 +29,7 @@ import { isTelegram, setHapticsEnabled } from "@/shared/lib/telegram";
 import { applyAppearance, watchScheme, type Palette, type ThemeMode } from "@/shared/lib/theme";
 import { realtime } from "@/shared/lib/socket";
 import { Avatar, Button, Toaster } from "@/shared/ui";
-import { BoltIcon, CoinIcon, InfinityIcon, MaskIcon } from "@/shared/ui/icons";
+import { InfinityIcon, MaskIcon } from "@/shared/ui/icons";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 
@@ -106,16 +108,23 @@ const Failure = ({
   );
 };
 
+/**
+ * The two balances are drawn objects, not glyphs from an icon set. Anteiku's
+ * coin carries the same mask the whole product is built around, so the currency
+ * belongs to this app rather than looking borrowed from any other.
+ */
 const CurrencyPill = ({
   label,
   to,
-  tone,
-  children,
+  art,
+  value,
+  tint,
 }: {
   label: string;
   to: string;
-  tone: "energy" | "coins";
-  children: React.ReactNode;
+  art: string;
+  value: React.ReactNode;
+  tint: string;
 }) => {
   const navigate = useNavigate();
   return (
@@ -124,12 +133,11 @@ const CurrencyPill = ({
       onClick={() => navigate(to)}
       whileTap={{ scale: 0.94 }}
       transition={spring.snappy}
-      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 font-display text-[12.5px] font-bold tabular ${
-        tone === "energy" ? "bg-warn/12 text-label" : "bg-elevated text-label"
-      }`}
+      className={`flex items-center gap-1.5 rounded-full py-1 pl-1 pr-3 font-display text-[13px] font-bold text-label tabular ${tint}`}
       aria-label={label}
     >
-      {children}
+      <img src={art} alt="" width={22} height={22} className="size-[22px] object-contain" />
+      {value}
     </m.button>
   );
 };
@@ -140,14 +148,26 @@ const Currencies = () => {
 
   return (
     <>
-      <CurrencyPill label="Energy" to="/daily" tone="energy">
-        <BoltIcon size={13} className={state?.unlimited ? "text-accent" : "text-warn"} />
-        {state?.unlimited ? <InfinityIcon size={14} className="text-accent" /> : (state?.energy ?? 0)}
-      </CurrencyPill>
-      <CurrencyPill label="Coins" to="/shop" tone="coins">
-        <CoinIcon size={13} className="text-secondary" />
-        {coins > 9999 ? `${Math.floor(coins / 1000)}k` : coins}
-      </CurrencyPill>
+      <CurrencyPill
+        label="Energy"
+        to="/daily"
+        art={energyArt}
+        tint="bg-warn/12"
+        value={
+          state?.unlimited ? (
+            <InfinityIcon size={15} className="text-accent" />
+          ) : (
+            (state?.energy ?? 0)
+          )
+        }
+      />
+      <CurrencyPill
+        label="Coins"
+        to="/shop"
+        art={coinArt}
+        tint="bg-elevated"
+        value={coins > 9999 ? `${Math.floor(coins / 1000)}k` : coins}
+      />
     </>
   );
 };

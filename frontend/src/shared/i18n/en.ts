@@ -333,6 +333,7 @@ export const en = {
     streak: "streak",
     rating: "rating",
     achievements: "Achievements",
+    achievementsOf: "{done} of {total} unlocked",
     invite: "Invite a friend",
     inviteHint: "You both get 100 coins",
     leaderboard: "Leaderboard",
@@ -616,10 +617,6 @@ export const en = {
         bigSmile: "Big Smile",
         avataaars: "Avataaars",
         pixelArt: "Pixel art",
-        bottts: "Bots",
-        thumbs: "Thumbs",
-        shapes: "Shapes",
-        geometric: "Geometric",
       },
       frame: {
         none: "No frame",

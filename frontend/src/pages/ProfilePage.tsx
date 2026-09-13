@@ -6,7 +6,7 @@ import { useT } from "@/shared/i18n";
 import { backgroundClass, nameEffectClass } from "@/shared/lib/cosmetics";
 import { request } from "@/shared/lib/api";
 import { compactNumber, durationLabel } from "@/shared/lib/format";
-import { listStagger, rise } from "@/shared/lib/motion";
+import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { openLink } from "@/shared/lib/telegram";
 import type { Achievement, Profile } from "@/shared/lib/types";
 import {
@@ -21,15 +21,9 @@ import {
   TabScreen,
 } from "@/shared/ui";
 import {
-  ChatIcon,
   CheckIcon,
   ChevronIcon,
-  CrownIcon,
-  FlameIcon,
-  GamesIcon,
-  HeartIcon,
   MaskIcon,
-  MicIcon,
 } from "@/shared/ui/icons";
 import { useAdmin } from "@/store/admin";
 import { useSession } from "@/store/session";
@@ -61,6 +55,7 @@ export const ProfilePage = () => {
   const checkAdmin = useAdmin((store) => store.check);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [editing, setEditing] = useState(false);
+  const [trophies, setTrophies] = useState(false);
   const [bio, setBio] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [gender, setGender] = useState("unknown");
@@ -219,85 +214,62 @@ export const ProfilePage = () => {
           <SectionHead title={t("profile.yourNumbers")} />
           <div className="grid grid-cols-3 gap-2 px-4">
             <StatTile
-              icon={<ChatIcon size={15} />}
+              art="chats"
               value={compactNumber(stats.dialogsTotal)}
               label={t("profile.chats")}
             />
             <StatTile
-              icon={<MicIcon size={15} />}
+              art="voice"
               value={durationLabel(stats.voiceSeconds)}
               label={t("profile.voice")}
             />
             <StatTile
-              icon={<GamesIcon size={15} />}
+              art="games"
               value={`${stats.gamesWon}/${stats.gamesPlayed}`}
               label={t("profile.games")}
             />
             <StatTile
-              icon={<HeartIcon size={15} />}
+              art="likes"
               value={compactNumber(stats.likesReceived)}
               label={t("profile.likes")}
             />
             <StatTile
-              icon={<FlameIcon size={15} />}
+              art="streak"
               value={String(stats.streakDays)}
               label={t("profile.streak")}
             />
             <StatTile
-              icon={<CrownIcon size={15} />}
+              art="rating"
               value={String(stats.rating)}
               label={t("profile.rating")}
             />
           </div>
         </m.section>
 
-        <m.section variants={rise}>
-          <SectionHead
-            title={t("profile.achievements")}
-            trailing={
-              <span className="font-display text-[12px] font-bold text-hint tabular">
-                {unlocked.length}/{achievements.length}
+        {/* Achievements are worth having but not worth eight rows of screen on
+            the way to everything else. The line says how far along you are and
+            the whole list is one tap away. */}
+        <m.section variants={rise} className="px-4">
+          <m.button
+            type="button"
+            onClick={() => setTrophies(true)}
+            whileTap={{ scale: 0.985 }}
+            transition={spring.snappy}
+            className="panel flex w-full items-center gap-3.5 rounded-[20px] px-4 py-3.5 text-left"
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-[15px] font-bold">
+                {t("profile.achievements")}
               </span>
-            }
-          />
-          <div className="space-y-2 px-4">
-            {achievements.slice(0, 8).map((item) => (
-              <div
-                key={item.key}
-                className={`flex items-center gap-3.5 rounded-[16px] px-4 py-3 ${
-                  item.unlocked ? "panel" : "quiet-panel"
-                }`}
-              >
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={`truncate font-display text-[14px] font-bold ${
-                      item.unlocked ? "text-label" : "text-secondary"
-                    }`}
-                  >
-                    {t(`achievements.${item.key}.title`)}
-                  </p>
-                  <p className="truncate text-[11.5px] text-hint">
-                    {t(`achievements.${item.key}.description`)}
-                  </p>
-                  {!item.unlocked && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="flex-1">
-                        <Meter ratio={item.progress / item.threshold} height={4} />
-                      </span>
-                      <span className="shrink-0 text-[11px] text-hint tabular">
-                        {item.progress}/{item.threshold}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                {item.unlocked && (
-                  <span className="shrink-0 text-accent">
-                    <CheckIcon size={17} />
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+              <span className="mt-1.5 block">
+                <Meter ratio={unlocked.length / Math.max(1, achievements.length)} height={4} />
+              </span>
+            </span>
+            <span className="shrink-0 font-display text-[13px] font-bold text-hint tabular">
+              {unlocked.length}/{achievements.length}
+            </span>
+            <ChevronIcon size={15} className="shrink-0 text-hint" />
+          </m.button>
         </m.section>
 
         <m.section variants={rise} className="space-y-2.5 px-4">
@@ -397,6 +369,49 @@ export const ProfilePage = () => {
               ))}
             </div>
           </div>
+        </div>
+      </Sheet>
+      <Sheet
+        open={trophies}
+        onClose={() => setTrophies(false)}
+        title={t("profile.achievements")}
+        description={t("profile.achievementsOf", {
+          done: unlocked.length,
+          total: achievements.length,
+        })}
+      >
+        <div className="space-y-3 pb-2">
+          {achievements.map((item) => (
+            <div key={item.key} className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p
+                  className={`truncate font-display text-[14px] font-bold ${
+                    item.unlocked ? "text-label" : "text-secondary"
+                  }`}
+                >
+                  {t(`achievements.${item.key}.title`)}
+                </p>
+                <p className="truncate text-[11.5px] text-hint">
+                  {t(`achievements.${item.key}.description`)}
+                </p>
+                {!item.unlocked && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="flex-1">
+                      <Meter ratio={item.progress / item.threshold} height={4} />
+                    </span>
+                    <span className="shrink-0 text-[11px] text-hint tabular">
+                      {item.progress}/{item.threshold}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {item.unlocked && (
+                <span className="shrink-0 text-accent">
+                  <CheckIcon size={17} />
+                </span>
+              )}
+            </div>
+          ))}
         </div>
       </Sheet>
     </TabScreen>

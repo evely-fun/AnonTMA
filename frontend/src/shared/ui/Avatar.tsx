@@ -159,7 +159,7 @@ export const Avatar = ({
   gender,
   className = "",
 }: AvatarProps) => {
-  const resolved = (style || (gender ? defaultStyleFor(gender) : "geometric")) as AvatarStyle;
+  const resolved = (style || defaultStyleFor(gender)) as AvatarStyle;
   const [ready, setReady] = useState(() => isStyleReady(resolved));
 
   useEffect(() => {
@@ -178,8 +178,8 @@ export const Avatar = ({
   }, [resolved]);
 
   const markup = useMemo(
-    () => (ready ? renderAvatar(resolved, seed || "anon") : null),
-    [ready, resolved, seed],
+    () => (ready ? renderAvatar(resolved, seed || "anon", gender) : null),
+    [ready, resolved, seed, gender],
   );
 
   const layer = (FRAME_KEYS as readonly string[]).includes(frame) ? (frame as AvatarFrame) : "none";

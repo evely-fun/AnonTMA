@@ -22,19 +22,19 @@ class Item:
 CATALOG: tuple[Item, ...] = (
     # Everyone gets a real character for free, the abstract marks are the
     # ones that cost something now.
+    # The Seeker is the one character that comes free, drawn to match the
+    # gender on the account and rerollable as often as you like. Everything
+    # else is earned. The robot, shape and thumb sets are gone: a mask you
+    # wear in a conversation should be a face.
     Item("avatar.adventurer", "avatar", 0, "adventurer", "base"),
-    Item("avatar.notionists", "avatar", 0, "notionists", "base"),
-    Item("avatar.lorelei", "avatar", 0, "lorelei", "base"),
-    Item("avatar.openPeeps", "avatar", 0, "openPeeps", "base"),
-    Item("avatar.micah", "avatar", 0, "micah", "base"),
-    Item("avatar.personas", "avatar", 700, "personas", "common"),
-    Item("avatar.bigSmile", "avatar", 900, "bigSmile", "common"),
-    Item("avatar.avataaars", "avatar", 1200, "avataaars", "common"),
-    Item("avatar.pixelArt", "avatar", 1600, "pixelArt", "rare"),
-    Item("avatar.bottts", "avatar", 1900, "bottts", "rare"),
-    Item("avatar.thumbs", "avatar", 2200, "thumbs", "epic"),
-    Item("avatar.shapes", "avatar", 2600, "shapes", "epic"),
-    Item("avatar.geometric", "avatar", 2600, "geometric", "epic"),
+    Item("avatar.notionists", "avatar", 700, "notionists", "common"),
+    Item("avatar.lorelei", "avatar", 900, "lorelei", "common"),
+    Item("avatar.openPeeps", "avatar", 1100, "openPeeps", "common"),
+    Item("avatar.micah", "avatar", 1400, "micah", "rare"),
+    Item("avatar.personas", "avatar", 1700, "personas", "rare"),
+    Item("avatar.bigSmile", "avatar", 2000, "bigSmile", "rare"),
+    Item("avatar.avataaars", "avatar", 2400, "avataaars", "epic"),
+    Item("avatar.pixelArt", "avatar", 2900, "pixelArt", "legendary"),
 
     Item("frame.none", "frame", 0, "none", "base"),
     Item("frame.halo", "frame", 500, "halo", "common"),

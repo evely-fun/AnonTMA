@@ -1,6 +1,12 @@
 import { m, useMotionValue, useSpring, useTransform } from "motion/react";
 import { useEffect, type ReactNode } from "react";
 
+import statChats from "@/assets/stats/chats.webp";
+import statGames from "@/assets/stats/games.webp";
+import statLikes from "@/assets/stats/likes.webp";
+import statRating from "@/assets/stats/rating.webp";
+import statStreak from "@/assets/stats/streak.webp";
+import statVoice from "@/assets/stats/voice.webp";
 import { haptic } from "@/shared/lib/telegram";
 import { spring } from "@/shared/lib/motion";
 
@@ -175,37 +181,46 @@ export const Chip = ({
   );
 };
 
+/** The drawn ground each number stands on, one per figure. */
+const STAT_ART = {
+  chats: statChats,
+  voice: statVoice,
+  games: statGames,
+  likes: statLikes,
+  streak: statStreak,
+  rating: statRating,
+} as const;
+
+export type StatArt = keyof typeof STAT_ART;
+
+/**
+ * A number on a soft painted ground rather than a white card with a grey glyph
+ * on top of it. Six identical cards each wearing a different outline icon read
+ * as a settings list; this reads as a set of figures worth looking at.
+ */
 export const StatTile = ({
   value,
   label,
-  icon,
-  tone = "neutral",
+  art,
 }: {
   value: ReactNode;
   label: string;
-  icon?: ReactNode;
-  tone?: "neutral" | "accent" | "live" | "warn";
-}) => {
-  const accent = {
-    neutral: "text-label",
-    accent: "text-accent",
-    live: "text-live",
-    warn: "text-warn",
-  };
-  return (
-    <div className="panel flex flex-col gap-1 rounded-[16px] px-3.5 py-3">
-      {icon && <span className="mb-1 text-hint">{icon}</span>}
-      <span
-        className={`font-display text-[19px] font-extrabold leading-none tracking-[-0.03em] tabular ${accent[tone]}`}
-      >
-        {value}
-      </span>
-      <span className="font-display text-[10px] font-bold tracking-[0.01em] text-hint">
-        {label}
-      </span>
-    </div>
-  );
-};
+  art: StatArt;
+}) => (
+  <div className="relative flex aspect-[5/4] flex-col items-center justify-center overflow-hidden rounded-[18px]">
+    <img
+      src={STAT_ART[art]}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      className="absolute inset-0 size-full object-cover"
+    />
+    <span className="relative font-display text-[24px] font-extrabold leading-none tracking-[-0.03em] text-label tabular">
+      {value}
+    </span>
+    <span className="relative mt-1.5 text-[12px] text-secondary">{label}</span>
+  </div>
+);
 
 export const Meter = ({
   ratio,
