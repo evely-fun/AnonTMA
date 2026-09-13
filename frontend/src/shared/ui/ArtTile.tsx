@@ -1,10 +1,14 @@
 import { m } from "motion/react";
 
 import call from "@/assets/tiles/call.webp";
+import economy from "@/assets/tiles/economy.webp";
 import friends from "@/assets/tiles/friends.webp";
+import interests from "@/assets/tiles/interests.webp";
 import invite from "@/assets/tiles/invite.webp";
 import leaderboard from "@/assets/tiles/leaderboard.webp";
+import language from "@/assets/tiles/language.webp";
 import levels from "@/assets/tiles/levels.webp";
+import mask from "@/assets/tiles/mask.webp";
 import premium from "@/assets/tiles/premium.webp";
 import rewards from "@/assets/tiles/rewards.webp";
 import rooms from "@/assets/tiles/rooms.webp";
@@ -27,7 +31,11 @@ export type TileArt =
   | "friends"
   | "search"
   | "call"
-  | "levels";
+  | "levels"
+  | "language"
+  | "mask"
+  | "interests"
+  | "economy";
 
 /** Flat ground of each illustration, so a tile holds its colour before the
  *  image decodes and never flashes an empty box. */
@@ -44,6 +52,10 @@ const ART: Record<TileArt, { src: string; tint: string }> = {
   search: { src: search, tint: "#ba035e" },
   call: { src: call, tint: "#047982" },
   levels: { src: levels, tint: "#c53f10" },
+  language: { src: language, tint: "#365de0" },
+  mask: { src: mask, tint: "#9c0431" },
+  interests: { src: interests, tint: "#76be1b" },
+  economy: { src: economy, tint: "#e45701" },
 };
 
 export const tileArt = (art: TileArt) => ART[art];

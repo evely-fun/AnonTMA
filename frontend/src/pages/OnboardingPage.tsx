@@ -5,13 +5,11 @@ import { useI18n, useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { ease, pop } from "@/shared/lib/motion";
 import type { Profile } from "@/shared/lib/types";
-import { Avatar, Button, Chip, LevelBars, Meter } from "@/shared/ui";
+import { Avatar, Button, Chip, LevelBars, Meter, tileArt } from "@/shared/ui";
 import {
   BoltIcon,
   CoinIcon,
   CrownIcon,
-  GlobeIcon,
-  MaskIcon,
   MicIcon,
   ShieldIcon,
 } from "@/shared/ui/icons";
@@ -97,9 +95,11 @@ export const OnboardingPage = () => {
             animate="animate"
             exit="exit"
           >
-            <span className="flex size-[92px] items-center justify-center rounded-[30px] bg-elevated text-accent">
-              <GlobeIcon size={42} />
-            </span>
+            <img
+              src={tileArt("language").src}
+              alt=""
+              className="size-[112px] rounded-[30px] object-cover"
+            />
             <h1 className="mt-1 font-display text-[24px] font-extrabold tracking-[-0.03em]">
               {t("onboarding.languageTitle")}
             </h1>
@@ -141,9 +141,11 @@ export const OnboardingPage = () => {
             animate="animate"
             exit="exit"
           >
-            <span className="flex size-[110px] items-center justify-center rounded-[34px] bg-elevated text-accent shadow-[inset_0_1px_0_oklch(1_0_0/0.14)]">
-              <MaskIcon size={52} />
-            </span>
+            <img
+              src={tileArt("mask").src}
+              alt=""
+              className="size-[132px] rounded-[36px] object-cover"
+            />
             <h1 className="mt-2 font-display text-[27px] font-extrabold leading-tight tracking-[-0.03em]">
               {t("onboarding.title")}
             </h1>
