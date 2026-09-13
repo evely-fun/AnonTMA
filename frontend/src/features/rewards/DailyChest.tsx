@@ -1,7 +1,9 @@
 import { AnimatePresence, m } from "motion/react";
 import { forwardRef, useImperativeHandle, useState } from "react";
 
-import rewardsArt from "@/assets/tiles/rewards.webp";
+import chestClosed from "@/assets/tiles/chest0.webp";
+import chestAjar from "@/assets/tiles/chest1.webp";
+import chestOpen from "@/assets/tiles/chest2.webp";
 import { useT } from "@/shared/i18n";
 import { spring } from "@/shared/lib/motion";
 import type { WheelPrize } from "@/shared/lib/types";
@@ -46,15 +48,21 @@ export const DailyChest = forwardRef<
 >(({ prizes, ready }, ref) => {
   const { t } = useT();
   const [won, setWon] = useState<WheelPrize | null>(null);
-  const [opening, setOpening] = useState(false);
+  // Three drawn states of the same chest. Cross fading between them reads as
+  // a lid actually lifting, which a single image cannot do however it is
+  // scaled or rotated.
+  const [frame, setFrame] = useState<0 | 1 | 2>(0);
+  const opening = frame > 0;
 
   useImperativeHandle(ref, () => ({
     reveal: async (prize) => {
       setWon(null);
-      setOpening(true);
+      setFrame(1);
+      await new Promise((resolve) => setTimeout(resolve, 320));
+      setFrame(2);
       await new Promise((resolve) => setTimeout(resolve, 620));
-      setOpening(false);
       setWon(prize);
+      setFrame(0);
     },
   }));
 
@@ -88,20 +96,21 @@ export const DailyChest = forwardRef<
             </m.div>
           ) : (
             <m.img
-              key="box"
-              src={rewardsArt}
+              key={`box-${frame}`}
+              src={[chestClosed, chestAjar, chestOpen][frame]}
               alt=""
               className="size-[150px] rounded-[36px] object-cover"
+              initial={opening ? { opacity: 0, scale: 0.96 } : false}
               animate={
                 opening
-                  ? { scale: [1, 1.12, 0.94, 1.06], rotate: [0, -4, 4, 0] }
+                  ? { opacity: 1, scale: frame === 2 ? 1.08 : 1.02 }
                   : ready
-                    ? { y: [0, -7, 0] }
-                    : { y: 0 }
+                    ? { opacity: 1, y: [0, -7, 0] }
+                    : { opacity: 1, y: 0 }
               }
               transition={
                 opening
-                  ? { duration: 0.6, ease: "easeInOut" }
+                  ? { duration: 0.22, ease: "easeOut" }
                   : { duration: 3.4, repeat: Infinity, ease: "easeInOut" }
               }
             />

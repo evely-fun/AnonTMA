@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useBackButton } from "@/shared/hooks/useBackButton";
 import { useT } from "@/shared/i18n";
 import { clockFormat } from "@/shared/lib/format";
-import { listStagger, rise, spring } from "@/shared/lib/motion";
+import { listStagger, rise } from "@/shared/lib/motion";
 import { celebrate } from "@/shared/lib/celebrate";
 import { haptic } from "@/shared/lib/telegram";
 import {
@@ -185,57 +185,20 @@ export const DailyPage = () => {
               )}
             </div>
 
+            {/* Just the run of days. What a day pays is shown when it is
+                claimed, which is the moment it actually matters. */}
             <div className="mt-4 flex gap-1.5">
               {ladder.map((entry) => {
                 const reached = entry.day <= streakDay;
                 return (
-                  <m.div
+                  <div
                     key={entry.day}
-                    whileTap={{ scale: 0.96 }}
-                    transition={spring.snappy}
-                    className={`flex flex-1 flex-col items-center gap-1 rounded-[13px] py-2.5 ${
-                      reached ? "bg-accent-quiet" : "bg-elevated/60"
+                    className={`flex h-9 flex-1 items-center justify-center rounded-[12px] font-display text-[13px] font-bold tabular ${
+                      reached ? "bg-accent text-on-accent" : "bg-elevated text-hint"
                     }`}
                   >
-                    <span
-                      className={`font-display text-[10px] font-bold tracking-[0.01em] ${
-                        reached ? "text-accent" : "text-hint"
-                      }`}
-                    >
-                      {entry.day}
-                    </span>
-                    {entry.premiumDays > 0 && (
-                      <span
-                        className={`flex items-center gap-0.5 font-display text-[10px] font-bold tabular ${
-                          reached ? "text-accent" : "text-hint"
-                        }`}
-                      >
-                        <CrownIcon size={10} />
-                        {entry.premiumDays}
-                        {t("economy.premiumDaysShort")}
-                      </span>
-                    )}
-                    {(
-                      <>
-                        <span
-                          className={`flex items-center gap-0.5 font-display text-[10px] font-bold tabular ${
-                            reached ? "text-live" : "text-hint"
-                          }`}
-                        >
-                          <CoinIcon size={10} />
-                          {entry.coins}
-                        </span>
-                        <span
-                          className={`flex items-center gap-0.5 font-display text-[10px] font-bold tabular ${
-                            reached ? "text-warn" : "text-hint"
-                          }`}
-                        >
-                          <BoltIcon size={10} />
-                          {entry.energy}
-                        </span>
-                      </>
-                    )}
-                  </m.div>
+                    {entry.premiumDays > 0 ? <CrownIcon size={15} /> : entry.day}
+                  </div>
                 );
               })}
             </div>
