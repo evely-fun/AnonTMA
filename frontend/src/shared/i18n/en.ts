@@ -141,6 +141,20 @@ export const en = {
     waiting: "Waiting",
     needs: "needs {count}",
   },
+  wardrobe: {
+    title: "Wardrobe",
+    subtitle: "how other people see you",
+    preview: "this is your profile",
+    owned: "{count} of {total} unlocked",
+    toShop: "Open the shop",
+    hint: "Locked pieces are bought with coins. What you wear shows in chats, rooms and games.",
+    slots: {
+      avatar: "Avatar",
+      frame: "Frame",
+      effect: "Name",
+      background: "Background",
+    },
+  },
   games: {
     title: "Games",
     note: "Every table runs on the voice channel",
@@ -157,6 +171,7 @@ export const en = {
     meta: {
       tictactoe: {
         title: "Tic Tac Toe",
+        tagline: "three in a row, 25s per move",
         subtitle: "Classic duel, 25 seconds per move",
         rules: [
           "Three in a row wins the round",
@@ -166,6 +181,7 @@ export const en = {
       },
       mafia: {
         title: "Mafia",
+        tagline: "by day you hunt, by night you are hunted",
         subtitle: "Voice deduction for 4 to 12 players",
         rules: [
           "At night the mafia picks a victim, the doctor saves, the detective checks",
@@ -175,6 +191,7 @@ export const en = {
       },
       telephone: {
         title: "Broken Telephone",
+        tagline: "a phrase down the chain, mangled",
         subtitle: "Whisper a phrase down the chain and watch it melt",
         rules: [
           "Only the current pair hears each other",
@@ -184,6 +201,7 @@ export const en = {
       },
       alias: {
         title: "Alias",
+        tagline: "explain words with your voice, never say them",
         subtitle: "Explain the word with your voice, never say it",
         rules: [
           "The explainer describes the word out loud",
@@ -193,6 +211,7 @@ export const en = {
       },
       flappy: {
         title: "Voice Flappy",
+        tagline: "hum with your voice to stay in the air",
         subtitle: "Your voice is the only control, hum to fly",
         rules: [
           "Loud voice lifts the bird, silence drops it",

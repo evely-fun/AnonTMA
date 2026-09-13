@@ -339,6 +339,17 @@ export const ProfilePage = () => {
             />
             <ListRow
               leading={
+                <IconTile tone="accent">
+                  <MaskIcon size={18} />
+                </IconTile>
+              }
+              title={t("wardrobe.title")}
+              subtitle={t("wardrobe.subtitle")}
+              chevron
+              onClick={() => navigate("/wardrobe")}
+            />
+            <ListRow
+              leading={
                 <IconTile tone="warn">
                   <GridIcon size={18} />
                 </IconTile>

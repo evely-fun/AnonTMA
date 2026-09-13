@@ -15,6 +15,7 @@ import { LevelsPage } from "@/pages/LevelsPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { PremiumPage } from "@/pages/PremiumPage";
 import { ProfilePage } from "@/pages/ProfilePage";
+import { WardrobePage } from "@/pages/WardrobePage";
 import { ShopPage } from "@/pages/ShopPage";
 import { RoomPage } from "@/pages/RoomPage";
 import { RoomsPage } from "@/pages/RoomsPage";
@@ -307,6 +308,7 @@ export const App = () => {
                 <Route path="/daily" element={<DailyPage />} />
                 <Route path="/premium" element={<PremiumPage />} />
                 <Route path="/shop" element={<ShopPage />} />
+                <Route path="/wardrobe" element={<WardrobePage />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/levels" element={<LevelsPage />} />
