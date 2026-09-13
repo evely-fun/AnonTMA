@@ -175,12 +175,12 @@ export const en = {
     meta: {
       tictactoe: {
         title: "Tic Tac Toe",
-        tagline: "three in a row, 25s per move",
+        tagline: "three in a row, 25 seconds a move",
         subtitle: "Classic duel, 25 seconds per move",
         rules: [
-          "Three in a row wins the round",
-          "Each move has a 25 second limit",
-          "Best of three decides the match",
+          { t: "Three in a row", d: "A line of three wins the round, in any direction." },
+          { t: "25 seconds a move", d: "Run out of time and the turn passes to your rival." },
+          { t: "Best of three", d: "First to two rounds takes the match." },
         ],
       },
       mafia: {
@@ -188,39 +188,62 @@ export const en = {
         tagline: "by day you hunt, by night you are hunted",
         subtitle: "Voice deduction for 4 to 12 players",
         rules: [
-          "At night the mafia picks a victim, the doctor saves, the detective checks",
-          "By day everyone speaks and votes for one suspect",
-          "Town wins when every mafia is out, mafia wins when they equal the town",
+          { t: "Who is who", d: "Your role is dealt in secret. The mafia know each other, the town knows nobody." },
+          { t: "Introductions", d: "A minute to talk before the first night. People remember you by your voice, and the mafia are already deciding who goes first." },
+          { t: "Night", d: "The town hears nothing. The mafia agree on a victim and the don has the last word, and checks one person for the star. The sheriff checks one, the doctor saves one: themselves once a game, and never the same person two nights running." },
+          { t: "Day", d: "Microphones open for the living. Three minutes to work out who is lying." },
+          { t: "The vote", d: "Most votes leaves and their role is turned over. A tie goes to a runoff between them, and a second tie sends nobody home." },
+          { t: "Who wins", d: "The town wins when no mafia are left. The mafia win when they equal the rest of the table." },
+          { t: "Leaving spoils it", d: "Walk out mid game and you cannot play for ten minutes. Losing connection is not walking out: your seat is held." },
+        ],
+      },
+      bunker: {
+        title: "Bunker",
+        tagline: "talk your way into a shelter with too few places",
+        subtitle: "Argue why the shelter needs you, for 4 to 12 players",
+        rules: [
+          { t: "What happened", d: "The world ends and the app names how: nuclear winter, a virus, an AI uprising, drought. It describes the shelter too, what is inside it and what has broken. There are always fewer places than people." },
+          { t: "Your dossier", d: "Six cards, dealt in secret: profession, biology, health, hobby, luggage and one fact about you. Only you see them. A bad card is not a sentence, but a cannibal should stay quiet a while." },
+          { t: "Action cards", d: "Two single use cards on top: swap a trait, open someone's card, heal, steal luggage, drop a vote against you, take immunity, and rarely a dictatorship that throws anyone out with no vote at all." },
+          { t: "Round one, who you are", d: "Everyone opens profession and biology in turn. One microphone at a time. Say why this catastrophe needs you." },
+          { t: "Round two, body and skills", d: "Health and hobby open. A hobby is often worth more than a diploma: herbalism beats a degree when the medbay is empty." },
+          { t: "Round three, what you carry", d: "Luggage and your fact open last. This is where three rounds of persuasion can come apart in one sentence." },
+          { t: "Debate", d: "Everyone talks at once for two and a half minutes, or a majority ends it early. Coalitions are made here." },
+          { t: "The vote", d: "From the second round on, each round ends with a vote. You cannot vote for yourself, and staying silent counts as a vote against you. A tie goes to a runoff, a second tie shuts nobody out." },
+          { t: "Last word", d: "Whoever has the most votes gets thirty seconds alone, and can still play a card. If it does not work the hatch closes and all their cards are turned over." },
+          { t: "The ending", d: "It runs until the survivors match the places. Then the app works out what became of the shelter: whether the broken thing got fixed, whether anyone can treat the sick, and who you locked in with." },
         ],
       },
       telephone: {
         title: "Broken Telephone",
         tagline: "a phrase down the chain, mangled",
-        subtitle: "Whisper a phrase down the chain and watch it melt",
+        subtitle: "Whisper a phrase down the chain and watch what comes out",
         rules: [
-          "Only the current pair hears each other",
-          "You get 15 seconds to whisper what you heard",
-          "Accuracy of the chain decides the score",
+          { t: "One pair at a time", d: "Only the speaker and their listener can hear each other. Everyone else waits." },
+          { t: "Say it once", d: "Fifteen seconds to pass the phrase on, then the listener types what they heard." },
+          { t: "The reveal", d: "At the end the whole chain is played back step by step, and points follow how much of the phrase survived." },
         ],
       },
       alias: {
         title: "Alias",
         tagline: "explain words with your voice, never say them",
-        subtitle: "Explain the word with your voice, never say it",
+        subtitle: "Explain the word out loud without ever saying it",
         rules: [
-          "The explainer describes the word out loud",
-          "Saying the word or its root costs a point",
-          "Team mates type guesses, the fastest correct one scores",
+          { t: "Teams of two", d: "Four to ten players split into pairs. The server draws the pairs." },
+          { t: "One pair at a time", d: "Pairs take turns rather than all going at once, or the voice channel would be noise. While a pair is playing, everyone else is muted." },
+          { t: "Sixty seconds a turn", d: "One of you sees the word and explains it out loud without saying it. The other guesses aloud. Got it, hit Guessed. Stuck, hit Skip." },
+          { t: "Four rounds", d: "A round is every team having one turn. Over the game both of you explain the same number of times." },
+          { t: "Counting", d: "The team that guessed the most words across all their turns wins." },
         ],
       },
       flappy: {
         title: "Voice Flappy",
         tagline: "hum with your voice to stay in the air",
-        subtitle: "Your voice is the only control, hum to fly",
+        subtitle: "Flown with your voice alone, hum to climb",
         rules: [
-          "Loud voice lifts the bird, silence drops it",
-          "Everyone flies through the same pipes",
-          "Last bird alive takes the crown",
+          { t: "Your voice is the control", d: "A loud voice lifts the bird, silence drops it." },
+          { t: "The same pipes", d: "Everyone flies the same course at the same time." },
+          { t: "Last one flying", d: "Whoever stays in the air longest takes it." },
         ],
       },
     },
@@ -247,6 +270,67 @@ export const en = {
       castVote: "Vote",
       mafiaTag: "mafia",
       cleanTag: "clean",
+      bunker: {
+        places: "{count} places",
+        round: "Round {current}",
+        rounds: { "1": "Who you are", "2": "Body and skills", "3": "What you carry" },
+        speaking: "{name} is speaking",
+        yourTurn: "Your turn to speak",
+        doneSpeaking: "I have said enough",
+        debate: "Open debate",
+        doneDebating: "Enough talking",
+        voteNow: "Vote someone out",
+        runoff: "Runoff",
+        castVote: "Shut them out",
+        lastWord: "Last word",
+        accused: "{name} is one vote from the hatch",
+        yourDossier: "Your dossier",
+        yourCards: "Your cards",
+        playCard: "Play",
+        cardsHint: "Pick someone on the table first, then play a card at them.",
+        out: "{name} stays outside",
+        tie: "A tie, nobody leaves this round",
+        survivors: "Inside the bunker",
+        catastrophe: {
+          nuclear_winter: "Nuclear winter",
+          virus: "A virus with no cure",
+          ai_uprising: "The machines turned",
+          drought: "Ten years without rain",
+          solar_flare: "The grid is gone",
+          flood: "The water never went down",
+        },
+        fault: {
+          greenhouse_down: "The greenhouse is dead",
+          medbay_looted: "The medbay was looted",
+          generator_failing: "The generator is failing",
+          water_contaminated: "The water is contaminated",
+          airlock_jammed: "The airlock is jammed",
+          stores_spoiled: "The stores have spoiled",
+        },
+        card: {
+          swap: "Swap a trait",
+          reveal: "Open a card",
+          heal: "Heal",
+          steal: "Steal luggage",
+          alibi: "Alibi",
+          immunity: "Immunity",
+          dictator: "Dictatorship",
+        },
+        field: {
+          profession: "Profession",
+          biology: "Biology",
+          health: "Health",
+          hobby: "Hobby",
+          luggage: "Luggage",
+          fact: "Fact",
+        },
+        outcome: {
+          thrive: "The bunker held and the world starts again",
+          survive: "They made it through, thinner and quieter",
+          struggle: "They survived, but only just",
+          doomed: "Nobody came back out",
+        },
+      },
       roles: {
         mafia: { name: "Mafia", hint: "Pick a victim at night, blend in by day." },
         doctor: { name: "Doctor", hint: "Save one person each night." },
@@ -759,8 +843,8 @@ export const en = {
 type Translated<T> = {
   [K in keyof T]: T[K] extends string
     ? string
-    : T[K] extends readonly string[]
-      ? readonly string[]
+    : T[K] extends readonly (infer Item)[]
+      ? readonly (Item extends string ? string : Translated<Item>)[]
       : Translated<T[K]>;
 } & Record<string, unknown>;
 

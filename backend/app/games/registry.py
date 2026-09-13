@@ -1,5 +1,6 @@
 from app.games.alias import Alias
 from app.games.base import GameEngine
+from app.games.bunker import Bunker
 from app.games.flappy import VoiceFlappy
 from app.games.mafia import Mafia
 from app.games.telephone import BrokenTelephone
@@ -7,7 +8,7 @@ from app.games.tictactoe import TicTacToe
 
 ENGINES: dict[str, GameEngine] = {
     engine.meta.key: engine
-    for engine in (TicTacToe(), Mafia(), BrokenTelephone(), Alias(), VoiceFlappy())
+    for engine in (TicTacToe(), Mafia(), Bunker(), BrokenTelephone(), Alias(), VoiceFlappy())
 }
 
 

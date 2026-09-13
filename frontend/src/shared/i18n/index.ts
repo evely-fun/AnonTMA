@@ -94,11 +94,24 @@ export function translateList(path: string, locale?: Locale): string[] {
   return Array.isArray(value) ? (value as string[]) : [];
 }
 
+/** A rule is a heading and a paragraph, so it cannot come back as a string. */
+export interface RuleEntry {
+  t: string;
+  d: string;
+}
+
+export function translateRules(path: string, locale?: Locale): RuleEntry[] {
+  const active = locale ?? useI18n.getState().locale;
+  const value = walk(DICTIONARIES[active], path) ?? walk(DICTIONARIES.en, path);
+  return Array.isArray(value) ? (value as RuleEntry[]) : [];
+}
+
 export const useT = () => {
   const locale = useI18n((state) => state.locale);
   return {
     locale,
     t: (path: string, vars?: Record<string, string | number>) => translate(path, vars, locale),
     list: (path: string) => translateList(path, locale),
+    rules: (path: string) => translateRules(path, locale),
   };
 };

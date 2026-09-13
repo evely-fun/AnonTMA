@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { AliasBoard } from "@/features/games/AliasBoard";
+import { BunkerBoard } from "@/features/games/BunkerBoard";
 import { FlappyGame } from "@/features/games/FlappyGame";
 import { MafiaBoard } from "@/features/games/MafiaBoard";
 import { TelephoneBoard } from "@/features/games/TelephoneBoard";
@@ -28,7 +29,7 @@ import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 
 export const GamePage = () => {
-  const { t, list } = useT();
+  const { t, rules } = useT();
   const { gameKey } = useParams();
   const navigate = useNavigate();
 
@@ -92,6 +93,8 @@ export const GamePage = () => {
         return <TelephoneBoard view={view as never} />;
       case "alias":
         return <AliasBoard view={view as never} />;
+      case "bunker":
+        return <BunkerBoard view={view as never} />;
       case "flappy":
         return <FlappyGame view={view as never} />;
       default:
@@ -190,12 +193,28 @@ export const GamePage = () => {
 
             <m.section variants={rise}>
               <SectionHead title={t("games.howItWorks")} />
-              <Panel className="px-4 py-3.5">
-                <div className="space-y-2.5">
-                  {list(`games.meta.${meta.key}.rules`).map((rule, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-accent" />
-                      <span className="text-[13.5px] leading-snug text-secondary">{rule}</span>
+              {/* Each rule is a heading and a sentence, numbered down one rail,
+                  so the whole game can be read at a glance and a single rule
+                  can be found again without re-reading the lot. */}
+              <Panel className="px-4 py-4">
+                <div className="relative">
+                  <span
+                    aria-hidden
+                    className="absolute bottom-4 left-[11px] top-4 w-px bg-separator"
+                  />
+                  {rules(`games.meta.${meta.key}.rules`).map((rule, index) => (
+                    <div key={rule.t} className="relative flex items-start gap-3.5 py-2">
+                      <span className="relative z-10 flex size-[22px] shrink-0 items-center justify-center rounded-full bg-accent-quiet font-display text-[11px] font-extrabold text-accent tabular">
+                        {index + 1}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-display text-[14px] font-bold leading-snug">
+                          {rule.t}
+                        </span>
+                        <span className="mt-1 block text-[13px] leading-snug text-secondary">
+                          {rule.d}
+                        </span>
+                      </span>
                     </div>
                   ))}
                 </div>
