@@ -23,7 +23,7 @@ import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 
-import { PrizeWheel, type PrizeWheelHandle } from "@/features/rewards/PrizeWheel";
+import { DailyChest, type DailyChestHandle } from "@/features/rewards/DailyChest";
 
 export const DailyPage = () => {
   const { t } = useT();
@@ -34,7 +34,7 @@ export const DailyPage = () => {
   const spin = useEconomy((store) => store.spin);
   const claimStreak = useEconomy((store) => store.claimStreak);
   const refreshProfile = useSession((session) => session.refreshProfile);
-  const wheelRef = useRef<PrizeWheelHandle | null>(null);
+  const chestRef = useRef<DailyChestHandle | null>(null);
   const [burst, setBurst] = useState<{ title: string; lines: RewardLine[] } | null>(null);
 
   useBackButton("/");
@@ -59,8 +59,10 @@ export const DailyPage = () => {
       toast(t("errors.generic"), { tone: "danger" });
       return;
     }
-    const index = Math.max(0, prizes.findIndex((prize) => prize.key === result.key));
-    await wheelRef.current?.spinTo(index);
+    const prize = prizes.find((item) => item.key === result.key);
+    await chestRef.current?.reveal(
+      prize ?? { key: result.key, kind: result.kind, amount: result.amount },
+    );
     haptic.notify("success");
     celebrate(result.kind === "premium" ? "big" : "small");
     const icon =
@@ -131,33 +133,7 @@ export const DailyPage = () => {
           />
           <div className="px-4">
             <div className="panel rounded-[24px] px-4 py-6">
-              <PrizeWheel
-                prizes={prizes}
-                handleRef={wheelRef}
-                spins={spins}
-                spinsLabel={t("economy.spinsLeft")}
-              />
-
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-                {[
-                  { kind: "energy", icon: <BoltIcon size={13} />, tone: "text-warn" },
-                  { kind: "coins", icon: <CoinIcon size={13} />, tone: "text-live" },
-                  { kind: "premium", icon: <CrownIcon size={13} />, tone: "text-accent" },
-                ].map((group) => {
-                  const amounts = prizes
-                    .filter((prize) => prize.kind === group.kind)
-                    .map((prize) => (group.kind === "premium" ? `${prize.amount}d` : prize.amount));
-                  if (amounts.length === 0) return null;
-                  return (
-                    <span key={group.kind} className="flex items-center gap-1.5">
-                      <span className={group.tone}>{group.icon}</span>
-                      <span className="font-display text-[11.5px] font-bold text-hint tabular">
-                        {amounts.join(" · ")}
-                      </span>
-                    </span>
-                  );
-                })}
-              </div>
+              <DailyChest ref={chestRef} prizes={prizes} ready={spins > 0} />
 
               <div className="mt-6 flex flex-col items-center gap-2">
                 <Button
@@ -228,10 +204,36 @@ export const DailyPage = () => {
                     >
                       {entry.day}
                     </span>
-                    {entry.premiumDays > 0 ? (
-                      <CrownIcon size={14} className={reached ? "text-accent" : "text-hint"} />
-                    ) : (
-                      <BoltIcon size={14} className={reached ? "text-accent" : "text-hint"} />
+                    {entry.premiumDays > 0 && (
+                      <span
+                        className={`flex items-center gap-0.5 font-display text-[10px] font-bold tabular ${
+                          reached ? "text-accent" : "text-hint"
+                        }`}
+                      >
+                        <CrownIcon size={10} />
+                        {entry.premiumDays}
+                        {t("economy.premiumDaysShort")}
+                      </span>
+                    )}
+                    {(
+                      <>
+                        <span
+                          className={`flex items-center gap-0.5 font-display text-[10px] font-bold tabular ${
+                            reached ? "text-live" : "text-hint"
+                          }`}
+                        >
+                          <CoinIcon size={10} />
+                          {entry.coins}
+                        </span>
+                        <span
+                          className={`flex items-center gap-0.5 font-display text-[10px] font-bold tabular ${
+                            reached ? "text-warn" : "text-hint"
+                          }`}
+                        >
+                          <BoltIcon size={10} />
+                          {entry.energy}
+                        </span>
+                      </>
                     )}
                   </m.div>
                 );

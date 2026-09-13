@@ -32,7 +32,6 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.1",
-    "spin-wheel": "^5.0.2",
     "tailwindcss": "^4.3.3",
     "zustand": "^5.0.2"
   },
