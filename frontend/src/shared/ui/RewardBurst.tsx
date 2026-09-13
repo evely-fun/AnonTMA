@@ -19,6 +19,10 @@ const TONE: Record<string, string> = {
 /**
  * A short overlay that names exactly what was won. It closes on tap or by
  * itself, so a reward is never a number that silently changed in the corner.
+ *
+ * The reward arrives as one card rather than loose rows floating on a dimmed
+ * screen: a single object to look at, and nothing behind it is blurred, which
+ * only ever made the page underneath look broken.
  */
 export const RewardBurst = ({
   open,
@@ -45,47 +49,46 @@ export const RewardBurst = ({
         <m.button
           type="button"
           onClick={onClose}
-          className="veil fixed inset-0 z-[120] mx-auto flex max-w-[480px] flex-col items-center justify-center gap-5 px-10 backdrop-blur-[10px]"
+          className="veil fixed inset-0 z-[120] mx-auto flex max-w-[480px] items-center justify-center px-8 text-left"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.22 } }}
         >
-          <m.h2
-            className="font-display text-[24px] font-extrabold tracking-[-0.03em]"
-            initial={{ opacity: 0, y: 14, scale: 0.94 }}
+          <m.div
+            className="panel w-full max-w-[320px] rounded-[26px] px-5 py-6"
+            initial={{ opacity: 0, y: 20, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.97, transition: { duration: 0.18 } }}
             transition={spring.ui}
           >
-            {title}
-          </m.h2>
+            <h2 className="text-center font-display text-[21px] font-extrabold tracking-[-0.03em]">
+              {title}
+            </h2>
 
-          <div className="flex w-full max-w-[300px] flex-col gap-2">
-            {lines.map((line, index) => (
-              <m.div
-                key={line.label}
-                className="panel flex items-center gap-3 rounded-[16px] px-4 py-3"
-                initial={{ opacity: 0, y: 18, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{
-                  delay: 0.08 + index * 0.09,
-                  duration: 0.42,
-                  ease: ease.out,
-                }}
-              >
-                <span className={`shrink-0 ${TONE[line.tone ?? "accent"]}`}>{line.icon}</span>
-                <span className="min-w-0 flex-1 truncate text-[13.5px] text-secondary">
-                  {line.label}
-                </span>
-                <span
-                  className={`shrink-0 font-display text-[17px] font-extrabold tabular ${
-                    TONE[line.tone ?? "accent"]
-                  }`}
+            <div className="mt-5 flex flex-col gap-3">
+              {lines.map((line, index) => (
+                <m.div
+                  key={line.label}
+                  className="flex items-center gap-3"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    delay: 0.12 + index * 0.08,
+                    duration: 0.34,
+                    ease: ease.out,
+                  }}
                 >
-                  {line.value}
-                </span>
-              </m.div>
-            ))}
-          </div>
+                  <span className={`shrink-0 ${TONE[line.tone ?? "accent"]}`}>{line.icon}</span>
+                  <span className="min-w-0 flex-1 truncate text-[13.5px] text-secondary first-letter:uppercase">
+                    {line.label}
+                  </span>
+                  <span className="shrink-0 font-display text-[19px] font-extrabold tabular">
+                    {line.value}
+                  </span>
+                </m.div>
+              ))}
+            </div>
+          </m.div>
         </m.button>
       )}
     </AnimatePresence>

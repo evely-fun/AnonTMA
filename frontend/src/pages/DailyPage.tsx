@@ -64,21 +64,10 @@ export const DailyPage = () => {
       prize ?? { key: result.key, kind: result.kind, amount: result.amount },
     );
     haptic.notify("success");
+    // The chest already shows the prize where the eye is. A second full screen
+    // card naming the same number is noise, so only the streak claim, which
+    // has nowhere of its own to land, raises one.
     celebrate(result.kind === "premium" ? "big" : "small");
-    const icon =
-      result.kind === "premium" ? <CrownIcon size={18} /> :
-      result.kind === "energy" ? <BoltIcon size={18} /> : <CoinIcon size={18} />;
-    setBurst({
-      title: t("economy.youWon"),
-      lines: [
-        {
-          icon,
-          label: t(`economy.${result.kind === "premium" ? "premiumTitle" : result.kind === "energy" ? "energy" : "coins"}`),
-          value: result.kind === "premium" ? `+${result.amount} d` : `+${result.amount}`,
-          tone: result.kind === "premium" ? "accent" : result.kind === "energy" ? "warn" : "live",
-        },
-      ],
-    });
     void refreshProfile();
   };
 

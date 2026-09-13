@@ -194,7 +194,7 @@
   --action-bg: oklch(0.26 0.02 var(--ground-hue));
   --action-ink: oklch(0.98 0.004 var(--ground-hue));
   --on-accent: oklch(0.99 0.003 var(--ground-hue));
-  --veil: oklch(0.4 0.02 var(--ground-hue) / 0.35);
+  --veil: oklch(0.22 0.014 var(--ground-hue) / 0.3);
   --island: oklch(1 0 0 / 0.9);
   --bar: oklch(0.975 0.004 var(--ground-hue) / 0.78);
   --bar-solid: oklch(0.975 0.004 var(--ground-hue));

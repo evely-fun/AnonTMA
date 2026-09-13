@@ -1,13 +1,23 @@
 import { AnimatePresence, m } from "motion/react";
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
-import chestClosed from "@/assets/tiles/chest0.webp";
-import chestAjar from "@/assets/tiles/chest1.webp";
-import chestOpen from "@/assets/tiles/chest2.webp";
 import { useT } from "@/shared/i18n";
 import { spring } from "@/shared/lib/motion";
 import type { WheelPrize } from "@/shared/lib/types";
 import { BoltIcon, CoinIcon, CrownIcon } from "@/shared/ui/icons";
+
+/** Frames of the rendered chest opening, in order. */
+const FRAMES = Object.entries(
+  import.meta.glob<string>("../../assets/tiles/chest/*.webp", {
+    eager: true,
+    import: "default",
+  }),
+)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([, src]) => src);
+
+const LAST = FRAMES.length - 1;
+const FRAME_MS = 1000 / 24;
 
 export interface DailyChestHandle {
   /** Plays the open and leaves the prize on screen until the next spin. */
@@ -33,11 +43,22 @@ const prizeLabel = (prize: WheelPrize, t: (key: string) => string): string => {
   return String(prize.amount);
 };
 
+const reducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+
 /**
  * A wheel was the wrong shape for this. Eight slices on a disc turn into a pie
  * chart, the labels will not fit inside them, and the prize ends up explained
  * in a legend somewhere else. A gift that opens says the same thing in one
  * gesture, and the prize lands where you are already looking.
+ *
+ * The open is a rendered frame sequence rather than a transform on a still,
+ * because a lid swinging back is a shape change and no amount of scaling or
+ * rotating a flat image will fake it. Every frame is in the document from the
+ * first render so the browser has decoded all of them before the first tap,
+ * and playback is a clock driven loop: a slow device drops frames instead of
+ * stretching the open past the moment the prize should land.
  *
  * The server picks the prize before anything animates, so there is no choice
  * being faked here: the box only plays back a result that already exists.
@@ -48,41 +69,93 @@ export const DailyChest = forwardRef<
 >(({ prizes, ready }, ref) => {
   const { t } = useT();
   const [won, setWon] = useState<WheelPrize | null>(null);
-  // Three drawn states of the same chest. Cross fading between them reads as
-  // a lid actually lifting, which a single image cannot do however it is
-  // scaled or rotated.
-  const [frame, setFrame] = useState<0 | 1 | 2>(0);
-  const opening = frame > 0;
+  const [frame, setFrame] = useState(0);
+  const raf = useRef(0);
+
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+
+  const play = () =>
+    new Promise<void>((done) => {
+      if (reducedMotion()) {
+        setFrame(LAST);
+        done();
+        return;
+      }
+      const start = performance.now();
+      const step = (now: number) => {
+        const index = Math.min(LAST, Math.floor((now - start) / FRAME_MS));
+        setFrame(index);
+        if (index >= LAST) {
+          done();
+          return;
+        }
+        raf.current = requestAnimationFrame(step);
+      };
+      raf.current = requestAnimationFrame(step);
+    });
 
   useImperativeHandle(ref, () => ({
     reveal: async (prize) => {
       setWon(null);
-      setFrame(1);
-      await new Promise((resolve) => setTimeout(resolve, 320));
-      setFrame(2);
-      await new Promise((resolve) => setTimeout(resolve, 620));
-      setWon(prize);
       setFrame(0);
+      await play();
+      // The lid is fully back before the prize starts its own rise, so the two
+      // read as one gesture rather than a cut.
+      await new Promise((resolve) => setTimeout(resolve, 140));
+      setWon(prize);
     },
   }));
+
+  const open = frame > 0;
 
   return (
     <div className="flex flex-col items-center">
       <div className="relative flex h-[188px] w-full items-center justify-center">
-        <AnimatePresence mode="wait">
-          {won ? (
+        <m.div
+          className="absolute size-[150px]"
+          animate={
+            won
+              ? { opacity: 0, scale: 0.86 }
+              : open
+                ? { opacity: 1, scale: 1, y: 0 }
+                : ready
+                  ? { opacity: 1, scale: 1, y: [0, -7, 0] }
+                  : { opacity: 1, scale: 1, y: 0 }
+          }
+          transition={
+            won
+              ? { duration: 0.28, ease: "easeOut" }
+              : open
+                ? { duration: 0.12 }
+                : { duration: 3.4, repeat: Infinity, ease: "easeInOut" }
+          }
+        >
+          {FRAMES.map((src, index) => (
+            <img
+              key={src}
+              src={src}
+              alt=""
+              decoding="sync"
+              className="absolute inset-0 size-full rounded-[36px] object-cover"
+              style={{ opacity: index === frame ? 1 : 0 }}
+            />
+          ))}
+        </m.div>
+
+        <AnimatePresence>
+          {won && (
             <m.div
               key="prize"
-              className="flex flex-col items-center gap-2"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              className="relative flex flex-col items-center gap-2"
+              initial={{ scale: 0.4, opacity: 0, y: 18 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              transition={spring.snappy}
+              transition={spring.soft}
             >
               {(() => {
                 const Icon = KIND_ICON[won.kind];
                 return (
-                  <span className={`${KIND_TONE[won.kind]}`}>
+                  <span className={KIND_TONE[won.kind]}>
                     <Icon size={46} />
                   </span>
                 );
@@ -94,26 +167,6 @@ export const DailyChest = forwardRef<
                 {t(`economy.prizeKind.${won.kind}`)}
               </span>
             </m.div>
-          ) : (
-            <m.img
-              key={`box-${frame}`}
-              src={[chestClosed, chestAjar, chestOpen][frame]}
-              alt=""
-              className="size-[150px] rounded-[36px] object-cover"
-              initial={opening ? { opacity: 0, scale: 0.96 } : false}
-              animate={
-                opening
-                  ? { opacity: 1, scale: frame === 2 ? 1.08 : 1.02 }
-                  : ready
-                    ? { opacity: 1, y: [0, -7, 0] }
-                    : { opacity: 1, y: 0 }
-              }
-              transition={
-                opening
-                  ? { duration: 0.22, ease: "easeOut" }
-                  : { duration: 3.4, repeat: Infinity, ease: "easeInOut" }
-              }
-            />
           )}
         </AnimatePresence>
       </div>
