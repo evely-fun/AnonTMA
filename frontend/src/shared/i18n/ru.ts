@@ -418,7 +418,7 @@ export const ru: Dictionary = {
     wheelHint: "Открывается после {minutes} минут в голосе за сегодня. Прокрутки копятся до {max}.",
     wheelReady: "{count} прокрутка готова",
     wheelReadyPlural: "готово прокруток: {count}",
-    wheelLocked: "ещё {time} разговоров",
+    wheelLocked: "ещё {time} в голосе",
     spin: "Крутить",
     spinsLeft: "спинов",
     spinning: "Крутится…",

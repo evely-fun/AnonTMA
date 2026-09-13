@@ -163,6 +163,7 @@ export const DailyPage = () => {
                 <Button
                   full
                   size="lg"
+                  variant={spins > 0 ? "primary" : "surface"}
                   loading={spinning}
                   disabled={spins <= 0}
                   onClick={() => void onSpin()}
