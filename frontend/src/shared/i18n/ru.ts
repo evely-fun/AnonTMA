@@ -290,7 +290,7 @@ export const ru: Dictionary = {
   friends: {
     requests: "Заявки",
     yourCircle: "Ваш круг",
-    invite: "пригласить",
+    invite: "Пригласить",
     empty: "Друзей пока нет",
     emptyHint: "Поставьте лайк в разговоре и отправьте заявку или позовите кого-то из Telegram.",
     inviteFriend: "Пригласить друга",

@@ -290,7 +290,7 @@ export const en = {
   friends: {
     requests: "Requests",
     yourCircle: "Your circle",
-    invite: "invite",
+    invite: "Invite",
     empty: "No friends yet",
     emptyHint: "Like a conversation and send a request, or invite someone from Telegram.",
     inviteFriend: "Invite a friend",
