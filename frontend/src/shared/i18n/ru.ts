@@ -67,7 +67,7 @@ export const ru: Dictionary = {
   chat: {
     title: "Анонимный чат",
     notConnected: "пока не подключено",
-    voiceChannel: "голосовой канал",
+    voiceChannel: "Голосовой канал",
     textChannel: "текстовый канал",
     looking: "Ищем собеседника",
     queue: "Сейчас в очереди: {count}",

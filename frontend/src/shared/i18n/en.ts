@@ -67,7 +67,7 @@ export const en = {
   chat: {
     title: "Anonymous chat",
     notConnected: "not connected yet",
-    voiceChannel: "voice channel",
+    voiceChannel: "Voice channel",
     textChannel: "text channel",
     looking: "Looking for someone",
     queue: "{count} people are in the queue right now",

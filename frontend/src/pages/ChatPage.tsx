@@ -40,7 +40,13 @@ import { useVoice } from "@/store/voice";
 
 const REPORT_REASONS = ["abuse", "adult", "spam", "scam", "underage", "other"];
 
-const Searching = ({ mode, onCancel }: { mode: "text" | "voice"; onCancel: () => void }) => {
+const Searching = ({
+  mode,
+  onCancel,
+}: {
+  mode: "text" | "voice";
+  onCancel: () => void;
+}) => {
   const { t } = useT();
   const seconds = useElapsed(true);
   const queue = useChat((state) => state.queue);
@@ -85,7 +91,13 @@ const Searching = ({ mode, onCancel }: { mode: "text" | "voice"; onCancel: () =>
   );
 };
 
-const Summary = ({ onNext, onHome }: { onNext: () => void; onHome: () => void }) => {
+const Summary = ({
+  onNext,
+  onHome,
+}: {
+  onNext: () => void;
+  onHome: () => void;
+}) => {
   const { t } = useT();
   const summary = useChat((state) => state.summary);
 
@@ -98,18 +110,28 @@ const Summary = ({ onNext, onHome }: { onNext: () => void; onHome: () => void })
     >
       <span
         className={`flex size-16 items-center justify-center rounded-[22px] ${
-          summary?.mutualLike ? "bg-destructive-quiet text-destructive" : "bg-elevated text-hint"
+          summary?.mutualLike
+            ? "bg-destructive-quiet text-destructive"
+            : "bg-elevated text-hint"
         }`}
       >
-        {summary?.mutualLike ? <HeartIcon size={28} /> : <CheckIcon size={28} />}
+        {summary?.mutualLike ? (
+          <HeartIcon size={28} />
+        ) : (
+          <CheckIcon size={28} />
+        )}
       </span>
       <h2 className="font-display text-[21px] font-extrabold tracking-[-0.025em]">
         {summary?.mutualLike ? t("chat.mutualLike") : t("chat.finished")}
       </h2>
       <p className="text-[13.5px] text-hint tabular">
-        {t("chat.together", { time: clockFormat(summary?.durationSeconds ?? 0) })}
+        {t("chat.together", {
+          time: clockFormat(summary?.durationSeconds ?? 0),
+        })}
         {summary?.reward?.xp ? ` · +${summary.reward.xp} XP` : ""}
-        {summary?.reward?.coins ? ` · +${summary.reward.coins} ${t("common.coins")}` : ""}
+        {summary?.reward?.coins
+          ? ` · +${summary.reward.coins} ${t("common.coins")}`
+          : ""}
       </p>
       <div className="mt-5 flex w-full max-w-[300px] flex-col gap-2">
         <Button full onClick={onNext}>
@@ -139,7 +161,12 @@ const VoiceStage = () => {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-7">
-      <VoiceBloom level={micLevel} muted={muted} tone={muted ? "warn" : "live"} size={236}>
+      <VoiceBloom
+        level={micLevel}
+        muted={muted}
+        tone={muted ? "warn" : "live"}
+        size={236}
+      >
         <Avatar
           seed={partner?.seed ?? "anon"}
           style={partner?.avatarStyle}
@@ -155,7 +182,9 @@ const VoiceStage = () => {
         <span className="font-display text-[14px] font-bold text-secondary tabular">
           {clockFormat(seconds)}
         </span>
-        {permission === "denied" && <Chip tone="danger">{t("chat.micBlocked")}</Chip>}
+        {permission === "denied" && (
+          <Chip tone="danger">{t("chat.micBlocked")}</Chip>
+        )}
         {playbackBlocked && (
           <m.button
             type="button"
@@ -174,8 +203,14 @@ const VoiceStage = () => {
         {maskUnavailable && <Chip tone="danger">{t("voice.maskDown")}</Chip>}
       </div>
 
-      <div className="flex items-center gap-5">
-        <IconButton label={t("chat.audioSettings")} onClick={() => setSheet(true)} size={46}>
+      {/* A three column grid rather than a centred row, so the microphone sits
+          dead centre whatever sits beside it. */}
+      <div className="grid w-full max-w-[280px] grid-cols-3 place-items-center">
+        <IconButton
+          label={t("chat.audioSettings")}
+          onClick={() => setSheet(true)}
+          size={46}
+        >
           <SlidersIcon size={19} />
         </IconButton>
         <IconButton
@@ -186,9 +221,7 @@ const VoiceStage = () => {
         >
           {muted ? <MicOffIcon size={26} /> : <MicIcon size={26} />}
         </IconButton>
-        <IconButton label={t("voice.changer")} onClick={() => setSheet(true)} size={46}>
-          <MaskIcon size={19} />
-        </IconButton>
+        <span />
       </div>
 
       <AudioSheet open={sheet} onClose={() => setSheet(false)} />
@@ -227,54 +260,67 @@ const TextStage = () => {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 py-3">
-        <AnimatePresence initial={false}>
-          {messages.map((message) => (
-            <m.div
-              key={message.id}
-              variants={rise}
-              initial="initial"
-              animate="animate"
-              className={`flex ${
-                message.system ? "justify-center" : message.own ? "justify-end" : "justify-start"
-              }`}
-            >
-              {message.system ? (
-                <span className="rounded-full bg-elevated/70 px-3 py-1 text-[11.5px] text-hint">
-                  {message.text === "You are connected. Say hello."
-                    ? t("chat.sayHello")
-                    : message.text}
-                </span>
-              ) : (
-                <span
-                  className={`max-w-[78%] break-words px-4 py-2.5 text-[14.5px] leading-snug ${
-                    message.own
-                      ? "accent-action rounded-[18px] rounded-br-[6px]"
-                      : "rounded-[18px] rounded-bl-[6px] bg-surface text-label"
-                  }`}
-                >
-                  {message.text}
-                </span>
-              )}
-            </m.div>
-          ))}
-        </AnimatePresence>
+      {/* The thread grows up from the composer rather than down from the
+          header, so the first few lines of a conversation are not stranded at
+          the top of an empty screen. */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex min-h-full flex-col justify-end gap-2 px-4 py-3">
+          <AnimatePresence initial={false}>
+            {messages.map((message) => (
+              <m.div
+                key={message.id}
+                variants={rise}
+                initial="initial"
+                animate="animate"
+                className={`flex ${
+                  message.system
+                    ? "justify-center"
+                    : message.own
+                      ? "justify-end"
+                      : "justify-start"
+                }`}
+              >
+                {message.system ? (
+                  <span className="rounded-full bg-elevated/70 px-3 py-1 text-[11.5px] text-hint">
+                    {message.text === "You are connected. Say hello."
+                      ? t("chat.sayHello")
+                      : message.text}
+                  </span>
+                ) : (
+                  <span
+                    className={`max-w-[78%] break-words px-4 py-2.5 text-[14.5px] leading-snug ${
+                      message.own
+                        ? "accent-action rounded-[18px] rounded-br-[6px]"
+                        : "rounded-[18px] rounded-bl-[6px] bg-surface text-label"
+                    }`}
+                  >
+                    {message.text}
+                  </span>
+                )}
+              </m.div>
+            ))}
+          </AnimatePresence>
 
-        {typing && (
-          <div className="flex justify-start">
-            <span className="flex items-center gap-1 rounded-[18px] rounded-bl-[6px] bg-surface px-4 py-3.5">
-              {[0, 1, 2].map((dot) => (
-                <m.i
-                  key={dot}
-                  className="size-1.5 rounded-full bg-hint"
-                  animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 1, repeat: Infinity, delay: dot * 0.15 }}
-                />
-              ))}
-            </span>
-          </div>
-        )}
-        <div ref={endRef} />
+          {typing && (
+            <div className="flex justify-start">
+              <span className="flex items-center gap-1 rounded-[18px] rounded-bl-[6px] bg-surface px-4 py-3.5">
+                {[0, 1, 2].map((dot) => (
+                  <m.i
+                    key={dot}
+                    className="size-1.5 rounded-full bg-hint"
+                    animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      delay: dot * 0.15,
+                    }}
+                  />
+                ))}
+              </span>
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
       </div>
 
       <div className="flex items-center gap-2 px-4 pb-2">
@@ -297,7 +343,6 @@ const TextStage = () => {
     </div>
   );
 };
-
 
 const RevealCard = () => {
   const { t } = useT();
@@ -328,7 +373,10 @@ const RevealCard = () => {
             referrerPolicy="no-referrer"
           />
         ) : (
-          <Avatar seed={revealed.avatarSeed || partner?.seed || "anon"} size={44} />
+          <Avatar
+            seed={revealed.avatarSeed || partner?.seed || "anon"}
+            size={44}
+          />
         )}
         <span className="min-w-0 flex-1">
           <span className="block truncate font-display text-[15px] font-extrabold tracking-[-0.015em]">
@@ -341,8 +389,12 @@ const RevealCard = () => {
             </span>
           </span>
         </span>
-        {revealed.friend && <CheckIcon size={17} className="shrink-0 text-live" />}
-        {handle && <ArrowUpRightIcon size={15} className="shrink-0 text-hint" />}
+        {revealed.friend && (
+          <CheckIcon size={17} className="shrink-0 text-live" />
+        )}
+        {handle && (
+          <ArrowUpRightIcon size={15} className="shrink-0 text-hint" />
+        )}
       </m.button>
     );
   }
@@ -363,7 +415,9 @@ const RevealCard = () => {
             <p className="truncate font-display text-[14.5px] font-bold tracking-[-0.01em]">
               {partner?.name ?? t("chat.stranger")} {t("chat.revealAsk")}
             </p>
-            <p className="mt-0.5 text-[12px] leading-snug text-hint">{t("chat.revealAskBody")}</p>
+            <p className="mt-0.5 text-[12px] leading-snug text-hint">
+              {t("chat.revealAskBody")}
+            </p>
           </div>
         </div>
         <div className="mt-3 flex gap-2">
@@ -419,12 +473,18 @@ export const ChatPage = () => {
   return (
     <PushScreen>
       <ScreenHeader
-        title={phase === "connected" ? (partner?.name ?? t("chat.stranger")) : t("chat.title")}
+        title={
+          phase === "connected" && mode === "text"
+            ? (partner?.name ?? t("chat.stranger"))
+            : phase === "connected"
+              ? t("chat.voiceChannel")
+              : t("chat.title")
+        }
         subtitle={
           phase === "connected"
-            ? mode === "voice"
-              ? t("chat.voiceChannel")
-              : t("chat.textChannel")
+            ? mode === "text"
+              ? t("chat.textChannel")
+              : undefined
             : t("chat.notConnected")
         }
         onBack={() => {
@@ -471,13 +531,26 @@ export const ChatPage = () => {
               >
                 <HeartIcon size={19} />
               </IconButton>
-              <IconButton label={t("chat.reveal")} size={44} onClick={requestReveal}>
+              <IconButton
+                label={t("chat.reveal")}
+                size={44}
+                onClick={requestReveal}
+              >
                 <MaskIcon size={19} />
               </IconButton>
-              <Button variant="surface" icon={<SkipIcon size={16} />} onClick={next}>
+              <Button
+                variant="surface"
+                icon={<SkipIcon size={16} />}
+                onClick={next}
+              >
                 {t("common.next")}
               </Button>
-              <IconButton label={t("chat.end")} tone="danger" size={44} onClick={end}>
+              <IconButton
+                label={t("chat.end")}
+                tone="danger"
+                size={44}
+                onClick={end}
+              >
                 <CloseIcon size={18} />
               </IconButton>
             </div>
@@ -495,7 +568,11 @@ export const ChatPage = () => {
         )}
       </div>
 
-      <Sheet open={reportOpen} onClose={() => setReportOpen(false)} title={t("chat.reportTitle")}>
+      <Sheet
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        title={t("chat.reportTitle")}
+      >
         <div className="flex flex-col gap-2 pb-2">
           {REPORT_REASONS.map((reason) => (
             <button
