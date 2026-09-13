@@ -14,6 +14,7 @@ import {
   PaletteIcon,
   ShieldIcon,
   SparkleIcon,
+  TelegramStarIcon,
   WaveIcon,
 } from "@/shared/ui/icons";
 import { useEconomy } from "@/store/economy";
@@ -157,7 +158,7 @@ export const PremiumPage = () => {
                   size="sm"
                   loading={pending === product.key}
                   onClick={() => void buy(product.key)}
-                  icon={<SparkleIcon size={14} />}
+                  icon={<TelegramStarIcon size={15} />}
                 >
                   {product.stars}
                 </Button>

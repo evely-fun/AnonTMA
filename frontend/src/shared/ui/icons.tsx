@@ -113,5 +113,26 @@ export const CoinIcon = ({ size = 24, ...rest }: IconProps) => (
     />
   </svg>
 );
+/**
+ * The Telegram Star, drawn rather than borrowed from an icon set: a five
+ * pointed star leaning forward, filled with Telegram's own gold. It marks the
+ * Stars price and nothing else, because the shape means a payment in Telegram
+ * and using it for anything else would be a lie about what the tap does.
+ */
+export const TelegramStarIcon = ({ size = 24, ...rest }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" {...rest}>
+    <defs>
+      <linearGradient id="tgStar" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#FFD84D" />
+        <stop offset="0.55" stopColor="#FFB02E" />
+        <stop offset="1" stopColor="#F08A13" />
+      </linearGradient>
+    </defs>
+    <path
+      d="M13.98 2.53a1 1 0 0 1 .9 1.35l-1.7 4.6h5.2a1.35 1.35 0 0 1 .93 2.33l-9.1 8.62a1 1 0 0 1-1.6-1.1l1.7-4.6H5.1a1.35 1.35 0 0 1-.93-2.33l9.1-8.62a1 1 0 0 1 .71-.25Z"
+      fill="url(#tgStar)"
+    />
+  </svg>
+);
 export const GiftIcon = (p: IconProps) => <Gift {...p} />;
 export const InfinityIcon = (p: IconProps) => <InfinityGlyph {...p} />;

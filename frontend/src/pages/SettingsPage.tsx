@@ -163,34 +163,42 @@ export const SettingsPage = () => {
                       transition={spring.snappy}
                       className="flex flex-col items-center gap-1.5"
                     >
+                      {/* A palette is a scheme, not a colour, so the swatch is
+                          a tiny screen: the ground it paints with an accent bar
+                          sitting on it. Two abstract discs said nothing about
+                          what choosing it would actually look like. */}
                       <span
-                        className={`relative flex size-12 items-center justify-center overflow-hidden rounded-full transition-[box-shadow] duration-200 ${
+                        className={`relative flex aspect-[4/5] w-full flex-col justify-end gap-1 overflow-hidden rounded-[12px] p-1.5 transition-[box-shadow] duration-200 ${
                           active
                             ? "shadow-[0_0_0_2px_var(--color-accent)]"
-                            : "shadow-[0_0_0_1px_var(--sheen)]"
+                            : "shadow-[0_0_0_1px_var(--color-separator)]"
                         }`}
-                        style={{ background: swatch.accent }}
+                        style={{ background: swatch.ground }}
                       >
-                        {/* The accent fills the swatch and the ground sits in
-                            the corner. Half and half made every light palette
-                            look like the same pale disc. */}
                         <span
-                          className="absolute bottom-1 right-1 size-3.5 rounded-full"
-                          style={{ background: swatch.ground }}
+                          className="block h-1.5 w-full rounded-full"
+                          style={{ background: swatch.accent, opacity: 0.35 }}
+                        />
+                        <span
+                          className="block h-2.5 w-full rounded-full"
+                          style={{ background: swatch.accent }}
                         />
                         {active && !locked && (
                           <m.span
                             initial={{ scale: 0.6, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={spring.snappy}
-                            className="relative z-10 flex size-5 items-center justify-center rounded-full bg-[oklch(1_0_0/0.9)] text-[oklch(0.2_0_0)]"
+                            className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-accent text-on-accent"
                           >
-                            <CheckIcon size={12} />
+                            <CheckIcon size={10} />
                           </m.span>
                         )}
+                        {/* The lock is a badge, not a shade over the whole
+                            swatch: you should be able to see what you would be
+                            buying before you decide to buy it. */}
                         {locked && (
-                          <span className="relative z-10 flex size-5 items-center justify-center rounded-full bg-[oklch(0_0_0/0.45)] text-[oklch(1_0_0/0.85)]">
-                            <LockIcon size={11} />
+                          <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-[oklch(0_0_0/0.4)] text-[oklch(1_0_0/0.92)]">
+                            <LockIcon size={10} />
                           </span>
                         )}
                       </span>
