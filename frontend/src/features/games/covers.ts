@@ -13,7 +13,7 @@ export interface Cover {
 
 const COVERS: Record<string, Cover> = {
   mafia: { src: mafia, tint: "#4e1ea0" },
-  bunker: { src: bunker, tint: "#04324c" },
+  bunker: { src: bunker, tint: "#02c2c3" },
   alias: { src: alias, tint: "#1376de" },
   telephone: { src: telephone, tint: "#e6454e" },
   tictactoe: { src: tictactoe, tint: "#016028" },

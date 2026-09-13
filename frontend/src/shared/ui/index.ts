@@ -25,3 +25,4 @@ export { RewardBurst, type RewardLine } from "./RewardBurst";
 export { SignalWave } from "./SignalWave";
 export { VoiceBloom } from "./VoiceBloom";
 export { LevelBars, VoiceOrb } from "./VoiceOrb";
+export { Rail } from "./Rail";

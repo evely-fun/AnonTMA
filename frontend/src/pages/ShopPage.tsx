@@ -9,7 +9,7 @@ import { backgroundClass, nameEffectClass } from "@/shared/lib/cosmetics";
 import { haptic } from "@/shared/lib/telegram";
 import { paletteSwatch, resolveScheme, type Palette, type ThemeMode } from "@/shared/lib/theme";
 import type { ShopItem } from "@/shared/lib/types";
-import { Avatar, Button, PushScreen, ScreenHeader } from "@/shared/ui";
+import { Avatar, Button, PushScreen, Rail, ScreenHeader } from "@/shared/ui";
 import { CheckIcon, CoinIcon, CrownIcon, LockIcon, SparkleIcon } from "@/shared/ui/icons";
 import { useEconomy } from "@/store/economy";
 import { defaultStyleFor } from "@/shared/lib/avatars";
@@ -180,7 +180,7 @@ export const ShopPage = () => {
       />
 
       <div className="flex-1 overflow-y-auto pb-[calc(28px+env(safe-area-inset-bottom))] pt-3">
-        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-8 pb-1">
+        <Rail className="-mx-4 gap-2 px-8 pb-1">
           {ORDER.map((category) => (
             <button
               key={category}
@@ -194,7 +194,7 @@ export const ShopPage = () => {
               {t(`shop.categories.${category}`)}
             </button>
           ))}
-        </div>
+        </Rail>
 
         <m.div
           key={tab}

@@ -9,7 +9,7 @@ import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
 import { request } from "@/shared/lib/api";
 import type { Profile, ShopItem } from "@/shared/lib/types";
-import { Avatar, Button, PushScreen, ScreenHeader, Skeleton } from "@/shared/ui";
+import { Avatar, Button, PushScreen, Rail, ScreenHeader, Skeleton } from "@/shared/ui";
 import { CheckIcon, LockIcon } from "@/shared/ui/icons";
 import { useSession } from "@/store/session";
 import { useShop } from "@/store/shop";
@@ -166,7 +166,7 @@ export const WardrobePage = () => {
                   is the other half, and without it three people wearing the
                   same effect all look identical. */}
               {slot === "effect" && worn.effect !== "none" && (
-                <div className="no-scrollbar mb-2.5 flex gap-2 overflow-x-auto px-4">
+                <Rail className="mb-2.5 gap-2 px-4">
                   {HUES.map((hue) => (
                     <m.button
                       key={hue}
@@ -183,10 +183,10 @@ export const WardrobePage = () => {
                       style={{ background: `oklch(0.62 0.2 ${hue})` }}
                     />
                   ))}
-                </div>
+                </Rail>
               )}
 
-              <div className="no-scrollbar flex gap-2.5 overflow-x-auto px-4 pb-1">
+              <Rail className="gap-2.5 px-4 pb-1">
                 {shelf.map((item) => {
                   const active = worn[slot] === item.value;
                   return (
@@ -225,7 +225,7 @@ export const WardrobePage = () => {
                     </m.button>
                   );
                 })}
-              </div>
+              </Rail>
             </m.section>
           ))}
 
