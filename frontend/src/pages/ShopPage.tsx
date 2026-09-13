@@ -57,7 +57,7 @@ const Preview = ({
     // its own or it sits with no swatch while every other row has one.
     return (
       <span
-        className={`size-11 rounded-[14px] ${
+        className={`block size-11 rounded-[14px] ${
           backgroundClass(item.value) || "bg-elevated shadow-[inset_0_0_0_1px_var(--color-separator)]"
         }`}
       />
@@ -69,7 +69,7 @@ const Preview = ({
     const swatch = paletteSwatch(item.value as Palette, scheme);
     return (
       <span
-        className="size-11 rounded-full"
+        className="block size-11 rounded-full"
         style={{ background: `linear-gradient(150deg, ${swatch.accent}, ${swatch.ground})` }}
       />
     );

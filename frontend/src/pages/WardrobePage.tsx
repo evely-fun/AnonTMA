@@ -233,7 +233,7 @@ const ShelfPreview = ({
         backgroundClass(value) || "bg-elevated shadow-[inset_0_0_0_1px_var(--color-separator)]"
       }`}
     >
-      <span className="size-6 rounded-full bg-white/70" />
+      <span className="block size-6 rounded-full bg-white/70" />
     </span>
   );
 };
