@@ -6,11 +6,10 @@ import { useBackButton } from "@/shared/hooks/useBackButton";
 import { useT } from "@/shared/i18n";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic, openLink } from "@/shared/lib/telegram";
-import { Button, PushScreen, ScreenHeader, SectionHead } from "@/shared/ui";
+import { Button, PushScreen, ScreenHeader, SectionHead, tileArt } from "@/shared/ui";
 import {
   BoltIcon,
   CheckIcon,
-  CrownIcon,
   PaletteIcon,
   ShieldIcon,
   SparkleIcon,
@@ -98,13 +97,13 @@ export const PremiumPage = () => {
       >
         <m.section className="px-4" variants={rise}>
           <div className="panel-hero relative overflow-hidden rounded-[24px] px-5 py-6 text-center">
-            <m.span
-              className="mx-auto flex size-16 items-center justify-center rounded-[22px] bg-accent-quiet text-accent"
+            <m.img
+              src={tileArt("premium").src}
+              alt=""
+              className="mx-auto size-[104px] rounded-[28px] object-cover"
               animate={{ y: [0, -5, 0] }}
               transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <CrownIcon size={30} />
-            </m.span>
+            />
             <h2 className="mt-4 font-display text-[24px] font-extrabold tracking-[-0.03em]">
               {t("economy.premiumTitle")}
             </h2>
@@ -121,11 +120,11 @@ export const PremiumPage = () => {
 
         <m.section variants={rise}>
           <SectionHead title={t("economy.perksTitle")} />
-          <div className="grid grid-cols-2 gap-2.5 px-4">
+          <div className="space-y-1.5 px-4">
             {PERKS.map(({ key, Icon }) => (
-              <div key={key} className="panel flex flex-col gap-2 rounded-[18px] px-3.5 py-3.5">
-                <Icon size={18} className="text-accent" />
-                <span className="text-[12.5px] leading-snug text-secondary">
+              <div key={key} className="flex items-start gap-3 px-1 py-1.5">
+                <Icon size={17} className="mt-0.5 shrink-0 text-accent" />
+                <span className="text-[13.5px] leading-snug text-secondary">
                   {t(`economy.perks.${key}`)}
                 </span>
               </div>

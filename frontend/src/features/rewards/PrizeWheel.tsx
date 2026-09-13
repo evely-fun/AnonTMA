@@ -35,6 +35,11 @@ export const PrizeWheel = ({
     if (!host || prizes.length === 0) return;
 
     const colours = roleColours();
+    // A translucent segment sinks into paper. The light theme needs the tone
+    // carried much closer to full strength to read as a wheel at all.
+    const light = (document.documentElement.dataset.theme ?? "dark") === "light";
+    const strong = light ? 0.72 : 0.3;
+    const soft = light ? 0.42 : 0.16;
     const toneOf = (prize: WheelPrize): string =>
       prize.kind === "premium"
         ? colours.accent
@@ -46,7 +51,7 @@ export const PrizeWheel = ({
       // Labels rotate with the wheel and read upside down on one side, so the
       // segments stay clean colour and the prizes are named in a legend below.
       items: prizes.map((prize, index) => ({
-        backgroundColor: withAlpha(toneOf(prize), index % 2 === 0 ? 0.3 : 0.16),
+        backgroundColor: withAlpha(toneOf(prize), index % 2 === 0 ? strong : soft),
       })),
       radius: 0.94,
       lineWidth: 1,
