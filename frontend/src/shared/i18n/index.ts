@@ -45,13 +45,45 @@ export const useI18n = create<I18nState>((set) => ({
     set({ preference, locale: preference === "auto" ? detect() : preference }),
 }));
 
+/**
+ * Which suffixed key a count wants. English needs one extra form, Russian
+ * needs two, and a key that does not declare them simply keeps its base form,
+ * so adding a plural anywhere is a matter of writing the key.
+ */
+const pluralSuffix = (locale: Locale, count: number): string => {
+  const n = Math.abs(Math.trunc(count));
+  if (locale === "ru") {
+    const tens = n % 100;
+    const ones = n % 10;
+    if (ones === 1 && tens !== 11) return "";
+    if (ones >= 2 && ones <= 4 && (tens < 12 || tens > 14)) return "Plural";
+    return "Many";
+  }
+  return n === 1 ? "" : "Plural";
+};
+
 export function translate(
   path: string,
   vars?: Record<string, string | number>,
   locale?: Locale,
 ): string {
   const active = locale ?? useI18n.getState().locale;
-  const value = walk(DICTIONARIES[active], path) ?? walk(DICTIONARIES.en, path);
+  let value = walk(DICTIONARIES[active], path) ?? walk(DICTIONARIES.en, path);
+
+  const count = vars?.count;
+  if (typeof count === "number") {
+    const suffix = pluralSuffix(active, count);
+    if (suffix) {
+      // Only the active language is consulted for a plural form. Reaching into
+      // English for one would print an English sentence inside a Russian
+      // screen, which is worse than the wrong ending.
+      const form =
+        walk(DICTIONARIES[active], path + suffix) ??
+        (suffix === "Many" ? walk(DICTIONARIES[active], `${path}Plural`) : undefined);
+      if (typeof form === "string") value = form;
+    }
+  }
+
   if (typeof value === "string") return fill(value, vars);
   return path;
 }

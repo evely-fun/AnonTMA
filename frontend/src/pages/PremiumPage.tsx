@@ -8,13 +8,13 @@ import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic, openLink } from "@/shared/lib/telegram";
 import { Button, PushScreen, ScreenHeader, SectionHead, tileArt } from "@/shared/ui";
 import {
+  GiftIcon,
   BoltIcon,
   CheckIcon,
   PaletteIcon,
   ShieldIcon,
   SparkleIcon,
   WaveIcon,
-  WheelIcon,
 } from "@/shared/ui/icons";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
@@ -26,7 +26,7 @@ const PERKS = [
   { key: "noise", Icon: ShieldIcon },
   { key: "themes", Icon: PaletteIcon },
   { key: "priority", Icon: SparkleIcon },
-  { key: "wheel", Icon: WheelIcon },
+  { key: "wheel", Icon: GiftIcon },
 ];
 
 export const PremiumPage = () => {

@@ -47,7 +47,8 @@ export const en = {
     text: "Text",
     findNow: "Find someone now",
     topUp: "Top up your energy to carry on",
-    friendsOnlineCount: "{count} friends are online",
+    friendsOnlineCount: "{count} friend is online",
+    friendsOnlineCountPlural: "{count} friends are online",
     cost: "{count} energy",
     free: "free with premium",
     friendsOnline: "Friends online",
@@ -70,7 +71,8 @@ export const en = {
     voiceChannel: "Voice channel",
     textChannel: "text channel",
     looking: "Looking for someone",
-    queue: "{count} people are in the queue right now",
+    queue: "{count} person is in the queue right now",
+    queuePlural: "{count} people are in the queue right now",
     matching: "Matching you by language and interests",
     sayHello: "You are connected. Say hello.",
     finished: "Conversation finished",
@@ -450,9 +452,9 @@ export const en = {
       coins: "coins",
       premium: "premium",
     },
-    wheelHint: "Unlocks after {minutes} minutes in voice today. Spins stack up to {max}.",
-    wheelReady: "{count} spin ready",
-    wheelReadyPlural: "{count} spins ready",
+    wheelHint: "Unlocks after {minutes} minutes in voice today. Chests stack up to {max}.",
+    wheelReady: "{count} chest waiting",
+    wheelReadyPlural: "{count} chests waiting",
     wheelLocked: "{time} of voice to go",
     spin: "Open",
     spinsLeft: "rewards",
@@ -470,7 +472,7 @@ export const en = {
       noise: "Studio noise suppression in every call",
       themes: "All ten colour palettes",
       priority: "Priority in the matching queue",
-      wheel: "An extra wheel spin every day",
+      wheel: "An extra chest every day",
     },
     buy: "Get for {stars} stars",
     perMonth: "per month",
@@ -689,12 +691,15 @@ export const en = {
     reportsToday: "Reports today",
     bannedUsers: "Banned",
     resolvedToday: "Closed today",
-    reporters: "{count} people reported",
-    reportsCount: "{count} reports",
+    reporters: "{count} person reported",
+    reportersPlural: "{count} people reported",
+    reportsCount: "{count} report",
+    reportsCountPlural: "{count} reports",
     priority: "Priority {value}",
     trust: "Trust {value}",
     accountAge: "Joined {date}",
-    priorSanctions: "{count} earlier sanctions",
+    priorSanctions: "{count} earlier sanction",
+    priorSanctionsPlural: "{count} earlier sanctions",
     evidence: "Evidence",
     noText: "No text to show. Voice is never recorded.",
     fromTarget: "reported user",
@@ -727,7 +732,8 @@ export const en = {
     reached: "Reached",
     locked: "Locked",
     perks: "Unlocks",
-    perkCoins: "+{count} coins on every finished chat",
+    perkCoins: "+{count} coin on every finished chat",
+    perkCoinsPlural: "+{count} coins on every finished chat",
     perkEnergy: "+{count} max energy",
     perkWheel: "Better odds on the wheel",
     perkTitle: "New title: {title}",
@@ -748,4 +754,17 @@ export const en = {
   },
 };
 
-export type Dictionary = typeof en;
+/**
+ * Every English key has to exist in a translation, but a language may need
+ * plural forms English does not: Russian wants a third ending where English
+ * wants two. Extra sibling keys are allowed for that reason alone.
+ */
+type Translated<T> = {
+  [K in keyof T]: T[K] extends string
+    ? string
+    : T[K] extends readonly string[]
+      ? readonly string[]
+      : Translated<T[K]>;
+} & Record<string, unknown>;
+
+export type Dictionary = Translated<typeof en>;

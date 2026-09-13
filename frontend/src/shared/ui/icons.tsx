@@ -18,7 +18,6 @@ import {
   Heart,
   Infinity as InfinityGlyph,
   LayoutGrid,
-  LifeBuoy,
   Link2,
   Lock,
   MessageCircle,
@@ -115,5 +114,4 @@ export const CoinIcon = ({ size = 24, ...rest }: IconProps) => (
   </svg>
 );
 export const GiftIcon = (p: IconProps) => <Gift {...p} />;
-export const WheelIcon = (p: IconProps) => <LifeBuoy {...p} />;
 export const InfinityIcon = (p: IconProps) => <InfinityGlyph {...p} />;

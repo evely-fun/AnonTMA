@@ -2,6 +2,7 @@ import { m } from "motion/react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+import chestArt from "@/assets/tiles/chest/00.webp";
 import { peerManager } from "@/features/voice/webrtc";
 import { useT } from "@/shared/i18n";
 import { clockFormat } from "@/shared/lib/format";
@@ -14,7 +15,6 @@ import {
   CoinIcon,
   FlameIcon,
   MicIcon,
-  WheelIcon,
 } from "@/shared/ui/icons";
 import { useChat } from "@/store/chat";
 import { useEconomy } from "@/store/economy";
@@ -168,7 +168,13 @@ export const HomePage = () => {
             transition={spring.snappy}
             className="panel-hero flex items-center gap-3.5 rounded-[20px] px-4 py-4 text-left"
           >
-            <WheelIcon size={24} className="shrink-0 text-accent" />
+            <img
+              src={chestArt}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="size-11 shrink-0 rounded-[13px] object-cover"
+            />
             <span className="min-w-0 flex-1">
               <span className="block font-display text-[15px] font-bold">
                 {t("economy.wheel")}
