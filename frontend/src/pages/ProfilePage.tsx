@@ -6,10 +6,11 @@ import { useT } from "@/shared/i18n";
 import { backgroundClass, nameEffectClass } from "@/shared/lib/cosmetics";
 import { request } from "@/shared/lib/api";
 import { compactNumber, durationLabel } from "@/shared/lib/format";
-import { listStagger, rise, spring } from "@/shared/lib/motion";
-import { haptic, openLink } from "@/shared/lib/telegram";
+import { listStagger, rise } from "@/shared/lib/motion";
+import { openLink } from "@/shared/lib/telegram";
 import type { Achievement, Profile } from "@/shared/lib/types";
 import {
+  ArtTile,
   Avatar,
   IconTile,
   Button,
@@ -21,7 +22,6 @@ import {
   TabScreen,
 } from "@/shared/ui";
 import {
-  BoltIcon,
   ChatIcon,
   CheckIcon,
   ChevronIcon,
@@ -31,7 +31,6 @@ import {
   GamesIcon,
   HeartIcon,
   MaskIcon,
-  GridIcon,
   MicIcon,
 } from "@/shared/ui/icons";
 import { useAdmin } from "@/store/admin";
@@ -53,49 +52,6 @@ const INTERESTS = [
   "memes",
   "night talks",
 ];
-
-const DECK_HUE: Record<string, string> = {
-  profile: "oklch(0.72 var(--chroma-profile) var(--hue-profile))",
-  games: "oklch(0.66 var(--chroma-games) var(--hue-games))",
-  search: "oklch(0.66 var(--chroma-search) var(--hue-search))",
-};
-
-const DeckTile = ({
-  hue,
-  icon,
-  title,
-  note,
-  onClick,
-}: {
-  hue: keyof typeof DECK_HUE;
-  icon: React.ReactNode;
-  title: string;
-  note: string;
-  onClick: () => void;
-}) => (
-  <m.button
-    type="button"
-    onClick={onClick}
-    onPointerDown={() => haptic.select()}
-    whileTap={{ scale: 0.95 }}
-    transition={spring.snappy}
-    className="panel flex flex-col gap-2 rounded-[20px] px-3 py-4 text-left"
-  >
-    <span style={{ color: DECK_HUE[hue] }}>{icon}</span>
-    <span className="font-display text-[13.5px] font-bold leading-tight">{title}</span>
-    <span className="text-[11.5px] leading-tight text-hint">{note}</span>
-  </m.button>
-);
-
-const QuietLink = ({ label, onClick }: { label: string; onClick: () => void }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="rounded-full bg-elevated px-3.5 py-2 text-[12.5px] text-secondary"
-  >
-    {label}
-  </button>
-);
 
 export const ProfilePage = () => {
   const { t } = useT();
@@ -232,28 +188,18 @@ export const ProfilePage = () => {
         </m.section>
 
         <m.section variants={rise} className="px-4">
-          {/* Three destinations instead of eight identical rows. Each says what
-              it does, and colour tells them apart before the label is read. */}
+          {/* Destinations are drawn, not labelled with a glyph. The picture
+              carries the meaning before the word is read. */}
           <div className="grid grid-cols-3 gap-2.5">
-            <DeckTile
-              hue="profile"
-              icon={<MaskIcon size={22} />}
+            <ArtTile
+              art="wardrobe"
               title={t("wardrobe.title")}
-              note={t("profile.deck.wardrobe")}
               onClick={() => navigate("/wardrobe")}
             />
-            <DeckTile
-              hue="games"
-              icon={<GridIcon size={22} />}
-              title={t("shop.title")}
-              note={t("profile.deck.shop")}
-              onClick={() => navigate("/shop")}
-            />
-            <DeckTile
-              hue="search"
-              icon={<BoltIcon size={22} />}
+            <ArtTile art="shop" title={t("shop.title")} onClick={() => navigate("/shop")} />
+            <ArtTile
+              art="rewards"
               title={t("profile.deck.dailyTitle")}
-              note={t("profile.deck.daily")}
               onClick={() => navigate("/daily")}
             />
           </div>
@@ -261,24 +207,13 @@ export const ProfilePage = () => {
 
         {!profile.premium?.active && (
           <m.section variants={rise} className="px-4">
-            <m.button
-              type="button"
+            <ArtTile
+              art="premium"
+              title={t("profile.getPremium")}
+              note={t("profile.premiumHint")}
               onClick={() => navigate("/premium")}
-              whileTap={{ scale: 0.985 }}
-              transition={spring.snappy}
-              className="panel flex w-full items-center gap-3.5 rounded-[20px] px-4 py-4 text-left"
-            >
-              <CrownIcon size={22} className="shrink-0 text-warn" />
-              <span className="min-w-0 flex-1">
-                <span className="block font-display text-[15px] font-bold">
-                  {t("profile.getPremium")}
-                </span>
-                <span className="mt-0.5 block text-[12.5px] leading-snug text-hint">
-                  {t("profile.premiumHint")}
-                </span>
-              </span>
-              <ChevronIcon size={16} className="shrink-0 text-hint" />
-            </m.button>
+              wide
+            />
           </m.section>
         )}
 
@@ -363,15 +298,37 @@ export const ProfilePage = () => {
           </div>
         </m.section>
 
-        <m.section variants={rise} className="px-4">
-          <div className="flex flex-wrap gap-2">
-            <QuietLink label={t("profile.leaderboard")} onClick={() => navigate("/leaderboard")} />
-            <QuietLink label={t("profile.invite")} onClick={() => void invite()} />
-            <QuietLink label={t("profile.settings")} onClick={() => navigate("/settings")} />
-            {isAdmin && (
-              <QuietLink label={t("admin.title")} onClick={() => navigate("/admin")} />
-            )}
-          </div>
+        <m.section variants={rise} className="space-y-2.5 px-4">
+          <ArtTile
+            art="leaderboard"
+            title={t("profile.leaderboard")}
+            note={t("profile.leaderboardHint")}
+            onClick={() => navigate("/leaderboard")}
+            wide
+          />
+          <ArtTile
+            art="invite"
+            title={t("profile.invite")}
+            note={t("profile.inviteHint")}
+            onClick={() => void invite()}
+            wide
+          />
+          <ArtTile
+            art="settings"
+            title={t("profile.settings")}
+            note={t("profile.settingsHint")}
+            onClick={() => navigate("/settings")}
+            wide
+          />
+          {isAdmin && (
+            <ArtTile
+              art="rooms"
+              title={t("admin.title")}
+              note={t("admin.subtitle")}
+              onClick={() => navigate("/admin")}
+              wide
+            />
+          )}
           <p className="px-6 pt-3 font-display text-[11px] font-bold tracking-[0.01em] text-hint">
             {t("profile.version")}
           </p>

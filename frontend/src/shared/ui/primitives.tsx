@@ -239,11 +239,14 @@ export const Meter = ({
 
 export const EmptyState = ({
   icon,
+  art,
   title,
   description,
   action,
 }: {
-  icon: ReactNode;
+  icon?: ReactNode;
+  /** An illustration says more than a grey glyph on an empty screen. */
+  art?: string;
   title: string;
   description?: string;
   action?: ReactNode;
@@ -254,9 +257,19 @@ export const EmptyState = ({
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
   >
-    <span className="mb-2 flex size-14 items-center justify-center rounded-[18px] bg-elevated text-hint">
-      {icon}
-    </span>
+    {art ? (
+      <img
+        src={art}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className="mb-3 size-[136px] rounded-[32px] object-cover"
+      />
+    ) : (
+      <span className="mb-2 flex size-14 items-center justify-center rounded-[18px] bg-elevated text-hint">
+        {icon}
+      </span>
+    )}
     <h3 className="font-display text-[17px] font-extrabold tracking-[-0.02em]">{title}</h3>
     {description && (
       <p className="max-w-[280px] text-[13.5px] leading-snug text-hint">{description}</p>

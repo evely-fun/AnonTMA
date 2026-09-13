@@ -1,4 +1,5 @@
 export { AmbientBackground } from "./AmbientBackground";
+export { ArtTile, tileArt, type TileArt } from "./ArtTile";
 export { Avatar } from "./Avatar";
 export { Button, IconButton } from "./Button";
 export {

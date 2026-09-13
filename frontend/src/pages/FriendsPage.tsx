@@ -11,6 +11,7 @@ import {
   Button,
   Chip,
   EmptyState,
+  tileArt,
   IconButton,
   OptionRow,
   Panel,
@@ -18,7 +19,7 @@ import {
   Sheet,
   TabScreen,
 } from "@/shared/ui";
-import { CheckIcon, CloseIcon, FriendsIcon, LinkIcon, PhoneIcon, StarIcon } from "@/shared/ui/icons";
+import { CheckIcon, CloseIcon, LinkIcon, PhoneIcon, StarIcon } from "@/shared/ui/icons";
 import { useSocial } from "@/store/social";
 import { toast } from "@/store/ui";
 
@@ -130,7 +131,7 @@ export const FriendsPage = () => {
 
           {!loading && friends.length === 0 ? (
             <EmptyState
-              icon={<FriendsIcon size={24} />}
+              art={tileArt("friends").src}
               title={t("friends.empty")}
               description={t("friends.emptyHint")}
               action={<Button onClick={() => void invite()}>{t("friends.inviteFriend")}</Button>}

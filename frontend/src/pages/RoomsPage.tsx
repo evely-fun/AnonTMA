@@ -11,13 +11,14 @@ import {
   Button,
   Chip,
   EmptyState,
+  tileArt,
   IconTile,
   SectionHead,
   Sheet,
   Skeleton,
   TabScreen,
 } from "@/shared/ui";
-import { DoorIcon, GamesIcon, MicIcon, PlusIcon, RoomsIcon } from "@/shared/ui/icons";
+import { GamesIcon, MicIcon, PlusIcon, RoomsIcon } from "@/shared/ui/icons";
 import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
@@ -96,7 +97,7 @@ export const RoomsPage = () => {
 
         {!loading && list.length === 0 && (
           <EmptyState
-            icon={<DoorIcon size={24} />}
+            art={tileArt("rooms").src}
             title={t("rooms.empty")}
             description={t("rooms.emptyHint")}
             action={<Button onClick={() => setOpen(true)}>{t("rooms.openRoom")}</Button>}
