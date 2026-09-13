@@ -11,17 +11,20 @@ import { MicIcon, MicOffIcon, PhoneEndIcon, PhoneIcon, SlidersIcon } from "@/sha
 import { useSocial } from "@/store/social";
 import { useVoice } from "@/store/voice";
 
-const ActiveCall = ({ onOpenAudio }: { onOpenAudio: () => void }) => {
+const ActiveCall = ({
+  call,
+  onOpenAudio,
+}: {
+  call: NonNullable<ReturnType<typeof useSocial.getState>["activeCall"]>;
+  onOpenAudio: () => void;
+}) => {
   const { t } = useT();
-  const call = useSocial((state) => state.activeCall);
   const friends = useSocial((state) => state.friends);
   const endCall = useSocial((state) => state.endCall);
   const micLevel = useVoice((state) => state.micLevel);
   const muted = useVoice((state) => state.muted);
   const toggleMute = useVoice((state) => state.toggleMute);
-  const seconds = useElapsed(call?.status === "active");
-
-  if (!call) return null;
+  const seconds = useElapsed(call.status === "active");
   const friend = friends.find((item) => item.id === call.userId);
 
   return (
@@ -65,16 +68,17 @@ const ActiveCall = ({ onOpenAudio }: { onOpenAudio: () => void }) => {
   );
 };
 
-const IncomingCall = () => {
+const IncomingCall = ({
+  call,
+}: {
+  call: NonNullable<ReturnType<typeof useSocial.getState>["incomingCall"]>;
+}) => {
   const { t } = useT();
-  const call = useSocial((state) => state.incomingCall);
   const answer = useSocial((state) => state.answerCall);
-
-  if (!call) return null;
 
   return (
     <m.div
-      className="veil fixed inset-0 z-[130] mx-auto flex max-w-[480px] items-center justify-center px-6 backdrop-blur-lg"
+      className="veil fixed inset-0 z-[130] mx-auto flex max-w-[480px] items-center justify-center px-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -91,7 +95,7 @@ const IncomingCall = () => {
         <p className="mt-4 font-display text-[20px] font-extrabold tracking-[-0.025em]">
           {call.from.anonName}
         </p>
-        <p className="font-display text-[11.5px] font-bold tracking-[0.01em] text-hint">
+        <p className="text-[12.5px] text-hint">
           {t("friends.incomingCall")}
         </p>
         <div className="mt-8 flex items-center gap-10">
@@ -115,9 +119,13 @@ export const CallOverlay = () => {
   return (
     <>
       <AnimatePresence>
-        {activeCall && <ActiveCall onOpenAudio={() => setAudioOpen(true)} />}
+        {activeCall && (
+          <ActiveCall key="active" call={activeCall} onOpenAudio={() => setAudioOpen(true)} />
+        )}
       </AnimatePresence>
-      <AnimatePresence>{incomingCall && <IncomingCall />}</AnimatePresence>
+      <AnimatePresence>
+        {incomingCall && <IncomingCall key="incoming" call={incomingCall} />}
+      </AnimatePresence>
       <AudioSheet open={audioOpen && Boolean(activeCall)} onClose={() => setAudioOpen(false)} />
     </>
   );

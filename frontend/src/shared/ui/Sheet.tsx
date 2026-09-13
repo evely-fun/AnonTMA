@@ -30,15 +30,20 @@ export const Sheet = ({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 mx-auto flex max-w-[480px] items-end">
-          <m.div
-            className="veil absolute inset-0 backdrop-blur-[6px]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-          />
+        // The full screen layer is a keyed motion element on purpose. It used
+        // to be a plain unkeyed div, which AnimatePresence cannot track: the
+        // panel inside animated away but the layer itself was never unmounted,
+        // leaving an invisible sheet of z-50 over the whole app that swallowed
+        // every tap. That is the freeze where the only way out was a reload.
+        <m.div
+          key="sheet"
+          className="fixed inset-0 z-50 mx-auto flex max-w-[480px] items-end"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <div className="veil absolute inset-0" onClick={onClose} />
           <m.div
             className="relative flex max-h-[88vh] w-full flex-col rounded-t-[26px] bg-surface pb-[calc(18px+env(safe-area-inset-bottom))] shadow-[0_-30px_80px_-40px_oklch(0_0_0/0.55)]"
             variants={sheetPanel}
@@ -66,7 +71,7 @@ export const Sheet = ({
             <div className="flex-1 overflow-y-auto px-4 pb-2">{children}</div>
             {footer && <div className="px-4 pt-3">{footer}</div>}
           </m.div>
-        </div>
+        </m.div>
       )}
     </AnimatePresence>
   );
