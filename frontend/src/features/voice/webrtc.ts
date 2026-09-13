@@ -10,6 +10,7 @@ interface PeerEntry {
   polite: boolean;
   makingOffer: boolean;
   ignoreOffer: boolean;
+  renegotiate: boolean;
   pendingCandidates: RTCIceCandidateInit[];
 }
 
@@ -41,15 +42,35 @@ export class PeerManager {
 
   setLocalStream(stream: MediaStream | null): void {
     this.localStream = stream;
-    this.peers.forEach((entry) => {
-      const senders = entry.connection.getSenders();
-      const track = stream?.getAudioTracks()[0] ?? null;
-      if (senders.length > 0) {
-        void senders[0].replaceTrack(track);
-      } else if (track && stream) {
-        entry.connection.addTrack(track, stream);
+    const track = stream?.getAudioTracks()[0] ?? null;
+    this.peers.forEach((entry) => this.attachLocalTrack(entry, track));
+  }
+
+  /**
+   * Puts the microphone on the peer's existing audio transceiver. Adding a
+   * track instead would open a second m line, and a peer built before the
+   * microphone was ready has already answered recvonly, so the direction has to
+   * be restored as well: replaceTrack never renegotiates on its own, and
+   * without that the side stays connected but is never heard.
+   */
+  private attachLocalTrack(entry: PeerEntry, track: MediaStreamTrack | null): void {
+    const transceivers = entry.connection.getTransceivers();
+    const audio =
+      transceivers.find(
+        (item) => item.sender.track?.kind === "audio" || item.receiver.track?.kind === "audio",
+      ) ?? transceivers[0];
+
+    if (!audio) {
+      if (track && this.localStream) {
+        entry.connection.addTrack(track, this.localStream);
       }
-    });
+      return;
+    }
+
+    void audio.sender.replaceTrack(track);
+    if (track && audio.direction !== "sendrecv") {
+      audio.direction = "sendrecv";
+    }
   }
 
   private ensureContext(): AudioContext {
@@ -104,7 +125,32 @@ export class PeerManager {
       this.silence = element;
     }
     await this.silence.play().catch(() => undefined);
-    await Promise.all([...this.peers.values()].map((entry) => this.play(entry)));
+    // play() can stay pending forever on a device with no audio output, and the
+    // tap to hear button would spin with it, so the unlock gives up on its own.
+    await Promise.race([
+      Promise.all([...this.peers.values()].map((entry) => this.play(entry))),
+      new Promise((resolve) => window.setTimeout(resolve, 1500)),
+    ]);
+  }
+
+  private async offer(peerId: number, entry: PeerEntry): Promise<void> {
+    try {
+      entry.makingOffer = true;
+      await entry.connection.setLocalDescription();
+      const description = entry.connection.localDescription;
+      if (description) {
+        realtime.send("rtc.signal", {
+          kind: "offer",
+          to: peerId,
+          sdpType: description.type,
+          sdp: description.sdp,
+        });
+      }
+    } catch {
+      /* negotiation retried on the next event */
+    } finally {
+      entry.makingOffer = false;
+    }
   }
 
   private createPeer(peerId: number, polite: boolean): PeerEntry {
@@ -132,6 +178,7 @@ export class PeerManager {
       polite,
       makingOffer: false,
       ignoreOffer: false,
+      renegotiate: false,
       pendingCandidates: [],
     };
 
@@ -143,24 +190,8 @@ export class PeerManager {
       connection.addTransceiver("audio", { direction: "sendrecv" });
     }
 
-    connection.onnegotiationneeded = async () => {
-      try {
-        entry.makingOffer = true;
-        await connection.setLocalDescription();
-        const description = connection.localDescription;
-        if (description) {
-          realtime.send("rtc.signal", {
-            kind: "offer",
-            to: peerId,
-            sdpType: description.type,
-            sdp: description.sdp,
-          });
-        }
-      } catch {
-        /* negotiation retried on next event */
-      } finally {
-        entry.makingOffer = false;
-      }
+    connection.onnegotiationneeded = () => {
+      void this.offer(peerId, entry);
     };
 
     connection.onicecandidate = (event) => {
@@ -186,6 +217,14 @@ export class PeerManager {
       void this.play(entry);
       this.attachAnalyser(peerId, entry);
       this.streamListeners.forEach((listener) => listener(peerId, stream));
+    };
+
+    connection.onsignalingstatechange = () => {
+      if (connection.signalingState !== "stable" || !entry.renegotiate) {
+        return;
+      }
+      entry.renegotiate = false;
+      void this.offer(peerId, entry);
     };
 
     connection.onconnectionstatechange = () => {
@@ -239,6 +278,7 @@ export class PeerManager {
         description.type === "offer" && (entry.makingOffer || connection.signalingState !== "stable");
       entry.ignoreOffer = !entry.polite && offerCollision;
       if (entry.ignoreOffer) {
+        entry.renegotiate = true;
         return;
       }
       try {

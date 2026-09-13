@@ -117,3 +117,10 @@ export const useVoice = create<VoiceState>((set, get) => ({
 if (import.meta.env.DEV) {
   (window as unknown as { __voiceStore?: typeof useVoice }).__voiceStore = useVoice;
 }
+
+if (import.meta.env.DEV) {
+  (window as unknown as { __voiceState?: () => unknown }).__voiceState = () => {
+    const state = useVoice.getState();
+    return { active: state.active, permission: state.permission, error: state.error };
+  };
+}

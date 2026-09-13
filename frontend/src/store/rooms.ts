@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { request } from "@/shared/lib/api";
 import { realtime } from "@/shared/lib/socket";
 import type { Room, RoomMember } from "@/shared/lib/types";
+import { useVoice } from "@/store/voice";
 
 interface RoomChatMessage {
   id: number;
@@ -24,7 +25,7 @@ interface RoomsState {
   loadList: (filters?: { kind?: string; language?: string }) => Promise<void>;
   create: (payload: Partial<Room> & { title: string }) => Promise<Room | null>;
   open: (roomId: number) => Promise<void>;
-  join: (roomId: number) => void;
+  join: (roomId: number) => Promise<void>;
   leave: () => void;
   setMembers: (members: RoomMember[]) => void;
   upsertMember: (member: RoomMember) => void;
@@ -93,8 +94,12 @@ export const useRooms = create<RoomsState>((set, get) => ({
     }
   },
 
-  join: (roomId) => {
+  join: async (roomId) => {
     set({ joining: true, messages: [] });
+    // Peers are built from the roster that comes back with room.joined, so the
+    // microphone has to exist before any of that signalling starts. Joining
+    // first meant this side answered recvonly and was never heard.
+    await useVoice.getState().enable();
     realtime.send("room.join", { roomId });
   },
 
