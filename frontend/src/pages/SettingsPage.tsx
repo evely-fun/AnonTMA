@@ -13,6 +13,8 @@ import { PALETTES, paletteSwatch, resolveScheme, type Palette, type ThemeMode } 
 import type { Profile } from "@/shared/lib/types";
 import {
   Chip,
+  IconTile,
+  ListRow,
   OptionRow,
   Panel,
   PushScreen,
@@ -21,7 +23,7 @@ import {
   Segmented,
   Switch,
 } from "@/shared/ui";
-import { CheckIcon, CrownIcon, LockIcon } from "@/shared/ui/icons";
+import { CheckIcon, CrownIcon, HelpIcon, LockIcon } from "@/shared/ui/icons";
 import { useSession } from "@/store/session";
 import { useShop } from "@/store/shop";
 import { toast } from "@/store/ui";
@@ -364,6 +366,19 @@ export const SettingsPage = () => {
               hint={t("settings.soundsHint")}
               checked={preferences.sounds}
               onChange={(value) => void update({ sounds: value })}
+            />
+          </Panel>
+        </m.section>
+
+        <m.section variants={rise}>
+          <SectionHead title={t("support.title")} note={t("support.subtitle")} />
+          <Panel>
+            <ListRow
+              leading={<IconTile tone="accent"><HelpIcon size={18} /></IconTile>}
+              title={t("support.newTicket")}
+              subtitle={t("support.settingsHint")}
+              chevron
+              onClick={() => navigate("/support")}
             />
           </Panel>
         </m.section>

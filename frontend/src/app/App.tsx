@@ -19,6 +19,7 @@ import { PremiumPage } from "@/pages/PremiumPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { WardrobePage } from "@/pages/WardrobePage";
 import { ShopPage } from "@/pages/ShopPage";
+import { SupportPage } from "@/pages/SupportPage";
 import { RoomPage } from "@/pages/RoomPage";
 import { RoomsPage } from "@/pages/RoomsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -337,6 +338,7 @@ export const App = () => {
                 <Route path="/friends" element={<FriendsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/support" element={<SupportPage />} />
                 <Route path="/daily" element={<DailyPage />} />
                 <Route path="/premium" element={<PremiumPage />} />
                 <Route path="/shop" element={<ShopPage />} />

@@ -18,6 +18,7 @@ import {
   Heart,
   Infinity as InfinityGlyph,
   LayoutGrid,
+  LifeBuoy,
   Link2,
   Lock,
   MessageCircle,
@@ -87,6 +88,7 @@ export const SearchIcon = (p: IconProps) => <Search {...p} />;
 export const GridIcon = (p: IconProps) => <LayoutGrid {...p} />;
 export const DoorIcon = (p: IconProps) => <DoorOpen {...p} />;
 export const LinkIcon = (p: IconProps) => <Link2 {...p} />;
+export const HelpIcon = (p: IconProps) => <LifeBuoy {...p} />;
 export const ClockIcon = (p: IconProps) => <Clock {...p} />;
 export const GlobeIcon = (p: IconProps) => <Globe {...p} />;
 
