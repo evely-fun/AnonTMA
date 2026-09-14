@@ -40,6 +40,7 @@ interface TelegramWebApp {
   setHeaderColor?: (color: string) => void;
   setBackgroundColor?: (color: string) => void;
   openTelegramLink: (url: string) => void;
+  openInvoice?: (url: string, callback?: (status: string) => void) => void;
   openLink: (url: string, options?: { try_instant_view?: boolean }) => void;
   shareToStory?: (media: string, params?: Record<string, unknown>) => void;
   switchInlineQuery?: (query: string, targets?: string[]) => void;
@@ -91,6 +92,19 @@ export const startParam = (): string | undefined => {
   }
   const params = new URLSearchParams(window.location.search);
   return params.get("tgWebAppStartParam") ?? params.get("startapp") ?? undefined;
+};
+
+/**
+ * Opens a stars invoice inside Telegram. Falls back to the plain link opener
+ * for clients too old to know the call, which still lands on the invoice.
+ */
+export const openInvoice = (url: string, onDone?: (status: string) => void): void => {
+  const app = webApp();
+  if (app?.openInvoice) {
+    app.openInvoice(url, onDone);
+    return;
+  }
+  app?.openTelegramLink(url);
 };
 
 export const colorScheme = (): "light" | "dark" => webApp()?.colorScheme ?? "dark";

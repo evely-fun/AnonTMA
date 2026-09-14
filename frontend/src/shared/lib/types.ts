@@ -253,6 +253,9 @@ export interface Product {
   days: number;
   energy: number;
   recurring: boolean;
+  coins: number;
+  unlocks: string[];
+  kind: "premium" | "energy" | "coins" | "set";
 }
 
 export interface ShopItem {

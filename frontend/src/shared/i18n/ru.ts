@@ -793,7 +793,7 @@ export const ru: Dictionary = {
   shop: {
     title: "Магазин",
     hint: "Тратьте монеты на внешний вид и бусты",
-    subtitle: "монеты, косметика, бусты",
+    subtitle: "звёзды, монеты, косметика",
     coins: "Монеты",
     buy: "Купить",
     owned: "Есть",
@@ -806,6 +806,7 @@ export const ru: Dictionary = {
     suggested: "Вам подойдёт",
     howToEarn: "Монеты дают игры, завершённые диалоги, огонёк и колесо.",
     categories: {
+      stars: "Звёзды",
       avatar: "Аватары",
       frame: "Рамки",
       effect: "Эффекты имени",

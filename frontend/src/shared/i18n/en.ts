@@ -790,7 +790,7 @@ export const en = {
   shop: {
     title: "Shop",
     hint: "Spend coins on looks and boosts",
-    subtitle: "coins, cosmetics, boosts",
+    subtitle: "stars, coins, cosmetics",
     coins: "Coins",
     buy: "Buy",
     owned: "Owned",
@@ -803,6 +803,7 @@ export const en = {
     suggested: "Suits you",
     howToEarn: "Coins come from games, finished chats, the daily streak and the wheel.",
     categories: {
+      stars: "Stars",
       avatar: "Avatars",
       frame: "Frames",
       effect: "Name effects",

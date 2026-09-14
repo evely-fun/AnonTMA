@@ -6,7 +6,7 @@ import { useBackButton } from "@/shared/hooks/useBackButton";
 import { useT } from "@/shared/i18n";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { backgroundClass, nameEffectClass } from "@/shared/lib/cosmetics";
-import { haptic } from "@/shared/lib/telegram";
+import { haptic, openInvoice } from "@/shared/lib/telegram";
 import {
   paletteSwatch,
   resolveScheme,
@@ -14,18 +14,26 @@ import {
   type ThemeMode,
 } from "@/shared/lib/theme";
 import type { ShopItem } from "@/shared/lib/types";
-import { Avatar, Button, PushScreen, Rail, ScreenHeader } from "@/shared/ui";
-import { CheckIcon, CrownIcon, LockIcon, SparkleIcon } from "@/shared/ui/icons";
-import { CoinMark } from "@/shared/ui/marks";
+import { Avatar, Button, IconTile, PushScreen, Rail, ScreenHeader } from "@/shared/ui";
+import {
+  CheckIcon,
+  CrownIcon,
+  LockIcon,
+  SparkleIcon,
+  TelegramStarIcon,
+} from "@/shared/ui/icons";
+import { CoinMark, EnergyMark } from "@/shared/ui/marks";
 import { useEconomy } from "@/store/economy";
 import { defaultStyleFor } from "@/shared/lib/avatars";
 import { useSession } from "@/store/session";
 import { useShop } from "@/store/shop";
 import { toast } from "@/store/ui";
 
-type Category = ShopItem["category"];
+/** The coin shelves, plus one that is paid for in stars. */
+type Tab = ShopItem["category"] | "stars";
 
-const ORDER: Category[] = [
+const ORDER: Tab[] = [
+  "stars",
   "avatar",
   "frame",
   "effect",
@@ -108,6 +116,93 @@ const Preview = ({
   );
 };
 
+/**
+ * The one shelf paid for in stars rather than coins. Coins buy cosmetics you
+ * can also grind for; this is the shelf for the things you cannot, and for
+ * buying coins outright rather than playing for them.
+ */
+const StarShelf = () => {
+  const { t } = useT();
+  const products = useEconomy((store) => store.products);
+  const mode = useEconomy((store) => store.mode);
+  const purchase = useEconomy((store) => store.purchase);
+  const loadProducts = useEconomy((store) => store.loadProducts);
+  const loadEconomy = useEconomy((store) => store.load);
+  const refreshProfile = useSession((state) => state.refreshProfile);
+  const [pending, setPending] = useState<string | null>(null);
+
+  useEffect(() => {
+    void loadProducts();
+  }, [loadProducts]);
+
+  const buy = async (key: string) => {
+    haptic.impact("medium");
+    setPending(key);
+    try {
+      const result = await purchase(key);
+      if (result?.url) {
+        openInvoice(result.url);
+        return;
+      }
+      if (result) {
+        haptic.notify("success");
+        toast(t("shop.bought"), { tone: "success" });
+        void refreshProfile();
+        void loadEconomy();
+      }
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <m.div
+      key="stars"
+      className="mt-4 flex flex-col gap-2.5 px-4"
+      variants={listStagger}
+      initial="initial"
+      animate="animate"
+    >
+      {mode === "test" && (
+        <p className="text-center text-[12px] text-hint">{t("economy.testMode")}</p>
+      )}
+      {products.map((product) => (
+        <m.div
+          key={product.key}
+          variants={rise}
+          className="panel flex items-center gap-3.5 rounded-[20px] px-4 py-3.5"
+        >
+          <IconTile tone={product.kind === "set" ? "accent" : "neutral"} size={44}>
+            {product.kind === "coins" ? (
+              <CoinMark size={22} />
+            ) : product.kind === "energy" ? (
+              <EnergyMark size={22} />
+            ) : (
+              <CrownIcon size={20} />
+            )}
+          </IconTile>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-[14.5px] font-extrabold leading-tight tracking-[-0.01em]">
+              {product.title}
+            </span>
+            <span className="mt-0.5 block text-[12px] leading-snug text-hint">
+              {product.description}
+            </span>
+          </span>
+          <Button
+            size="sm"
+            loading={pending === product.key}
+            onClick={() => void buy(product.key)}
+            icon={<TelegramStarIcon size={15} />}
+          >
+            {product.stars}
+          </Button>
+        </m.div>
+      ))}
+    </m.div>
+  );
+};
+
 export const ShopPage = () => {
   const { t } = useT();
   const navigate = useNavigate();
@@ -124,7 +219,7 @@ export const ShopPage = () => {
   const scheme = resolveScheme(
     (profile?.preferences?.theme ?? "auto") as ThemeMode,
   );
-  const [tab, setTab] = useState<Category>("avatar");
+  const [tab, setTab] = useState<Tab>("avatar");
 
   useBackButton("/");
 
@@ -211,6 +306,9 @@ export const ShopPage = () => {
           ))}
         </Rail>
 
+        {tab === "stars" ? (
+          <StarShelf />
+        ) : (
         <m.div
           key={tab}
           className="mt-4 grid grid-cols-2 gap-2.5 px-4"
@@ -299,10 +397,13 @@ export const ShopPage = () => {
             );
           })}
         </m.div>
+        )}
 
-        <p className="px-6 pt-5 text-center text-[12px] leading-snug text-hint">
-          {t("shop.howToEarn")}
-        </p>
+        {tab !== "stars" && (
+          <p className="px-6 pt-5 text-center text-[12px] leading-snug text-hint">
+            {t("shop.howToEarn")}
+          </p>
+        )}
       </div>
     </PushScreen>
   );

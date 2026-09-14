@@ -23,6 +23,10 @@ class Product:
     days: int
     energy: int
     recurring: bool
+    coins: int = 0
+    # Cosmetics that cannot be earned with coins at any price.
+    unlocks: tuple[str, ...] = ()
+    kind: str = "premium"
 
 
 CATALOG: tuple[Product, ...] = (
@@ -52,6 +56,54 @@ CATALOG: tuple[Product, ...] = (
         days=0,
         energy=120,
         recurring=False,
+        kind="energy",
+    ),
+    # Coins were the one thing stars could not buy, which left the shop with a
+    # currency you could only grind for. The rate improves with the size.
+    Product(
+        key="coins_small",
+        title="A pocketful of coins",
+        description="1,200 coins, enough for a frame and change.",
+        stars=39,
+        days=0,
+        energy=0,
+        recurring=False,
+        coins=1200,
+        kind="coins",
+    ),
+    Product(
+        key="coins_medium",
+        title="A bag of coins",
+        description="3,500 coins, about a legendary and a rare.",
+        stars=99,
+        days=0,
+        energy=0,
+        recurring=False,
+        coins=3500,
+        kind="coins",
+    ),
+    Product(
+        key="coins_large",
+        title="A chest of coins",
+        description="9,000 coins, the best rate we do.",
+        stars=229,
+        days=0,
+        energy=0,
+        recurring=False,
+        coins=9000,
+        kind="coins",
+    ),
+    # The only way to own these. They are not on the coin shelves at all.
+    Product(
+        key="founder_set",
+        title="Founder's set",
+        description="The crown, the aurora name and the nebula background, together, and never sold for coins.",
+        stars=349,
+        days=7,
+        energy=0,
+        recurring=False,
+        unlocks=("frame.crown", "effect.aurora", "background.nebula"),
+        kind="set",
     ),
 )
 
@@ -68,6 +120,9 @@ def catalog_payload() -> list[dict]:
             "days": product.days,
             "energy": product.energy,
             "recurring": product.recurring,
+            "coins": product.coins,
+            "unlocks": list(product.unlocks),
+            "kind": product.kind,
         }
         for product in CATALOG
     ]
@@ -75,12 +130,25 @@ def catalog_payload() -> list[dict]:
 
 async def _apply(session: AsyncSession, user: User, product: Product) -> dict:
     stats = await session.get(UserStats, user.id)
-    granted = {"premiumDays": 0, "energy": 0}
+    granted = {"premiumDays": 0, "energy": 0, "coins": 0, "unlocks": []}
     if product.days:
         grant_premium(user, product.days)
         granted["premiumDays"] = product.days
     if product.energy and stats:
         granted["energy"] = add_energy(stats, is_premium(user), product.energy)
+    if product.coins and stats:
+        stats.coins += product.coins
+        granted["coins"] = product.coins
+    if product.unlocks:
+        from app.db.base import utcnow
+        from app.db.models import Inventory
+        from app.services.shop import owned_keys
+
+        owned = await owned_keys(session, user.id)
+        for key in product.unlocks:
+            if key not in owned:
+                session.add(Inventory(user_id=user.id, item=key, acquired_at=utcnow()))
+                granted["unlocks"].append(key)
     return granted
 
 
