@@ -19,3 +19,4 @@ smoke.db
 voicetest.db
 *.db
 dump.rdb
+*.tsbuildinfo
