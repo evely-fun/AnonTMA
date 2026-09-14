@@ -49,6 +49,10 @@ CATALOG: tuple[Item, ...] = (
     Item("frame.orbit", "frame", 1900, "orbit", "rare"),
     Item("frame.ember", "frame", 2400, "ember", "rare"),
     Item("frame.gilded", "frame", 3000, "gilded", "epic"),
+    # Crest frames: something sits on the ring rather than only round it.
+    Item("frame.ears", "frame", 2600, "ears", "rare"),
+    Item("frame.petals", "frame", 3400, "petals", "epic"),
+    Item("frame.crown", "frame", 4800, "crown", "legendary"),
 
     Item("effect.none", "effect", 0, "none", "base"),
     Item("effect.gradient", "effect", 1200, "gradient", "common"),

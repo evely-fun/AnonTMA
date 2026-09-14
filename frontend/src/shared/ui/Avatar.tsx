@@ -11,7 +11,17 @@ import {
   type AvatarStyle,
 } from "@/shared/lib/avatars";
 
-const FRAME_KEYS = ["none", "halo", "pulse", "orbit", "ember", "gilded"] as const;
+const FRAME_KEYS = [
+  "none",
+  "halo",
+  "pulse",
+  "orbit",
+  "ember",
+  "gilded",
+  "ears",
+  "crown",
+  "petals",
+] as const;
 export type AvatarFrame = (typeof FRAME_KEYS)[number];
 
 const SHELLS: [string, string][] = [
@@ -41,6 +51,13 @@ const EMBER_SPARKS = [
 ];
 
 /** Each frame is its own layer so the five of them read differently. */
+const PETALS = [
+  { left: "6%", delay: "0s" },
+  { left: "34%", delay: "1.1s" },
+  { left: "62%", delay: "2.2s" },
+  { left: "88%", delay: "3.1s" },
+];
+
 const FrameLayer = ({ frame }: { frame: AvatarFrame }) => {
   if (frame === "none") {
     return null;
@@ -70,6 +87,59 @@ const FrameLayer = ({ frame }: { frame: AvatarFrame }) => {
       <>
         <span className="frame-ring frame-orbit-ring" />
         <span className="frame-orbit-arm" />
+      </>
+    );
+  }
+  // Ears sit on the ring rather than round it, and twitch once in a while
+  // instead of running a loop you can feel. The crown bobs, the petals drift.
+  if (frame === "ears") {
+    return (
+      <>
+        <span className="frame-ring frame-ears-ring" />
+        <m.svg
+          className="frame-crest"
+          viewBox="0 0 100 40"
+          animate={{ rotate: [0, -4, 0, 3, 0] }}
+          transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", times: [0, 0.08, 0.16, 0.24, 1] }}
+        >
+          <path d="M31 39 L27 12 L50 30 Z" className="frame-crest-fill" />
+          <path d="M69 39 L73 12 L50 30 Z" className="frame-crest-fill" />
+          <path d="M33 34 L31 19 L43 29 Z" className="frame-crest-inner" />
+          <path d="M67 34 L69 19 L57 29 Z" className="frame-crest-inner" />
+        </m.svg>
+      </>
+    );
+  }
+  if (frame === "crown") {
+    return (
+      <>
+        <span className="frame-ring frame-crown-ring" />
+        <m.svg
+          className="frame-crest"
+          viewBox="0 0 100 40"
+          animate={{ y: [0, -2, 0] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <path
+            d="M26 36 L20 10 L36 22 L50 6 L64 22 L80 10 L74 36 Z"
+            className="frame-crown-fill"
+          />
+          <circle cx="50" cy="30" r="3.2" className="frame-crown-gem" />
+        </m.svg>
+      </>
+    );
+  }
+  if (frame === "petals") {
+    return (
+      <>
+        <span className="frame-ring frame-petal-ring" />
+        {PETALS.map((petal) => (
+          <span
+            key={petal.left}
+            className="frame-petal"
+            style={{ left: petal.left, animationDelay: petal.delay }}
+          />
+        ))}
       </>
     );
   }

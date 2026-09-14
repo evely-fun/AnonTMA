@@ -835,6 +835,9 @@ export const ru: Dictionary = {
         orbit: "Орбита",
         ember: "Уголёк",
         gilded: "Позолота",
+        ears: "Ушки",
+        petals: "Первый цвет",
+        crown: "Корона",
       },
       effect: {
         none: "Обычное имя",

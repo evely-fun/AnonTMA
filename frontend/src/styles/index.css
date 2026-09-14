@@ -589,6 +589,64 @@
     animation: ember-rise 2.4s ease-out infinite;
   }
 
+  /*
+    Crest frames. The ring stays the same object as every other frame so the
+    set reads as one family, and the thing on top of it is what you bought.
+    Everything moves on transform only, so a decorated avatar in a list of
+    twenty costs no layout.
+  */
+  .frame-crest {
+    position: absolute;
+    left: 50%;
+    /* The bases overlap the ring, so the crest reads as worn rather than
+       floating above the head. */
+    top: -30%;
+    width: 96%;
+    height: 38%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .frame-crest-fill {
+    fill: oklch(0.72 0.13 28);
+  }
+
+  .frame-crest-inner {
+    fill: oklch(0.86 0.07 24);
+  }
+
+  .frame-ears-ring {
+    border: 2px solid oklch(0.72 0.13 28);
+  }
+
+  .frame-crown-fill {
+    fill: oklch(0.82 0.15 85);
+  }
+
+  .frame-crown-gem {
+    fill: oklch(0.62 0.19 24);
+  }
+
+  .frame-crown-ring {
+    border: 2px solid oklch(0.82 0.15 85);
+  }
+
+  .frame-petal-ring {
+    border: 2px solid oklch(0.84 0.09 350);
+  }
+
+  .frame-petal {
+    position: absolute;
+    top: -6px;
+    width: 6px;
+    height: 5px;
+    border-radius: 60% 40% 60% 40%;
+    background: oklch(0.84 0.09 350);
+    pointer-events: none;
+    animation: petal-fall 4.2s linear infinite;
+  }
+
   .frame-gilded {
     background: conic-gradient(
       from 0deg,
@@ -608,6 +666,23 @@
   @keyframes frame-spin {
     to {
       transform: rotate(360deg);
+    }
+  }
+
+  @keyframes petal-fall {
+    0% {
+      opacity: 0;
+      transform: translateY(0) rotate(0deg);
+    }
+    12% {
+      opacity: 0.9;
+    }
+    88% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(120%) rotate(220deg);
     }
   }
 

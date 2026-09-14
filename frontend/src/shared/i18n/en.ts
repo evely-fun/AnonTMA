@@ -832,6 +832,9 @@ export const en = {
         orbit: "Orbit",
         ember: "Ember",
         gilded: "Gilded",
+        ears: "Ears",
+        petals: "First bloom",
+        crown: "Crown",
       },
       effect: {
         none: "Plain name",
