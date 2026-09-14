@@ -20,7 +20,7 @@ import {
   type RewardLine,
 } from "@/shared/ui";
 import { CheckIcon, CrownIcon, SparkleIcon } from "@/shared/ui/icons";
-import { CoinMark, EnergyMark, StreakMark } from "@/shared/ui/marks";
+import { CoinMark, EnergyMark, StreakFlame } from "@/shared/ui/marks";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
@@ -178,9 +178,19 @@ export const DailyPage = () => {
           <SectionHead title={t("economy.streak")} />
           <Panel className="px-4 py-4">
             <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2 font-display text-[15px] font-extrabold tracking-[-0.01em]">
-                <StreakMark size={18} />
-                {t("economy.streakDay", { day: streakDay })}
+              {/* The flame is the counter. It grows with the run and changes
+                  what it is made of, which is the only thing that can carry a
+                  streak with no ceiling on it. */}
+              <span className="flex items-center gap-2.5">
+                <StreakFlame tier={state?.streak.tier} size={34} />
+                <span className="min-w-0">
+                  <span className="block font-display text-[15px] font-extrabold tracking-[-0.01em]">
+                    {t("economy.streakDay", { day: streakDay })}
+                  </span>
+                  <span className="mt-0.5 block text-[12px] text-hint">
+                    {t(`economy.streakTier.${state?.streak.tier ?? "spark"}`)}
+                  </span>
+                </span>
               </span>
               {state?.streak.claimedToday ? (
                 <span className="flex items-center gap-1.5 font-display text-[12.5px] font-bold text-hint">
@@ -194,8 +204,8 @@ export const DailyPage = () => {
               )}
             </div>
 
-            {/* Just the run of days. What a day pays is shown when it is
-                claimed, which is the moment it actually matters. */}
+            {/* The week in front of you rather than a fixed ladder, because
+                the run does not stop at seven. */}
             <div className="mt-4 flex gap-1.5">
               {ladder.map((entry) => {
                 const reached = entry.day <= streakDay;

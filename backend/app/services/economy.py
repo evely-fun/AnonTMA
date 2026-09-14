@@ -19,15 +19,34 @@ ENERGY_REFERRAL = 60
 WHEEL_REQUIRED_VOICE_SECONDS = 20 * 60
 WHEEL_MAX_PENDING = 3
 
-STREAK_REWARDS = [
-    {"day": 1, "energy": 10, "coins": 20, "premiumDays": 0},
-    {"day": 2, "energy": 15, "coins": 30, "premiumDays": 0},
-    {"day": 3, "energy": 20, "coins": 50, "premiumDays": 0},
-    {"day": 4, "energy": 25, "coins": 70, "premiumDays": 0},
-    {"day": 5, "energy": 30, "coins": 90, "premiumDays": 0},
-    {"day": 6, "energy": 40, "coins": 120, "premiumDays": 0},
-    {"day": 7, "energy": 60, "coins": 200, "premiumDays": 1},
-]
+# The streak does not end at a week. It is a formula rather than a table, so
+# day 400 is a real number and not the same payout as day 7. Each day pays less
+# than the old table did, and keeps climbing instead: the reward for keeping it
+# is the curve, not one large cliff.
+STREAK_BASE_ENERGY = 6
+STREAK_BASE_COINS = 12
+# Where the climb levels off. The streak itself never stops, only its slope.
+STREAK_GROWTH_DAYS = 60
+# Every seventh day pays half again, every thirtieth adds a day of premium.
+STREAK_WEEK = 7
+STREAK_MONTH = 30
+
+# What the flame looks like at each stage, and the day it starts on.
+STREAK_TIERS = (
+    ("spark", 1),
+    ("flame", 3),
+    ("steady", 7),
+    ("blaze", 14),
+    ("everburn", 30),
+)
+
+
+def streak_tier(day: int) -> str:
+    name = STREAK_TIERS[0][0]
+    for tier, starts in STREAK_TIERS:
+        if day >= starts:
+            name = tier
+    return name
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,8 +170,19 @@ def register_voice_time(stats: UserStats, seconds: int) -> None:
 
 
 def streak_reward_for(day: int) -> dict:
-    index = min(max(day, 1), len(STREAK_REWARDS)) - 1
-    return STREAK_REWARDS[index]
+    day = max(1, day)
+    steps = min(day, STREAK_GROWTH_DAYS)
+    energy = STREAK_BASE_ENERGY + steps // 2
+    coins = STREAK_BASE_COINS + steps * 3
+    if day % STREAK_WEEK == 0:
+        coins += coins // 2
+    return {
+        "day": day,
+        "energy": energy,
+        "coins": coins,
+        "premiumDays": 1 if day % STREAK_MONTH == 0 else 0,
+        "tier": streak_tier(day),
+    }
 
 
 async def claim_streak(session: AsyncSession, user: User, stats: UserStats) -> dict | None:
@@ -179,6 +209,7 @@ async def claim_streak(session: AsyncSession, user: User, stats: UserStats) -> d
         "energy": gained,
         "coins": int(reward["coins"]),
         "premiumDays": int(reward["premiumDays"]),
+        "tier": streak_tier(stats.streak_days or 1),
     }
 
 
@@ -248,7 +279,17 @@ def state_payload(user: User, stats: UserStats) -> dict:
         "streak": {
             "days": stats.streak_days,
             "claimedToday": stats.streak_claimed_day == today_key(),
+            "tier": streak_tier(stats.streak_days or 1),
+            "nextReward": streak_reward_for((stats.streak_days or 1) + 1),
             "reward": streak_reward_for(stats.streak_days or 1),
-            "ladder": STREAK_REWARDS,
+            # A window on the curve rather than a fixed week: what you are on
+            # now and the six days in front of you, wherever you are.
+            "ladder": [
+                streak_reward_for(day)
+                for day in range(
+                    max(1, (stats.streak_days or 1)),
+                    max(1, (stats.streak_days or 1)) + 7,
+                )
+            ],
         },
     }

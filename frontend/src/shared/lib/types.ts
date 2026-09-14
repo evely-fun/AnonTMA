@@ -207,6 +207,7 @@ export interface StreakReward {
   energy: number;
   coins: number;
   premiumDays: number;
+  tier?: string;
 }
 
 export interface EconomyState {
@@ -226,7 +227,9 @@ export interface EconomyState {
   streak: {
     days: number;
     claimedToday: boolean;
+    tier: string;
     reward: StreakReward;
+    nextReward: StreakReward;
     ladder: StreakReward[];
   };
 }

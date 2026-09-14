@@ -646,6 +646,13 @@ export const ru: Dictionary = {
     dailyTitle: "Ежедневные награды",
     streak: "Огонёк",
     streakDay: "День {day}",
+    streakTier: {
+      spark: "Искра",
+      flame: "Горит",
+      steady: "Ровное пламя",
+      blaze: "Пожар",
+      everburn: "Вечный огонь",
+    },
     claim: "Забрать",
     claimed: "Забрано сегодня",
     claimedToast: "Награда за огонёк получена",

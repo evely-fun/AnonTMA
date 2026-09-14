@@ -176,8 +176,6 @@
   --cosmetic-tint: 0.5;
   --cosmetic-ink: oklch(0.97 0.005 var(--ground-hue));
   --nav-l: 0.78;
-  --hero-l: 0.62;
-  --hero-ink: oklch(0.16 0.02 var(--ground-hue));
   --orb-lightness: 0.42;
   --orb-alpha: 0.8;
 }
@@ -208,8 +206,6 @@
   --action-bg: oklch(0.26 0.02 var(--ground-hue));
   --action-ink: oklch(0.98 0.004 var(--ground-hue));
   --nav-l: 0.55;
-  --hero-l: 0.72;
-  --hero-ink: oklch(0.18 0.03 28);
   --on-accent: oklch(0.99 0.003 var(--ground-hue));
   --veil: oklch(0.22 0.014 var(--ground-hue) / 0.3);
   --island: oklch(1 0 0 / 0.9);
@@ -453,6 +449,16 @@
 
   .glass {
     background: var(--bar-solid);
+  }
+
+  /*
+    The inactive tab mark. Same drawing, colour taken out and a little of its
+    weight with it, so the tab you are on is the only coloured thing in the row
+    and the two states line up pixel for pixel.
+  */
+  .nav-mark-dim {
+    filter: grayscale(1) opacity(0.45) contrast(0.9);
+    transition: filter 200ms ease;
   }
 
   .nav-island {
@@ -731,14 +737,15 @@
   }
 
   /*
-    The one button on the home screen. It is a single solid fill in the search
-    hue with ink on top, so the drawing sits on the button rather than the
-    button being a picture with a label stuck under it, and there is no seam to
-    break when the theme flips.
+    The one button on the home screen. It is ink, not colour: the rule is that
+    contrast says what you can press and colour says what a thing is, and a
+    whole screen of saturated red for a button breaks it. The drawing sits on
+    the button's own fill, so there is still no seam to come apart when the
+    theme flips.
   */
   .home-hero {
-    background: oklch(var(--hero-l) var(--chroma-search) var(--hue-search));
-    color: var(--hero-ink);
+    background: var(--action-bg);
+    color: var(--action-ink);
     box-shadow: var(--panel-shadow);
   }
 

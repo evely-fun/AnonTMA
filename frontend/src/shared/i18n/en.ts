@@ -644,6 +644,13 @@ export const en = {
     dailyTitle: "Daily rewards",
     streak: "Streak",
     streakDay: "Day {day}",
+    streakTier: {
+      spark: "A spark",
+      flame: "Burning",
+      steady: "Steady",
+      blaze: "A blaze",
+      everburn: "Everburn",
+    },
     claim: "Claim",
     claimed: "Claimed today",
     claimedToast: "Streak reward claimed",

@@ -11,7 +11,7 @@ import { clockFormat } from "@/shared/lib/format";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
 import { Avatar, Meter, Segmented, TabScreen } from "@/shared/ui";
-import { CoinMark, EnergyMark, StreakMark } from "@/shared/ui/marks";
+import { CoinMark, EnergyMark, StreakFlame } from "@/shared/ui/marks";
 import { useChat } from "@/store/chat";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
@@ -178,7 +178,7 @@ export const HomePage = () => {
             {profile?.stats?.coins ?? 0}
           </span>
           <span className="flex items-center gap-1.5 text-[13px] text-secondary tabular">
-            <StreakMark size={16} />
+            <StreakFlame tier={economy?.streak.tier} size={17} />
             {economy?.streak.days ?? 0}
           </span>
         </m.button>
