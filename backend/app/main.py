@@ -13,6 +13,7 @@ from app.api.v1 import (
     economy,
     friends,
     games,
+    owner,
     rooms,
     shop,
     support,
@@ -102,7 +103,7 @@ async def health() -> dict:
     return {"status": "ok", "environment": settings.environment}
 
 
-for module in (auth, users, friends, rooms, games, config, economy, shop, admin, support):
+for module in (auth, users, friends, rooms, games, config, economy, shop, admin, support, owner):
     app.include_router(module.router, prefix=settings.api_prefix)
 
 app.include_router(telegram.router)

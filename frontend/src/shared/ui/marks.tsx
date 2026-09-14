@@ -1,5 +1,6 @@
 import coinArt from "@/assets/currency/coin.webp";
 import energyArt from "@/assets/currency/energy.webp";
+import starArt from "@/assets/currency/star.webp";
 import streakArt from "@/assets/currency/streak.webp";
 import streakBlaze from "@/assets/streak/blaze.webp";
 import streakEverburn from "@/assets/streak/everburn.webp";
@@ -48,6 +49,11 @@ export const EnergyMark = ({
   size?: number;
   className?: string;
 }) => <Mark src={energyArt} size={size} className={className} />;
+
+/** The Telegram star, drawn rather than traced from a glyph. */
+export const StarMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={starArt} size={size} className={className} />
+);
 
 export const StreakMark = ({
   size = 16,

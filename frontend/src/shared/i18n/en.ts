@@ -841,9 +841,11 @@ export const en = {
       rare: "Rare",
       epic: "Epic",
       legendary: "Legendary",
+      mythic: "Developer",
     },
     items: {
       avatar: {
+        pilot02: "Unit 02",
         adventurer: "Adventurer",
         neko: "Mochi",
         ronin: "Drift",
@@ -861,6 +863,7 @@ export const en = {
         pixelArt: "Pixel art",
       },
       frame: {
+        crest: "Developer crest",
         none: "No frame",
         halo: "Halo",
         pulse: "Pulse",
@@ -872,12 +875,19 @@ export const en = {
         crown: "Crown",
       },
       effect: {
+        crimson: "Crimson",
         none: "Plain name",
         gradient: "Gradient name",
         glow: "Glowing name",
         aurora: "Aurora name",
+        ember: "Ember",
+        chrome: "Chrome",
+        shine: "Shine",
+        pulse: "Heartbeat",
+        marker: "Highlighter",
       },
       background: {
+        forge: "The forge",
         none: "No background",
         dawn: "Dawn",
         tide: "Tide",

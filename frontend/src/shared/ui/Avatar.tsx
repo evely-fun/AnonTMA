@@ -1,4 +1,6 @@
 import { m } from "motion/react";
+
+import crestArt from "@/assets/owner/crest.webp";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -21,6 +23,7 @@ const FRAME_KEYS = [
   "ears",
   "crown",
   "petals",
+  "crest",
 ] as const;
 export type AvatarFrame = (typeof FRAME_KEYS)[number];
 
@@ -92,6 +95,22 @@ const FrameLayer = ({ frame }: { frame: AvatarFrame }) => {
   }
   // Ears sit on the ring rather than round it, and twitch once in a while
   // instead of running a loop you can feel. The crown bobs, the petals drift.
+  // The developer crest. One piece, never sold, so it is drawn rather than
+  // assembled out of the ring parts the rest of the set shares.
+  if (frame === "crest") {
+    return (
+      <>
+        <span className="frame-ring frame-crest-ring" />
+        <m.img
+          src={crestArt}
+          alt=""
+          className="frame-crest-badge"
+          animate={{ y: [0, -1.5, 0] }}
+          transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </>
+    );
+  }
   if (frame === "ears") {
     return (
       <>

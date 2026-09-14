@@ -20,9 +20,8 @@ import {
   CrownIcon,
   LockIcon,
   SparkleIcon,
-  TelegramStarIcon,
 } from "@/shared/ui/icons";
-import { CoinMark, EnergyMark } from "@/shared/ui/marks";
+import { CoinMark, EnergyMark, StarMark } from "@/shared/ui/marks";
 import { useEconomy } from "@/store/economy";
 import { defaultStyleFor } from "@/shared/lib/avatars";
 import { useSession } from "@/store/session";
@@ -49,6 +48,7 @@ const RARITY_TONE: Record<ShopItem["rarity"], string> = {
   rare: "text-accent",
   epic: "text-warn",
   legendary: "text-destructive",
+  mythic: "text-destructive",
 };
 
 const Preview = ({
@@ -193,7 +193,7 @@ const StarShelf = () => {
             size="sm"
             loading={pending === product.key}
             onClick={() => void buy(product.key)}
-            icon={<TelegramStarIcon size={15} />}
+            icon={<StarMark size={16} />}
           >
             {product.stars}
           </Button>

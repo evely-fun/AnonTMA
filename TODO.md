@@ -20,29 +20,19 @@ comments on it.
 - **Home**, one ink card with its own drawing per mode, identical in both
   themes.
 - **Avatar pack**, six drawn characters. **Crest frames**, ears, petals, crown.
+- **Game art**, five role cards, four phase banners and a nine piece Bunker
+  deck, all in the same clay as the covers.
+- **Bunker** rebuilt on the official rules: four passes a round, the seventy
+  percent threshold, a second vote, ties that take everyone in them.
+- **Economy**, an invite ladder that pays most for the first few, streak
+  freezes, and a stars shelf selling coins and one set stars alone can buy.
+- **Alias** in pairs over four rounds, swapping roles between them.
+- **Broken Telephone** as the drawing chain, with a canvas and a gallery.
 
-## **2. Bunker to the official rules**
+## **Economy**
 
-Rebuild against https://bunker-online.com/ru/rules.
-
-- Six to fifteen players, places are half the table rounded down.
-- A minute of introduction per player, a minute of general discussion, thirty
-  seconds of defence each, fifteen seconds to vote.
-- How many traits open per round comes from a table keyed on the player count,
-  and the profession always opens in round one.
-- Seventy percent of the votes excludes at once. A plurality under that gives
-  thirty seconds of defence and a revote. A tie does the same. A tie on the
-  revote excludes everyone tied, except in round one, which never excludes.
-- Seven rounds at most, and the game ends as soon as the bunker is full.
-- Action cards are barred during last words.
-
-## **Economy, still to do**
-
-- A Telegram Stars shop. Nothing exists yet.
-- Much bigger rewards for an invite, weighted to the first few. Today an invite
-  pays a flat hundred coins.
-- Streak freezes in the Duolingo shape: a freeze is spent automatically on a
-  missed day, and can be bought and stockpiled. Nothing exists yet.
+Done. Still worth doing later: live payments need `PAYMENTS_MODE=live` and a
+bot token on the API service, and the stars catalogue could use seasonal sets.
 
 ## **Home**
 
@@ -55,17 +45,7 @@ Done: one card with its own drawing per mode, and the mode switch above it.
 - Every asset generated in our own style, backgrounds cut, checked against a
   real card before it ships.
 
-## **8. Alias**
-
-Pairs of two players, four rounds, a skipped word costs a point.
-
-## **9. Broken Telephone**
-
-The drawing chain: write a situation in thirty seconds, the neighbour draws it
-in sixty, the next writes what they see. Two rounds, then a vote on the best
-chain. Needs a canvas and per step image storage.
-
-## **10. Full design pass**
+## **Full design pass**
 
 Every screen once the above lands. Motion, spacing, empty and loading states,
 phone and desktop, both themes, both locales.

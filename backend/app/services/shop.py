@@ -23,6 +23,9 @@ class Item:
     value: str
     rarity: str
     premiumOnly: bool = False
+    # Never shown on a shelf and never purchasable. The only way in is a grant
+    # or a promo code, which is what makes these actually rare.
+    exclusive: bool = False
 
 
 # Cosmetics are permanent unlocks, boosts are consumed on purchase.
@@ -65,6 +68,11 @@ CATALOG: tuple[Item, ...] = (
     Item("effect.gradient", "effect", 1200, "gradient", "common"),
     Item("effect.glow", "effect", 2200, "glow", "rare"),
     Item("effect.aurora", "effect", 3500, "aurora", "epic"),
+    Item("effect.ember", "effect", 1400, "ember", "common"),
+    Item("effect.marker", "effect", 1600, "marker", "common"),
+    Item("effect.pulse", "effect", 1900, "pulse", "rare"),
+    Item("effect.shine", "effect", 2600, "shine", "rare"),
+    Item("effect.chrome", "effect", 4100, "chrome", "legendary"),
 
     Item("background.none", "background", 0, "none", "base"),
     Item("background.dawn", "background", 600, "dawn", "common"),
@@ -85,10 +93,17 @@ CATALOG: tuple[Item, ...] = (
 
     Item("premium.week", "premium", 4000, "7", "epic"),
     Item("premium.month", "premium", 14000, "30", "legendary"),
+
+    # Developer pieces. Not for sale, not on any shelf.
+    Item("avatar.pilot02", "avatar", 0, "pilot02", "mythic", exclusive=True),
+    Item("frame.crest", "frame", 0, "crest", "mythic", exclusive=True),
+    Item("effect.crimson", "effect", 0, "crimson", "mythic", exclusive=True),
+    Item("background.forge", "background", 0, "forge", "mythic", exclusive=True),
 )
 
 BY_KEY = {item.key: item for item in CATALOG}
-FREE_KEYS = {item.key for item in CATALOG if item.price == 0}
+FREE_KEYS = {item.key for item in CATALOG if item.price == 0 and not item.exclusive}
+EXCLUSIVE_KEYS = {item.key for item in CATALOG if item.exclusive}
 SLOTS = {"avatar": "avatar", "frame": "frame", "effect": "effect", "background": "background"}
 DEFAULT_EQUIPPED = {
     "avatar": "adventurer",
@@ -120,8 +135,12 @@ def catalog_payload(owned: set[str], coins: int) -> list[dict]:
             "owned": item.key in owned,
             "affordable": coins >= item.price,
             "consumable": item.category in ("boost", "premium"),
+            "exclusive": item.exclusive,
         }
+        # An exclusive piece only appears once it is yours, and then only as
+        # something to wear rather than something to buy.
         for item in CATALOG
+        if not item.exclusive or item.key in owned
     ]
 
 
@@ -129,6 +148,8 @@ async def buy(session: AsyncSession, user: User, key: str) -> dict:
     item = BY_KEY.get(key)
     if item is None:
         return {"error": "unknown_item"}
+    if item.exclusive:
+        return {"error": "not_for_sale"}
 
     stats = await session.get(UserStats, user.id)
     if stats is None:

@@ -15,7 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, BigIntPk, IntPk, TimestampMixin
+from app.db.base import Base, BigIntPk, IntPk, TimestampMixin, utcnow
 
 
 class Gender(StrEnum):
@@ -376,3 +376,56 @@ class SupportMessage(Base, BigIntPk, TimestampMixin):
     author_id: Mapped[int] = mapped_column(BigInteger, index=True)
     from_staff: Mapped[bool] = mapped_column(Boolean, default=False)
     body: Mapped[str] = mapped_column(Text, default="")
+
+
+class PromoCode(Base, BigIntPk, TimestampMixin):
+    __tablename__ = "promo_codes"
+
+    code: Mapped[str] = mapped_column(String(24), unique=True, index=True)
+    items: Mapped[list] = mapped_column(JSON, default=list)
+    coins: Mapped[int] = mapped_column(Integer, default=0)
+    premium_days: Mapped[int] = mapped_column(Integer, default=0)
+    max_uses: Mapped[int] = mapped_column(Integer, default=1)
+    used: Mapped[int] = mapped_column(Integer, default=0)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
+    note: Mapped[str | None] = mapped_column(String(120))
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class PromoRedemption(Base, BigIntPk):
+    __tablename__ = "promo_redemptions"
+    __table_args__ = (Index("ix_redeem_once", "code_id", "user_id", unique=True),)
+
+    code_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    redeemed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class StaffGrant(Base, BigIntPk):
+    """Every hand out, written down. The ledger is what keeps a panel with this
+    much reach honest, and it is the only place the two ends are linked."""
+
+    __tablename__ = "staff_grants"
+    __table_args__ = (Index("ix_grant_target", "target_id", "id"),)
+
+    actor_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    target_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    kind: Mapped[str] = mapped_column(String(16), default="item")
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    note: Mapped[str | None] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Notice(Base, BigIntPk):
+    """Something the app owes a person the next time they open it: a warning,
+    a mute, a gift. A sanction nobody is told about teaches nothing."""
+
+    __tablename__ = "notices"
+    __table_args__ = (Index("ix_notice_inbox", "user_id", "seen", "id"),)
+
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    kind: Mapped[str] = mapped_column(String(24), default="info")
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    seen: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

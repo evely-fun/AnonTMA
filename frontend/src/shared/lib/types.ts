@@ -263,10 +263,12 @@ export interface ShopItem {
   category: "avatar" | "frame" | "effect" | "background" | "palette" | "boost" | "premium";
   value: string;
   price: number;
-  rarity: "base" | "common" | "rare" | "epic" | "legendary";
+  rarity: "base" | "common" | "rare" | "epic" | "legendary" | "mythic";
   owned: boolean;
   affordable: boolean;
   consumable: boolean;
+  /** Never on a shelf: a grant or a promo code is the only way in. */
+  exclusive?: boolean;
 }
 
 export interface ModerationTarget {

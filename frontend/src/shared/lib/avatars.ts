@@ -4,6 +4,7 @@ import asuka from "@/assets/portraits/asuka.webp";
 import kitsune from "@/assets/portraits/kitsune.webp";
 import neko from "@/assets/portraits/neko.webp";
 import pilot from "@/assets/portraits/pilot.webp";
+import pilot02 from "@/assets/portraits/pilot02.webp";
 import ronin from "@/assets/portraits/ronin.webp";
 import scholar from "@/assets/portraits/scholar.webp";
 
@@ -36,6 +37,7 @@ export type PortraitStyle =
   | "ronin"
   | "kitsune"
   | "pilot"
+  | "pilot02"
   | "scholar";
 
 export const PORTRAITS: Record<PortraitStyle, string> = {
@@ -44,6 +46,7 @@ export const PORTRAITS: Record<PortraitStyle, string> = {
   ronin,
   kitsune,
   pilot,
+  pilot02,
   scholar,
 };
 

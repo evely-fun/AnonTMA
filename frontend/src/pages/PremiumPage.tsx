@@ -14,9 +14,9 @@ import {
   PaletteIcon,
   ShieldIcon,
   SparkleIcon,
-  TelegramStarIcon,
   WaveIcon,
 } from "@/shared/ui/icons";
+import { StarMark } from "@/shared/ui/marks";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
@@ -158,7 +158,7 @@ export const PremiumPage = () => {
                   size="sm"
                   loading={pending === product.key}
                   onClick={() => void buy(product.key)}
-                  icon={<TelegramStarIcon size={15} />}
+                  icon={<StarMark size={16} />}
                 >
                   {product.stars}
                 </Button>

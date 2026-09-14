@@ -149,21 +149,30 @@ async def resolve(
     hours = ACTIONS[action]
     upheld = action not in ("dismiss", "unban")
 
+    # Whatever happens, the person it happened to is told. A sanction nobody
+    # hears about changes a number and teaches nothing.
+    from app.services import notices
+
     if action == "warn":
         target.warnings += 1
+        await notices.push(session, target.id, "warning", {"count": target.warnings})
     elif action == "mute_24h":
         target.muted_until = utcnow() + timedelta(hours=hours)
+        await notices.push(session, target.id, "muted", {"hours": hours})
     elif action == "ban_7d":
         target.is_banned = True
         target.banned_until = utcnow() + timedelta(hours=hours)
+        await notices.push(session, target.id, "banned", {"hours": hours})
     elif action == "ban_permanent":
         target.is_banned = True
         target.banned_until = None
+        await notices.push(session, target.id, "banned", {"hours": 0})
     elif action == "unban":
         target.is_banned = False
         target.banned_until = None
         target.muted_until = None
         target.trust_score = max(target.trust_score, 70)
+        await notices.push(session, target.id, "unbanned", {})
     elif action == "dismiss":
         target.trust_score = min(100, target.trust_score + 8)
 

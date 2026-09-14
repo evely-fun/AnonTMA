@@ -1,4 +1,14 @@
-export type NameEffect = "none" | "gradient" | "glow" | "aurora";
+export type NameEffect =
+  | "none"
+  | "gradient"
+  | "glow"
+  | "aurora"
+  | "ember"
+  | "chrome"
+  | "shine"
+  | "pulse"
+  | "marker"
+  | "crimson";
 
 export type ProfileBackground =
   | "none"
@@ -7,13 +17,20 @@ export type ProfileBackground =
   | "mesh"
   | "nebula"
   | "prism"
-  | "aurora";
+  | "aurora"
+  | "forge";
 
 const CLASSES: Record<NameEffect, string> = {
   none: "",
   gradient: "name-gradient",
   glow: "name-glow",
   aurora: "name-aurora",
+  ember: "name-ember",
+  chrome: "name-chrome",
+  shine: "name-shine",
+  pulse: "name-pulse",
+  marker: "name-marker",
+  crimson: "name-crimson",
 };
 
 const BACKGROUNDS: Record<ProfileBackground, string> = {
@@ -24,6 +41,7 @@ const BACKGROUNDS: Record<ProfileBackground, string> = {
   nebula: "skin-nebula",
   prism: "skin-prism",
   aurora: "skin-aurora",
+  forge: "skin-forge",
 };
 
 export const PROFILE_BACKGROUNDS: ProfileBackground[] = [

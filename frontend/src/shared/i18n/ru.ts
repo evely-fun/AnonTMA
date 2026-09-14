@@ -844,9 +844,11 @@ export const ru: Dictionary = {
       rare: "Редкое",
       epic: "Эпическое",
       legendary: "Легендарное",
+      mythic: "Разработчик",
     },
     items: {
       avatar: {
+        pilot02: "Второй номер",
         adventurer: "Искатель",
         neko: "Мочи",
         ronin: "Дрифт",
@@ -864,6 +866,7 @@ export const ru: Dictionary = {
         pixelArt: "Пиксель-арт",
       },
       frame: {
+        crest: "Знак разработчика",
         none: "Без рамки",
         halo: "Ореол",
         pulse: "Пульс",
@@ -875,12 +878,19 @@ export const ru: Dictionary = {
         crown: "Корона",
       },
       effect: {
+        crimson: "Багровый",
         none: "Обычное имя",
         gradient: "Градиентное имя",
         glow: "Светящееся имя",
         aurora: "Имя-аврора",
+        ember: "Уголёк",
+        chrome: "Хром",
+        shine: "Блик",
+        pulse: "Сердцебиение",
+        marker: "Маркер",
       },
       background: {
+        forge: "Горн",
         none: "Без фона",
         dawn: "Рассвет",
         tide: "Прилив",

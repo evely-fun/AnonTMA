@@ -530,6 +530,142 @@
     }
   }
 
+  /*
+    The rest of the set. Every one runs off the same hue the owner picks, and
+    every animated one moves a background position or an opacity, so a list of
+    names costs no layout however many of them are wearing something.
+  */
+  .name-ember {
+    background: linear-gradient(
+      180deg,
+      oklch(0.78 0.18 calc(var(--name-hue, 28) + 40)) 0%,
+      oklch(0.62 0.22 var(--name-hue, 28)) 55%,
+      oklch(0.44 0.18 calc(var(--name-hue, 28) - 20)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .name-chrome {
+    background: linear-gradient(
+      104deg,
+      oklch(0.45 0.03 var(--name-hue, 28)) 0%,
+      oklch(0.92 0.02 var(--name-hue, 28)) 28%,
+      oklch(0.5 0.04 var(--name-hue, 28)) 46%,
+      oklch(0.95 0.015 var(--name-hue, 28)) 68%,
+      oklch(0.45 0.03 var(--name-hue, 28)) 100%
+    );
+    background-size: 260% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: aurora-drift 9s linear infinite;
+    will-change: background-position;
+  }
+
+  /* One highlight travelling across an otherwise solid name. */
+  .name-shine {
+    background: linear-gradient(
+      100deg,
+      oklch(0.58 0.18 var(--name-hue, 28)) 0%,
+      oklch(0.58 0.18 var(--name-hue, 28)) 40%,
+      oklch(0.92 0.09 var(--name-hue, 28)) 50%,
+      oklch(0.58 0.18 var(--name-hue, 28)) 60%,
+      oklch(0.58 0.18 var(--name-hue, 28)) 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: aurora-drift 4.5s linear infinite;
+    will-change: background-position;
+  }
+
+  :root[data-theme="dark"] .name-shine {
+    background: linear-gradient(
+      100deg,
+      oklch(0.76 0.16 var(--name-hue, 28)) 0%,
+      oklch(0.76 0.16 var(--name-hue, 28)) 40%,
+      oklch(0.98 0.05 var(--name-hue, 28)) 50%,
+      oklch(0.76 0.16 var(--name-hue, 28)) 60%,
+      oklch(0.76 0.16 var(--name-hue, 28)) 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  /* A slow breath rather than a blink, which is why it is not a pulse. */
+  .name-pulse {
+    color: oklch(0.58 0.2 var(--name-hue, 28));
+    animation: name-breathe 3.4s ease-in-out infinite;
+    will-change: opacity;
+  }
+
+  :root[data-theme="dark"] .name-pulse {
+    color: oklch(0.8 0.17 var(--name-hue, 28));
+  }
+
+  @keyframes name-breathe {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+
+  /* Ink that sits under the name rather than on it. */
+  .name-marker {
+    color: var(--ink-1);
+    background-image: linear-gradient(
+      oklch(0.72 0.19 var(--name-hue, 28) / 0.38),
+      oklch(0.72 0.19 var(--name-hue, 28) / 0.38)
+    );
+    background-repeat: no-repeat;
+    background-size: 100% 42%;
+    background-position: 0 78%;
+    padding-inline: 0.18em;
+    border-radius: 3px;
+  }
+
+  /*
+    The developer name. A deep red gradient with a slow sweep across it, and
+    the only effect in the set that is not for sale at any price.
+  */
+  .name-crimson {
+    background: linear-gradient(
+      98deg,
+      oklch(0.42 0.19 22) 0%,
+      oklch(0.58 0.24 26) 22%,
+      oklch(0.74 0.2 32) 44%,
+      oklch(0.58 0.24 26) 66%,
+      oklch(0.42 0.19 22) 100%
+    );
+    background-size: 260% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: aurora-drift 6s linear infinite;
+    will-change: background-position;
+  }
+
+  :root[data-theme="dark"] .name-crimson {
+    background: linear-gradient(
+      98deg,
+      oklch(0.56 0.2 22) 0%,
+      oklch(0.7 0.23 26) 22%,
+      oklch(0.88 0.16 34) 44%,
+      oklch(0.7 0.23 26) 66%,
+      oklch(0.56 0.2 22) 100%
+    );
+    background-size: 260% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
   /* Avatar frames. Each one is a distinct effect, not a recoloured border. */
   .frame-ring {
     position: absolute;
@@ -662,6 +798,19 @@
     transform: translateX(-50%);
     pointer-events: none;
     overflow: visible;
+  }
+
+  .frame-crest-ring {
+    border: 2px solid oklch(0.6 0.2 26);
+  }
+
+  .frame-crest-badge {
+    position: absolute;
+    left: 50%;
+    top: -34%;
+    width: 52%;
+    transform: translateX(-50%);
+    pointer-events: none;
   }
 
   .frame-crest-fill {
@@ -1015,6 +1164,16 @@
     background-size: 280% 280%, 100% 100%;
     animation: skin-drift 16s ease-in-out infinite alternate;
     will-change: background-position;
+  }
+
+  /*
+    The developer background. A painted ground rather than a gradient, so it
+    is the one profile that cannot be approximated with a colour picker.
+  */
+  .skin-forge {
+    background-image: url("@/assets/owner/forge.webp");
+    background-size: cover;
+    background-position: center;
   }
 
   @keyframes skin-drift {

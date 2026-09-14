@@ -36,6 +36,8 @@ RIGHTS: dict[str, set[str]] = {
         "staff.assign",
         "staff.assign_admin",
         "economy.grant",
+        "owner.panel",
+        "owner.announce",
     },
 }
 
