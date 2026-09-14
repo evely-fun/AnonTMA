@@ -17,6 +17,7 @@ import {
   SendIcon,
   SlidersIcon,
 } from "@/shared/ui/icons";
+import { HandMark } from "@/shared/ui/marks";
 import { useGames } from "@/store/games";
 import { PersonSheet, type Person } from "@/features/moderation/PersonSheet";
 import { EntranceOverlay } from "@/features/rooms/EntranceOverlay";
@@ -240,7 +241,7 @@ export const RoomPage = () => {
               raiseHand(next);
             }}
           >
-            <HandIcon size={19} />
+            <HandMark size={20} />
           </IconButton>
           <IconButton
             label={muted ? t("chat.unmute") : t("chat.mute")}

@@ -8,7 +8,7 @@ import { request } from "@/shared/lib/api";
 import { haptic } from "@/shared/lib/telegram";
 import type { Profile } from "@/shared/lib/types";
 import { Button, OptionRow, Panel, Segmented, Sheet } from "@/shared/ui";
-import { CrownIcon, LockIcon, MicOffIcon } from "@/shared/ui/icons";
+import { CrownMark, LockMark, MutedMark } from "@/shared/ui/marks";
 import { useSession } from "@/store/session";
 import { useVoice } from "@/store/voice";
 
@@ -88,7 +88,7 @@ export const AudioSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
           <p className="px-1 pb-1 text-[12.5px] leading-snug text-hint">{t("voice.changerHint")}</p>
           {maskUnavailable && (
             <div className="mb-1 flex items-start gap-3 rounded-[16px] bg-warn/15 px-4 py-3">
-              <MicOffIcon size={17} className="mt-0.5 shrink-0 text-warn" />
+              <MutedMark size={18} className="mt-0.5 shrink-0" />
               <p className="flex-1 text-[12.5px] leading-snug text-secondary">
                 <span className="block font-display font-bold text-warn">{t("voice.maskDown")}</span>
                 {t("voice.maskDownBody")}
@@ -97,7 +97,7 @@ export const AudioSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
           )}
           {!premium && (
             <div className="mb-1 flex items-center gap-3 rounded-[16px] bg-accent-quiet px-4 py-3">
-              <CrownIcon size={18} className="shrink-0 text-accent" />
+              <CrownMark size={18} className="shrink-0" />
               <p className="flex-1 text-[12.5px] leading-snug text-secondary">
                 {t("voice.premiumOnly")}
               </p>
@@ -123,7 +123,7 @@ export const AudioSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
                   subtitle={t(`voice.presets.${value}.hint`)}
                   active={preset === value}
                   muted={locked}
-                  trailing={locked ? <LockIcon size={15} className="text-hint" /> : undefined}
+                  trailing={locked ? <LockMark size={15} /> : undefined}
                   onClick={() => choosePreset(value)}
                 />
               );

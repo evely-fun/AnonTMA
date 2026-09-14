@@ -96,7 +96,10 @@ CATALOG: tuple[Item, ...] = (
 
     # Developer pieces. Not for sale, not on any shelf.
     Item("avatar.pilot02", "avatar", 0, "pilot02", "mythic", exclusive=True),
-    Item("frame.crest", "frame", 0, "crest", "mythic", exclusive=True),
+    Item("frame.veil", "frame", 0, "veil", "mythic", exclusive=True),
+    Item("frame.sigil", "frame", 0, "sigil", "mythic", exclusive=True),
+    Item("frame.relic", "frame", 0, "relic", "mythic", exclusive=True),
+    Item("frame.moth", "frame", 0, "moth", "mythic", exclusive=True),
     Item("effect.crimson", "effect", 0, "crimson", "mythic", exclusive=True),
     Item("background.forge", "background", 0, "forge", "mythic", exclusive=True),
 )

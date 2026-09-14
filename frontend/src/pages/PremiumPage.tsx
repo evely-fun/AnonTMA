@@ -7,27 +7,26 @@ import { useT } from "@/shared/i18n";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic, openLink } from "@/shared/lib/telegram";
 import { Button, PushScreen, ScreenHeader, SectionHead, tileArt } from "@/shared/ui";
+import { CheckIcon, WaveIcon } from "@/shared/ui/icons";
 import {
-  GiftIcon,
-  BoltIcon,
-  CheckIcon,
-  PaletteIcon,
-  ShieldIcon,
-  SparkleIcon,
-  WaveIcon,
-} from "@/shared/ui/icons";
-import { StarMark } from "@/shared/ui/marks";
+  EnergyMark,
+  GiftMark,
+  PaletteMark,
+  ShieldMark,
+  SparkMark,
+  StarMark,
+} from "@/shared/ui/marks";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 
 const PERKS = [
-  { key: "energy", Icon: BoltIcon },
+  { key: "energy", Icon: EnergyMark },
   { key: "voice", Icon: WaveIcon },
-  { key: "noise", Icon: ShieldIcon },
-  { key: "themes", Icon: PaletteIcon },
-  { key: "priority", Icon: SparkleIcon },
-  { key: "wheel", Icon: GiftIcon },
+  { key: "noise", Icon: ShieldMark },
+  { key: "themes", Icon: PaletteMark },
+  { key: "priority", Icon: SparkMark },
+  { key: "wheel", Icon: GiftMark },
 ];
 
 export const PremiumPage = () => {

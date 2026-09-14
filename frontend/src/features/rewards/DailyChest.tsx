@@ -10,8 +10,8 @@ import {
 import { useT } from "@/shared/i18n";
 import { spring } from "@/shared/lib/motion";
 import type { WheelPrize } from "@/shared/lib/types";
-import { CrownIcon } from "@/shared/ui/icons";
-import { CoinMark, EnergyMark } from "@/shared/ui/marks";
+
+import { CoinMark, CrownMark, EnergyMark } from "@/shared/ui/marks";
 
 /** Frames of the rendered chest opening, in order. */
 const FRAMES = Object.entries(
@@ -34,7 +34,7 @@ export interface DailyChestHandle {
 const KIND_ICON = {
   energy: EnergyMark,
   coins: CoinMark,
-  premium: CrownIcon,
+  premium: CrownMark,
 } as const;
 
 const KIND_TONE = {

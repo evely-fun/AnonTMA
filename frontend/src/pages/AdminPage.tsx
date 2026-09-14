@@ -20,7 +20,7 @@ import {
   Sheet,
   Skeleton,
 } from "@/shared/ui";
-import { ShieldIcon } from "@/shared/ui/icons";
+import { GavelMark } from "@/shared/ui/marks";
 import { useAdmin } from "@/store/admin";
 import { toast } from "@/store/ui";
 
@@ -225,7 +225,7 @@ export const AdminPage = () => {
           </div>
         ) : cases.length === 0 ? (
           <EmptyState
-            icon={<ShieldIcon size={24} />}
+            icon={<GavelMark size={28} />}
             title={t("admin.empty")}
             description={t("admin.emptyHint")}
           />

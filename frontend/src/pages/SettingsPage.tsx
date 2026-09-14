@@ -25,7 +25,8 @@ import {
   Sheet,
   Switch,
 } from "@/shared/ui";
-import { CheckIcon, CrownIcon, HelpIcon, LockIcon, SparkleIcon } from "@/shared/ui/icons";
+import { CheckIcon, LockIcon } from "@/shared/ui/icons";
+import { CrownMark, GavelMark, PromoMark, SupportMark } from "@/shared/ui/marks";
 import { useSession } from "@/store/session";
 import { useShop } from "@/store/shop";
 import { toast } from "@/store/ui";
@@ -288,7 +289,7 @@ export const SettingsPage = () => {
                   onClick={() => navigate("/premium")}
                   className="flex items-center gap-1.5 font-display text-[13px] font-bold text-accent"
                 >
-                  <CrownIcon size={14} />
+                  <CrownMark size={15} />
                   {t("common.premium")}
                 </button>
               )
@@ -412,14 +413,14 @@ export const SettingsPage = () => {
           <SectionHead title={t("support.title")} note={t("support.subtitle")} />
           <Panel>
             <ListRow
-              leading={<IconTile tone="accent"><HelpIcon size={18} /></IconTile>}
+              leading={<IconTile tone="accent"><SupportMark size={20} /></IconTile>}
               title={t("support.newTicket")}
               subtitle={t("support.settingsHint")}
               chevron
               onClick={() => navigate("/support")}
             />
             <ListRow
-              leading={<IconTile tone="warn"><SparkleIcon size={18} /></IconTile>}
+              leading={<IconTile tone="warn"><PromoMark size={20} /></IconTile>}
               title={t("owner.redeem")}
               subtitle={t("owner.redeemHint")}
               chevron
@@ -430,7 +431,7 @@ export const SettingsPage = () => {
             />
             {profile.rights?.includes("owner.panel") && (
               <ListRow
-                leading={<IconTile tone="danger"><CrownIcon size={18} /></IconTile>}
+                leading={<IconTile tone="danger"><GavelMark size={20} /></IconTile>}
                 title={t("owner.open")}
                 subtitle={t("owner.openHint")}
                 chevron

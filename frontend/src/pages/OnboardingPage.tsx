@@ -6,7 +6,8 @@ import { request } from "@/shared/lib/api";
 import { ease, pop } from "@/shared/lib/motion";
 import type { Profile } from "@/shared/lib/types";
 import { Avatar, Button, Chip, LevelBars, Meter, tileArt } from "@/shared/ui";
-import { CrownIcon, MicIcon, ShieldIcon } from "@/shared/ui/icons";
+import { MicIcon, ShieldIcon } from "@/shared/ui/icons";
+import { CrownMark } from "@/shared/ui/marks";
 import { CoinMark, EnergyMark } from "@/shared/ui/marks";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
@@ -288,7 +289,7 @@ export const OnboardingPage = () => {
                   body: t("onboarding.coinsBody"),
                 },
                 {
-                  icon: <CrownIcon size={19} />,
+                  icon: <CrownMark size={20} />,
                   tone: "bg-accent-quiet text-accent",
                   title: t("onboarding.premiumWhat"),
                   body: t("onboarding.premiumBody"),

@@ -4,6 +4,7 @@ import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { haptic } from "@/shared/lib/telegram";
 import { Avatar, Button, Chip, OptionRow, Sheet } from "@/shared/ui";
+import { BanMark, FlagMark, MutedMark } from "@/shared/ui/marks";
 import { toast } from "@/store/ui";
 
 interface Record {
@@ -119,10 +120,21 @@ export const PersonSheet = ({
             {record ? (
               <div className="flex flex-wrap gap-1.5">
                 <Chip tone={record.warnings > 0 ? "danger" : "neutral"}>
+                  <FlagMark size={13} />
                   {t("moderation.warnings", { count: record.warnings })}
                 </Chip>
-                {record.isBanned && <Chip tone="danger">{t("admin.banned")}</Chip>}
-                {record.mutedUntil && <Chip tone="danger">{t("admin.muted")}</Chip>}
+                {record.isBanned && (
+                  <Chip tone="danger">
+                    <BanMark size={13} />
+                    {t("admin.banned")}
+                  </Chip>
+                )}
+                {record.mutedUntil && (
+                  <Chip tone="danger">
+                    <MutedMark size={13} />
+                    {t("admin.muted")}
+                  </Chip>
+                )}
               </div>
             ) : (
               <p className="text-[12.5px] leading-snug text-hint">{t("moderation.anonHint")}</p>

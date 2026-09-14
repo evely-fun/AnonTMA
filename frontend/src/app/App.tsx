@@ -33,7 +33,8 @@ import { applyAppearance, watchScheme, type Palette, type ThemeMode } from "@/sh
 import { useDesktopWheel } from "@/shared/hooks/useDesktopWheel";
 import { realtime } from "@/shared/lib/socket";
 import { Avatar, Button, Toaster } from "@/shared/ui";
-import { InfinityIcon, MaskIcon } from "@/shared/ui/icons";
+import { MaskIcon } from "@/shared/ui/icons";
+import { InfinityMark } from "@/shared/ui/marks";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 
@@ -159,7 +160,7 @@ const Currencies = () => {
         tint="bg-warn/12"
         value={
           state?.unlimited ? (
-            <InfinityIcon size={15} className="text-accent" />
+            <InfinityMark size={15} />
           ) : (
             (state?.energy ?? 0)
           )

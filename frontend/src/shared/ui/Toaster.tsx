@@ -3,12 +3,13 @@ import { AnimatePresence, m } from "motion/react";
 import { spring } from "@/shared/lib/motion";
 import { useUi } from "@/store/ui";
 
-import { CheckIcon, FlagIcon, SparkleIcon } from "./icons";
+import { CheckIcon } from "./icons";
+import { FlagMark, SparkMark } from "./marks";
 
 const ICONS = {
-  neutral: SparkleIcon,
+  neutral: SparkMark,
   success: CheckIcon,
-  danger: FlagIcon,
+  danger: FlagMark,
 };
 
 const TONES = {

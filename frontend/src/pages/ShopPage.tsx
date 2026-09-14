@@ -17,11 +17,9 @@ import type { ShopItem } from "@/shared/lib/types";
 import { Avatar, Button, IconTile, PushScreen, Rail, ScreenHeader } from "@/shared/ui";
 import {
   CheckIcon,
-  CrownIcon,
   LockIcon,
-  SparkleIcon,
 } from "@/shared/ui/icons";
-import { CoinMark, EnergyMark, StarMark } from "@/shared/ui/marks";
+import { CoinMark, CrownMark, EnergyMark, SparkMark, StarMark } from "@/shared/ui/marks";
 import { useEconomy } from "@/store/economy";
 import { defaultStyleFor } from "@/shared/lib/avatars";
 import { useSession } from "@/store/session";
@@ -94,14 +92,14 @@ const Preview = ({
   if (item.category === "premium") {
     return (
       <span className="flex size-11 items-center justify-center rounded-[14px] bg-accent-quiet text-accent">
-        <CrownIcon size={21} />
+        <CrownMark size={22} />
       </span>
     );
   }
   if (item.category === "boost") {
     return (
       <span className="flex size-11 items-center justify-center rounded-[14px] bg-warn/15 text-warn">
-        <SparkleIcon size={20} />
+        <SparkMark size={21} />
       </span>
     );
   }
@@ -178,7 +176,7 @@ const StarShelf = () => {
             ) : product.kind === "energy" ? (
               <EnergyMark size={22} />
             ) : (
-              <CrownIcon size={20} />
+              <CrownMark size={21} />
             )}
           </IconTile>
           <span className="min-w-0 flex-1">

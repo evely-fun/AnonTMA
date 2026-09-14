@@ -1,6 +1,9 @@
 import { m } from "motion/react";
 
-import crestArt from "@/assets/owner/crest.webp";
+import mothArt from "@/assets/owner/moth.webp";
+import relicArt from "@/assets/owner/relic.webp";
+import sigilArt from "@/assets/owner/sigil.webp";
+import veilArt from "@/assets/owner/veil.webp";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -23,7 +26,10 @@ const FRAME_KEYS = [
   "ears",
   "crown",
   "petals",
-  "crest",
+  "veil",
+  "sigil",
+  "relic",
+  "moth",
 ] as const;
 export type AvatarFrame = (typeof FRAME_KEYS)[number];
 
@@ -46,6 +52,15 @@ const hash = (value: string): number => {
   }
   return Math.abs(output);
 };
+
+/** The charms only the developer set carries. */
+const RARE = {
+  veil: veilArt,
+  sigil: sigilArt,
+  relic: relicArt,
+  moth: mothArt,
+} as const;
+type RareFrame = keyof typeof RARE;
 
 const EMBER_SPARKS = [
   { left: "18%", delay: "0s" },
@@ -95,18 +110,19 @@ const FrameLayer = ({ frame }: { frame: AvatarFrame }) => {
   }
   // Ears sit on the ring rather than round it, and twitch once in a while
   // instead of running a loop you can feel. The crown bobs, the petals drift.
-  // The developer crest. One piece, never sold, so it is drawn rather than
-  // assembled out of the ring parts the rest of the set shares.
-  if (frame === "crest") {
+  // The four rare pieces. Never sold, so each is a painted charm hung on one
+  // quiet ring rather than another arrangement of the shared ring parts.
+  if (frame in RARE) {
     return (
       <>
-        <span className="frame-ring frame-crest-ring" />
+        <span className="frame-ring frame-rare-ring" />
+        <span className="frame-ring frame-rare-halo" />
         <m.img
-          src={crestArt}
+          src={RARE[frame as RareFrame]}
           alt=""
-          className="frame-crest-badge"
-          animate={{ y: [0, -1.5, 0] }}
-          transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+          className="frame-rare-charm"
+          animate={{ y: [0, -2, 0], rotate: [-1.5, 1.5, -1.5] }}
+          transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
         />
       </>
     );

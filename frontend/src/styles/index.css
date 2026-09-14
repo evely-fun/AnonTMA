@@ -821,17 +821,38 @@
     overflow: visible;
   }
 
-  .frame-crest-ring {
-    border: 2px solid oklch(0.6 0.2 26);
+  /* The rare set. One quiet gold ring with a slow violet breath behind it,
+     so the charm hung at the top is the thing you look at. */
+  .frame-rare-ring {
+    border: 2px solid oklch(0.78 0.11 78);
   }
 
-  .frame-crest-badge {
+  .frame-rare-halo {
+    border: 6px solid oklch(0.55 0.16 310 / 0.28);
+    filter: blur(3px);
+    animation: rare-breath 5.2s ease-in-out infinite;
+  }
+
+  .frame-rare-charm {
     position: absolute;
     left: 50%;
-    top: -34%;
+    top: -27%;
     width: 52%;
     transform: translateX(-50%);
+    filter: drop-shadow(0 3px 6px oklch(0.2 0.06 300 / 0.45));
     pointer-events: none;
+  }
+
+  @keyframes rare-breath {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.04);
+    }
   }
 
   .frame-crest-fill {

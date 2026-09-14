@@ -886,7 +886,10 @@ export const en = {
         pixelArt: "Pixel art",
       },
       frame: {
-        crest: "Developer crest",
+        veil: "Veil",
+        sigil: "Sigil",
+        relic: "Relic",
+        moth: "Moth",
         none: "No frame",
         halo: "Halo",
         pulse: "Pulse",

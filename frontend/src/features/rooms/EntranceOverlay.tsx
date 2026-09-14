@@ -84,7 +84,7 @@ export const EntranceOverlay = ({
             <Avatar
               seed={arrival.avatarSeed}
               style={arrival.avatarStyle}
-              frame={arrival.frame ?? "crest"}
+              frame={arrival.frame ?? "veil"}
               size={92}
             />
             <span className="mt-1.5 block font-display text-[12px] font-bold tracking-[0.02em] text-white/65">

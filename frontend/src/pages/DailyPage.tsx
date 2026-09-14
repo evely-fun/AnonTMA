@@ -19,8 +19,8 @@ import {
   SectionHead,
   type RewardLine,
 } from "@/shared/ui";
-import { CheckIcon, CrownIcon, SparkleIcon } from "@/shared/ui/icons";
-import { CoinMark, EnergyMark, StreakFlame } from "@/shared/ui/marks";
+import { CheckIcon } from "@/shared/ui/icons";
+import { CoinMark, CrownMark, EnergyMark, SparkMark, StreakFlame } from "@/shared/ui/marks";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
@@ -103,7 +103,7 @@ export const DailyPage = () => {
     ];
     if (reward.premiumDays > 0) {
       lines.push({
-        icon: <CrownIcon size={18} />,
+        icon: <CrownMark size={19} />,
         label: t("common.premium"),
         value: `+${reward.premiumDays} d`,
         tone: "accent",
@@ -150,7 +150,7 @@ export const DailyPage = () => {
                   loading={spinning}
                   disabled={spins <= 0}
                   onClick={() => void onSpin()}
-                  icon={<SparkleIcon size={17} />}
+                  icon={<SparkMark size={18} />}
                 >
                   {spins > 0
                     ? `${t("economy.spin")} · ${spins}`
@@ -238,7 +238,7 @@ export const DailyPage = () => {
                     }`}
                   >
                     {entry.premiumDays > 0 ? (
-                      <CrownIcon size={15} />
+                      <CrownMark size={15} />
                     ) : (
                       entry.day
                     )}

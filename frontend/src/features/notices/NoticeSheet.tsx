@@ -6,7 +6,7 @@ import { useSession } from "@/store/session";
 import { request } from "@/shared/lib/api";
 import { haptic } from "@/shared/lib/telegram";
 import { Button, IconTile, Sheet } from "@/shared/ui";
-import { CrownIcon, FlagIcon, ShieldIcon } from "@/shared/ui/icons";
+import { FlagMark, GiftMark, PromoMark, ShieldMark } from "@/shared/ui/marks";
 import { CoinMark } from "@/shared/ui/marks";
 
 export interface Notice {
@@ -63,9 +63,10 @@ const TONE: Record<string, "danger" | "warn" | "accent" | "live"> = {
 };
 
 const Mark = ({ kind }: { kind: string }) => {
-  if (kind === "gift" || kind === "promo") return <CrownIcon size={22} />;
-  if (kind === "unbanned") return <ShieldIcon size={22} />;
-  return <FlagIcon size={22} />;
+  if (kind === "gift") return <GiftMark size={26} />;
+  if (kind === "promo") return <PromoMark size={26} />;
+  if (kind === "unbanned") return <ShieldMark size={26} />;
+  return <FlagMark size={26} />;
 };
 
 export const NoticeSheet = () => {

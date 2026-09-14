@@ -26,7 +26,6 @@ import {
   ClockIcon,
   CloseIcon,
   FlagIcon,
-  HeartIcon,
   MaskIcon,
   MicIcon,
   MicOffIcon,
@@ -35,6 +34,7 @@ import {
   SlidersIcon,
   WaveIcon,
 } from "@/shared/ui/icons";
+import { HeartMark } from "@/shared/ui/marks";
 import { useChat } from "@/store/chat";
 import { useVoice } from "@/store/voice";
 
@@ -116,7 +116,7 @@ const Summary = ({
         }`}
       >
         {summary?.mutualLike ? (
-          <HeartIcon size={28} />
+          <HeartMark size={30} />
         ) : (
           <CheckIcon size={28} />
         )}
@@ -529,7 +529,7 @@ export const ChatPage = () => {
                 size={44}
                 onClick={like}
               >
-                <HeartIcon size={19} />
+                <HeartMark size={20} />
               </IconButton>
               <IconButton
                 label={t("chat.reveal")}

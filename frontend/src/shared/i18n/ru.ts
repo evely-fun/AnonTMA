@@ -889,7 +889,10 @@ export const ru: Dictionary = {
         pixelArt: "Пиксель-арт",
       },
       frame: {
-        crest: "Знак разработчика",
+        veil: "Вуаль",
+        sigil: "Знак",
+        relic: "Реликвия",
+        moth: "Мотылёк",
         none: "Без рамки",
         halo: "Ореол",
         pulse: "Пульс",

@@ -7,6 +7,30 @@ import streakEverburn from "@/assets/streak/everburn.webp";
 import streakFlame from "@/assets/streak/flame.webp";
 import streakSpark from "@/assets/streak/spark.webp";
 import streakSteady from "@/assets/streak/steady.webp";
+import banArt from "@/assets/marks/ban.webp";
+import bubbleArt from "@/assets/marks/bubbles.webp";
+import clockArt from "@/assets/marks/clock.webp";
+import giftArt from "@/assets/marks/gift.webp";
+import linkArt from "@/assets/marks/link.webp";
+import paletteArt from "@/assets/marks/palette.webp";
+import slidersArt from "@/assets/marks/sliders.webp";
+import crownArt from "@/assets/marks/crown.webp";
+import eyeArt from "@/assets/marks/eye.webp";
+import flagArt from "@/assets/marks/flag.webp";
+import globeArt from "@/assets/marks/globe.webp";
+import maskArt from "@/assets/marks/mask.webp";
+import shieldArt from "@/assets/marks/shield.webp";
+import sparkArt from "@/assets/marks/spark.webp";
+import trophyArt from "@/assets/marks/trophy.webp";
+import handArt from "@/assets/marks/hand.webp";
+import heartArt from "@/assets/marks/heart.webp";
+import infinityArt from "@/assets/marks/infinity.webp";
+import keyArt from "@/assets/marks/key.webp";
+import lockArt from "@/assets/marks/lock.webp";
+import mutedArt from "@/assets/marks/mutemic.webp";
+import ringArt from "@/assets/marks/ring.webp";
+import gavelArt from "@/assets/owner/gavel.webp";
+import promoArt from "@/assets/owner/promo.webp";
 
 /**
  * The three things the economy is counted in. They are painted objects rather
@@ -92,4 +116,105 @@ export const StreakFlame = ({
     size={size}
     className={className}
   />
+);
+
+/**
+ * The rest of the painted set. These stand where an outline glyph used to,
+ * anywhere the icon names a thing rather than an action: a warning, a mute, a
+ * locked piece, a gift code. Controls you tap are still drawn in ink.
+ */
+export const FlagMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={flagArt} size={size} className={className} />
+);
+
+export const MutedMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={mutedArt} size={size} className={className} />
+);
+
+export const LockMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={lockArt} size={size} className={className} />
+);
+
+export const KeyMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={keyArt} size={size} className={className} />
+);
+
+export const HeartMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={heartArt} size={size} className={className} />
+);
+
+export const HandMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={handArt} size={size} className={className} />
+);
+
+export const SupportMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={ringArt} size={size} className={className} />
+);
+
+export const InfinityMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={infinityArt} size={size} className={className} />
+);
+
+export const GavelMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={gavelArt} size={size} className={className} />
+);
+
+export const PromoMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={promoArt} size={size} className={className} />
+);
+
+export const CrownMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={crownArt} size={size} className={className} />
+);
+
+export const MaskMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={maskArt} size={size} className={className} />
+);
+
+export const ShieldMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={shieldArt} size={size} className={className} />
+);
+
+export const SparkMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={sparkArt} size={size} className={className} />
+);
+
+export const BubbleMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={bubbleArt} size={size} className={className} />
+);
+
+export const GlobeMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={globeArt} size={size} className={className} />
+);
+
+export const EyeMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={eyeArt} size={size} className={className} />
+);
+
+export const TrophyMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={trophyArt} size={size} className={className} />
+);
+
+export const GiftMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={giftArt} size={size} className={className} />
+);
+
+export const PaletteMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={paletteArt} size={size} className={className} />
+);
+
+export const SlidersMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={slidersArt} size={size} className={className} />
+);
+
+export const LinkMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={linkArt} size={size} className={className} />
+);
+
+export const BanMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={banArt} size={size} className={className} />
+);
+
+export const ClockMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={clockArt} size={size} className={className} />
 );

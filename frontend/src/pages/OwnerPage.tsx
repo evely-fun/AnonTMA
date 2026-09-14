@@ -20,8 +20,8 @@ import {
   Sheet,
   Skeleton,
 } from "@/shared/ui";
-import { CrownIcon, SearchIcon } from "@/shared/ui/icons";
-import { CoinMark, EnergyMark } from "@/shared/ui/marks";
+import { SearchIcon } from "@/shared/ui/icons";
+import { CoinMark, EnergyMark, GavelMark, PromoMark } from "@/shared/ui/marks";
 import { useOwner, type PersonCard, type PromoCode } from "@/store/owner";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
@@ -311,7 +311,7 @@ export const OwnerPage = () => {
       <PushScreen>
         <ScreenHeader title={t("owner.title")} />
         <EmptyState
-          icon={<CrownIcon size={24} />}
+          icon={<GavelMark size={28} />}
           title={t("owner.denied")}
           description={t("owner.deniedHint")}
         />
@@ -382,7 +382,7 @@ export const OwnerPage = () => {
         <div className="mt-4 px-4">
           <Button
             full
-            icon={<CrownIcon size={17} />}
+            icon={<PromoMark size={18} />}
             onClick={() => {
               reset();
               setComposing(true);
@@ -393,7 +393,7 @@ export const OwnerPage = () => {
 
           {codes.length === 0 ? (
             <EmptyState
-              icon={<CrownIcon size={22} />}
+              icon={<PromoMark size={26} />}
               title={t("owner.noCodes")}
               description={t("owner.noCodesHint")}
             />
@@ -416,7 +416,7 @@ export const OwnerPage = () => {
         <div className="mt-4 px-4">
           {ledger.length === 0 ? (
             <EmptyState
-              icon={<CrownIcon size={22} />}
+              icon={<PromoMark size={26} />}
               title={t("owner.noLedger")}
               description={t("owner.noLedgerHint")}
             />

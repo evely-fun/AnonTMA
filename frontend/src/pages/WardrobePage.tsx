@@ -126,7 +126,7 @@ export const WardrobePage = () => {
             before it can be seen. */}
         <div className="sticky top-0 z-10 bg-bg px-4 pb-3 pt-3">
           <div
-            className={`flex items-center gap-4 rounded-[26px] px-5 py-4 ${
+            className={`flex items-center gap-4 rounded-[26px] px-5 pb-4 pt-7 ${
               backgroundClass(worn.background) || "panel"
             }`}
           >
