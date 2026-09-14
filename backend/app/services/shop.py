@@ -102,6 +102,7 @@ CATALOG: tuple[Item, ...] = (
     Item("frame.moth", "frame", 0, "moth", "mythic", exclusive=True),
     Item("effect.crimson", "effect", 0, "crimson", "mythic", exclusive=True),
     Item("background.forge", "background", 0, "forge", "mythic", exclusive=True),
+    Item("background.night", "background", 0, "night", "mythic", exclusive=True),
 )
 
 BY_KEY = {item.key: item for item in CATALOG}

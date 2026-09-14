@@ -915,6 +915,7 @@ export const en = {
       },
       background: {
         forge: "The forge",
+        night: "Moonrise",
         none: "No background",
         dawn: "Dawn",
         tide: "Tide",

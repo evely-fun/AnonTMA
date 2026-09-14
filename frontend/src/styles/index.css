@@ -821,25 +821,26 @@
     overflow: visible;
   }
 
-  /* The rare set. One quiet gold ring with a slow violet breath behind it,
-     so the charm hung at the top is the thing you look at. */
-  .frame-rare-ring {
+  /* The rare set. The frame is the drawn object: it is laid over the avatar at
+     the size its own hole expects, with a slow violet breath behind it. */
+  .frame-rare-small {
     border: 2px solid oklch(0.78 0.11 78);
   }
 
   .frame-rare-halo {
-    border: 6px solid oklch(0.55 0.16 310 / 0.28);
-    filter: blur(3px);
-    animation: rare-breath 5.2s ease-in-out infinite;
+    inset: 18%;
+    border: 8px solid oklch(0.55 0.16 310 / 0.22);
+    filter: blur(5px);
+    animation: rare-breath 6s ease-in-out infinite;
   }
 
-  .frame-rare-charm {
+  .frame-wreath {
     position: absolute;
     left: 50%;
-    top: -27%;
-    width: 52%;
-    transform: translateX(-50%);
-    filter: drop-shadow(0 3px 6px oklch(0.2 0.06 300 / 0.45));
+    top: 50%;
+    width: 100%;
+    translate: -50% -50%;
+    filter: drop-shadow(0 4px 10px oklch(0.18 0.06 300 / 0.5));
     pointer-events: none;
   }
 
@@ -1212,13 +1213,33 @@
     The developer background. A painted ground rather than a gradient, so it
     is the one profile that cannot be approximated with a colour picker.
   */
-  /* The only skin that is a photograph rather than a tint, so it carries its
-     own ink: the card is dark in both themes and the light one would otherwise
-     print dark text on it. */
+  /* Two painted skins rather than tints, so they carry their own ink: the card
+     is dark under both themes and the light one would otherwise print dark
+     text on a dark picture. */
+  /* The moon belongs on the right, where the picture put it, so the card is
+     read from a scrim on the left rather than by moving the picture. */
+  .skin-night {
+    background-image:
+      linear-gradient(
+        100deg,
+        oklch(0.16 0.05 320 / 0.92) 0%,
+        oklch(0.16 0.05 320 / 0.72) 38%,
+        oklch(0.16 0.05 320 / 0.15) 68%,
+        transparent 100%
+      ),
+      url("@/assets/owner/night.webp");
+    background-size: cover, cover;
+    background-position: center, center right;
+  }
+
   .skin-forge {
     background-image: url("@/assets/owner/forge.webp");
     background-size: cover;
     background-position: center;
+  }
+
+  .skin-night,
+  .skin-forge {
     --cosmetic-ink: oklch(0.97 0.008 60);
     --color-label: oklch(0.97 0.008 60);
     --color-secondary: oklch(0.88 0.012 60);

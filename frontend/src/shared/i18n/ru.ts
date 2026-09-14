@@ -918,6 +918,7 @@ export const ru: Dictionary = {
       },
       background: {
         forge: "Горн",
+        night: "Лунная ночь",
         none: "Без фона",
         dawn: "Рассвет",
         tide: "Прилив",

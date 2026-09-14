@@ -1,4 +1,4 @@
-import { m } from "motion/react";
+import { m, type TargetAndTransition } from "motion/react";
 
 import mothArt from "@/assets/owner/moth.webp";
 import relicArt from "@/assets/owner/relic.webp";
@@ -53,14 +53,21 @@ const hash = (value: string): number => {
   return Math.abs(output);
 };
 
-/** The charms only the developer set carries. */
-const RARE = {
-  veil: veilArt,
-  sigil: sigilArt,
-  relic: relicArt,
-  moth: mothArt,
-} as const;
-type RareFrame = keyof typeof RARE;
+/**
+ * The rare set. Each of these is a whole object rather than a ring with
+ * something pinned to it: the decoration runs the full way round, and the
+ * avatar sits in the hole in the middle. Every one moves differently, because
+ * four identical spins would read as one frame in four colours.
+ */
+const RARE: Record<
+  string,
+  { art: string; motion: TargetAndTransition; seconds: number; spins?: boolean }
+> = {
+  veil: { art: veilArt, motion: { y: [0, -3, 0], rotate: [-2.5, 2.5, -2.5] }, seconds: 7 },
+  sigil: { art: sigilArt, motion: { rotate: [0, 360] }, seconds: 44, spins: true },
+  relic: { art: relicArt, motion: { rotate: [0, -360] }, seconds: 30, spins: true },
+  moth: { art: mothArt, motion: { scale: [1, 1.035, 1], rotate: [1.5, -1.5, 1.5] }, seconds: 6 },
+};
 
 const EMBER_SPARKS = [
   { left: "18%", delay: "0s" },
@@ -76,7 +83,7 @@ const PETALS = [
   { left: "88%", delay: "3.1s" },
 ];
 
-const FrameLayer = ({ frame }: { frame: AvatarFrame }) => {
+const FrameLayer = ({ frame, size }: { frame: AvatarFrame; size: number }) => {
   if (frame === "none") {
     return null;
   }
@@ -113,16 +120,30 @@ const FrameLayer = ({ frame }: { frame: AvatarFrame }) => {
   // The four rare pieces. Never sold, so each is a painted charm hung on one
   // quiet ring rather than another arrangement of the shared ring parts.
   if (frame in RARE) {
+    const piece = RARE[frame];
+    // Below about forty pixels the wreath is a smudge and the face inside it
+    // is unreadable, so a row avatar gets the gold ring and keeps its face.
+    if (size < 44) {
+      return (
+        <>
+          <span className="frame-ring frame-rare-small" />
+          <span className="frame-ring frame-rare-halo" />
+        </>
+      );
+    }
     return (
       <>
-        <span className="frame-ring frame-rare-ring" />
         <span className="frame-ring frame-rare-halo" />
         <m.img
-          src={RARE[frame as RareFrame]}
+          src={piece.art}
           alt=""
-          className="frame-rare-charm"
-          animate={{ y: [0, -2, 0], rotate: [-1.5, 1.5, -1.5] }}
-          transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
+          className="frame-wreath"
+          animate={piece.motion}
+          transition={{
+            duration: piece.seconds,
+            repeat: Infinity,
+            ease: piece.spins ? "linear" : "easeInOut",
+          }}
         />
       </>
     );
@@ -291,6 +312,10 @@ export const Avatar = ({
   );
 
   const layer = (FRAME_KEYS as readonly string[]).includes(frame) ? (frame as AvatarFrame) : "none";
+  // A wreath is wider than the face it surrounds. The box a caller asked for
+  // is the outer bound, so the portrait shrinks into the hole rather than the
+  // frame spilling over whatever sits next to it.
+  const inner = layer in RARE && size >= 44 ? Math.round(size * 0.58) : size;
 
   return (
     <span
@@ -305,17 +330,17 @@ export const Avatar = ({
           transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut" }}
         />
       )}
-      <FrameLayer frame={layer} />
+      <FrameLayer frame={layer} size={size} />
       <span
         className="overflow-hidden"
-        style={{ width: size, height: size, borderRadius: size }}
+        style={{ width: inner, height: inner, borderRadius: inner }}
       >
         {portrait ? (
           <img
             src={portrait}
             alt=""
-            width={size}
-            height={size}
+            width={inner}
+            height={inner}
             loading="lazy"
             decoding="async"
             className="block size-full object-cover"

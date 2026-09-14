@@ -18,7 +18,8 @@ export type ProfileBackground =
   | "nebula"
   | "prism"
   | "aurora"
-  | "forge";
+  | "forge"
+  | "night";
 
 const CLASSES: Record<NameEffect, string> = {
   none: "",
@@ -42,6 +43,7 @@ const BACKGROUNDS: Record<ProfileBackground, string> = {
   prism: "skin-prism",
   aurora: "skin-aurora",
   forge: "skin-forge",
+  night: "skin-night",
 };
 
 export const PROFILE_BACKGROUNDS: ProfileBackground[] = [
