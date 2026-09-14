@@ -129,6 +129,11 @@ class LeaderboardEntry(ApiModel):
     is_me: bool = Field(default=False, alias="isMe")
 
 
+class ActionRequest(ApiModel):
+    action: str = Field(max_length=24)
+    note: str | None = Field(default=None, max_length=200)
+
+
 class ReportRequest(ApiModel):
     reason: str = Field(max_length=32)
     scope: str = Field(default="dialog", max_length=16)

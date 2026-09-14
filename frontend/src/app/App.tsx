@@ -12,6 +12,7 @@ import { FriendsPage } from "@/pages/FriendsPage";
 import { GamePage } from "@/pages/GamePage";
 import { GamesPage } from "@/pages/GamesPage";
 import { AdminPage } from "@/pages/AdminPage";
+import { OwnerPage } from "@/pages/OwnerPage";
 import { HomePage } from "@/pages/HomePage";
 import { LeaderboardPage } from "@/pages/LeaderboardPage";
 import { LevelsPage } from "@/pages/LevelsPage";
@@ -345,6 +346,7 @@ export const App = () => {
                 <Route path="/shop" element={<ShopPage />} />
                 <Route path="/wardrobe" element={<WardrobePage />} />
                 <Route path="/admin" element={<AdminPage />} />
+                <Route path="/owner" element={<OwnerPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/levels" element={<LevelsPage />} />
                 <Route path="*" element={<HomePage />} />

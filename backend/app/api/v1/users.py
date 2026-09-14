@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import delete, desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentUser, SessionDep, rate_limit_default
 from app.db.models import Block, Friendship, User, UserAchievement, UserStats
 from app.realtime import presence
 from app.schemas.user import (
     AchievementView,
+    ActionRequest,
     LeaderboardEntry,
     ProfileUpdate,
     ProfileView,
@@ -282,6 +284,24 @@ async def public_profile(
     )
 
 
+def _action_state(viewer: User, target: User, blocked: bool) -> dict:
+    """What the viewer may do, and the little of the target's record they are
+    allowed to see. A plain player learns nothing here beyond their own block."""
+    state = {
+        "userId": target.id,
+        "actions": staff.actions_for(viewer, target),
+        "blocked": blocked,
+        "role": staff.role_of(target),
+    }
+    if staff.can(viewer, "moderation.act"):
+        state["record"] = {
+            "warnings": target.warnings,
+            "isBanned": target.is_banned,
+            "mutedUntil": target.muted_until.isoformat() if target.muted_until else None,
+        }
+    return state
+
+
 @router.get("/{user_id}/actions")
 async def actions(user_id: int, user: CurrentUser, session: SessionDep) -> dict:
     """What this viewer may do about that person, decided here rather than in
@@ -291,29 +311,57 @@ async def actions(user_id: int, user: CurrentUser, session: SessionDep) -> dict:
     target = await session.get(User, user_id)
     if target is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such user")
-    return {
-        "userId": user_id,
-        "actions": staff.actions_for(user, target),
-        "blocked": await moderation.is_blocked(session, user.id, user_id),
-        "role": staff.role_of(target),
-    }
+    blocked = await moderation.is_blocked(session, user.id, user_id)
+    return _action_state(user, target, blocked)
+
+
+@router.post("/{user_id}/actions")
+async def act(
+    user_id: int, payload: ActionRequest, user: CurrentUser, session: SessionDep
+) -> dict:
+    """Carry out one of those actions. The list above is the authority: an
+    action that is not in it for this pair is refused whatever the client sent."""
+    from app.services import admin as moderation_admin
+    from app.services import moderation
+
+    target = await session.get(User, user_id)
+    if target is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such user")
+
+    action = payload.action
+    if action not in staff.actions_for(user, target) or action in ("report", "grant"):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed")
+
+    if action == "block":
+        await _block(session, user.id, user_id)
+    else:
+        await moderation_admin.sanction(session, user, target, action, payload.note)
+
+    await session.flush()
+    blocked = await moderation.is_blocked(session, user.id, user_id)
+    return _action_state(user, target, blocked)
+
+
+async def _block(session: AsyncSession, blocker_id: int, blocked_id: int) -> None:
+    if blocker_id == blocked_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Cannot block yourself")
+    exists = await session.execute(
+        select(Block.id).where((Block.blocker_id == blocker_id) & (Block.blocked_id == blocked_id))
+    )
+    if exists.first() is not None:
+        return
+    session.add(Block(blocker_id=blocker_id, blocked_id=blocked_id))
+    await session.execute(
+        delete(Friendship).where(
+            ((Friendship.user_id == blocker_id) & (Friendship.friend_id == blocked_id))
+            | ((Friendship.user_id == blocked_id) & (Friendship.friend_id == blocker_id))
+        )
+    )
 
 
 @router.post("/{user_id}/block")
 async def block_user(user_id: int, user: CurrentUser, session: SessionDep) -> dict:
-    if user_id == user.id:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Cannot block yourself")
-    exists = await session.execute(
-        select(Block.id).where((Block.blocker_id == user.id) & (Block.blocked_id == user_id))
-    )
-    if exists.first() is None:
-        session.add(Block(blocker_id=user.id, blocked_id=user_id))
-        await session.execute(
-            delete(Friendship).where(
-                ((Friendship.user_id == user.id) & (Friendship.friend_id == user_id))
-                | ((Friendship.user_id == user_id) & (Friendship.friend_id == user.id))
-            )
-        )
+    await _block(session, user.id, user_id)
     return {"ok": True}
 
 

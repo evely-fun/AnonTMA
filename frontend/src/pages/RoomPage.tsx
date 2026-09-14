@@ -18,6 +18,7 @@ import {
   SlidersIcon,
 } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
+import { PersonSheet, type Person } from "@/features/moderation/PersonSheet";
 import { EntranceOverlay } from "@/features/rooms/EntranceOverlay";
 import { useRooms } from "@/store/rooms";
 import { useSocial } from "@/store/social";
@@ -91,6 +92,7 @@ export const RoomPage = () => {
   const [hand, setHand] = useState(false);
   const [audioOpen, setAudioOpen] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
+  const [person, setPerson] = useState<Person | null>(null);
 
   useEffect(() => {
     const id = Number(roomId);
@@ -354,17 +356,29 @@ export const RoomPage = () => {
             }}
           />
           <OptionRow
-            title={t("moderation.report")}
-            muted
+            title={t("moderation.aboutPerson")}
+            subtitle={t("moderation.aboutPersonHint")}
             onClick={() => {
               if (!target) return;
-              reportMember(target.userId, "abuse");
+              setPerson({
+                userId: target.userId,
+                anonName: target.anonName,
+                avatarSeed: target.avatarSeed,
+              });
               setPicked(null);
-              toast(t("moderation.reported"));
             }}
           />
         </div>
       </Sheet>
+
+      <PersonSheet
+        person={person}
+        onClose={() => setPerson(null)}
+        onReport={(userId) => {
+          reportMember(userId, "abuse");
+          toast(t("moderation.reported"));
+        }}
+      />
 
       <AudioSheet open={audioOpen} onClose={() => setAudioOpen(false)} />
       <EntranceOverlay arrival={arrival} onDone={clearArrival} />

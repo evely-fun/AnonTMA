@@ -12,6 +12,7 @@ import { haptic } from "@/shared/lib/telegram";
 import { PALETTES, paletteSwatch, resolveScheme, type Palette, type ThemeMode } from "@/shared/lib/theme";
 import type { Profile } from "@/shared/lib/types";
 import {
+  Button,
   Chip,
   IconTile,
   ListRow,
@@ -21,9 +22,10 @@ import {
   ScreenHeader,
   SectionHead,
   Segmented,
+  Sheet,
   Switch,
 } from "@/shared/ui";
-import { CheckIcon, CrownIcon, HelpIcon, LockIcon } from "@/shared/ui/icons";
+import { CheckIcon, CrownIcon, HelpIcon, LockIcon, SparkleIcon } from "@/shared/ui/icons";
 import { useSession } from "@/store/session";
 import { useShop } from "@/store/shop";
 import { toast } from "@/store/ui";
@@ -65,6 +67,8 @@ export const SettingsPage = () => {
   const setVoiceLevel = useVoice((state) => state.setLevel);
   const setVoicePreset = useVoice((state) => state.setPreset);
   const [saving, setSaving] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
+  const [code, setCode] = useState("");
   const shopItems = useShop((store) => store.items);
   const loadShop = useShop((store) => store.load);
 
@@ -93,6 +97,23 @@ export const SettingsPage = () => {
       patchProfile(updated);
     } catch {
       toast(t("settings.saveFailed"), { tone: "danger" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const redeem = async () => {
+    setSaving(true);
+    try {
+      await request("/owner/redeem", { method: "POST", body: { code } });
+      const updated = await request<Profile>("/users/me");
+      patchProfile(updated);
+      haptic.notify("success");
+      toast(t("notices.promoTitle"), { tone: "success" });
+      setRedeeming(false);
+    } catch {
+      haptic.notify("error");
+      toast(t("owner.redeemFailed"), { tone: "danger" });
     } finally {
       setSaving(false);
     }
@@ -397,6 +418,25 @@ export const SettingsPage = () => {
               chevron
               onClick={() => navigate("/support")}
             />
+            <ListRow
+              leading={<IconTile tone="warn"><SparkleIcon size={18} /></IconTile>}
+              title={t("owner.redeem")}
+              subtitle={t("owner.redeemHint")}
+              chevron
+              onClick={() => {
+                setCode("");
+                setRedeeming(true);
+              }}
+            />
+            {profile.rights?.includes("owner.panel") && (
+              <ListRow
+                leading={<IconTile tone="danger"><CrownIcon size={18} /></IconTile>}
+                title={t("owner.open")}
+                subtitle={t("owner.openHint")}
+                chevron
+                onClick={() => navigate("/owner")}
+              />
+            )}
           </Panel>
         </m.section>
 
@@ -404,6 +444,26 @@ export const SettingsPage = () => {
           <p className="text-[12.5px] leading-relaxed text-hint">{t("settings.about")}</p>
         </m.section>
       </m.div>
+
+      <Sheet
+        open={redeeming}
+        onClose={() => setRedeeming(false)}
+        title={t("owner.redeem")}
+        description={t("owner.redeemHint")}
+      >
+        <div className="flex flex-col gap-3 pb-2">
+          <input
+            value={code}
+            onChange={(event) => setCode(event.target.value.toUpperCase())}
+            placeholder={t("owner.redeemPlaceholder")}
+            maxLength={24}
+            className="w-full rounded-[16px] bg-elevated px-4 py-3 text-center font-display text-[18px] font-extrabold tracking-[0.14em] tabular outline-none placeholder:tracking-normal placeholder:text-hint"
+          />
+          <Button full loading={saving} disabled={code.length < 4} onClick={() => void redeem()}>
+            {t("owner.redeemGo")}
+          </Button>
+        </div>
+      </Sheet>
     </PushScreen>
   );
 };

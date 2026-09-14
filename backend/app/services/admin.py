@@ -134,24 +134,23 @@ async def case_detail(session: AsyncSession, case_id: int) -> dict | None:
     }
 
 
-async def resolve(
-    session: AsyncSession, admin: User, case_id: int, action: str, note: str | None
-) -> dict | None:
-    if action not in ACTIONS:
-        return None
-    case = await session.get(ModerationCase, case_id)
-    if case is None:
-        return None
-    target = await session.get(User, case.target_id)
-    if target is None:
-        return None
+async def sanction(
+    session: AsyncSession,
+    admin: User,
+    target: User,
+    action: str,
+    note: str | None = None,
+    case_id: int | None = None,
+) -> int:
+    """One moderation action against one person, with the person told about it.
 
-    hours = ACTIONS[action]
-    upheld = action not in ("dismiss", "unban")
-
-    # Whatever happens, the person it happened to is told. A sanction nobody
-    # hears about changes a number and teaches nothing.
+    A sanction nobody hears about changes a number and teaches nothing, so
+    every branch here writes a notice. It is deliberately free of the report
+    queue: the same action has to work from a room, a profile or a case.
+    """
     from app.services import notices
+
+    hours = ACTIONS.get(action, 0)
 
     if action == "warn":
         target.warnings += 1
@@ -176,6 +175,35 @@ async def resolve(
     elif action == "dismiss":
         target.trust_score = min(100, target.trust_score + 8)
 
+    session.add(
+        ModerationAction(
+            case_id=case_id,
+            target_id=target.id,
+            admin_id=admin.id,
+            action=action,
+            duration_hours=hours,
+            note=note,
+            created_at=utcnow(),
+        )
+    )
+    return hours
+
+
+async def resolve(
+    session: AsyncSession, admin: User, case_id: int, action: str, note: str | None
+) -> dict | None:
+    if action not in ACTIONS:
+        return None
+    case = await session.get(ModerationCase, case_id)
+    if case is None:
+        return None
+    target = await session.get(User, case.target_id)
+    if target is None:
+        return None
+
+    upheld = action not in ("dismiss", "unban")
+    await sanction(session, admin, target, action, note, case_id=case.id)
+
     reporters = await session.execute(
         select(Report.reporter_id).where(Report.case_id == case.id).distinct()
     )
@@ -196,17 +224,6 @@ async def resolve(
     case.resolved_by_id = admin.id
     case.note = note
 
-    session.add(
-        ModerationAction(
-            case_id=case.id,
-            target_id=case.target_id,
-            admin_id=admin.id,
-            action=action,
-            duration_hours=hours,
-            note=note,
-            created_at=utcnow(),
-        )
-    )
     await session.flush()
     return {"caseId": case.id, "action": action, "target": await _target_card(session, case.target_id)}
 
