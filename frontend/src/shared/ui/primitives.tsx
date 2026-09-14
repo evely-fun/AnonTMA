@@ -255,6 +255,7 @@ export const Meter = ({
 export const EmptyState = ({
   icon,
   art,
+  mark,
   title,
   description,
   action,
@@ -262,6 +263,8 @@ export const EmptyState = ({
   icon?: ReactNode;
   /** An illustration says more than a grey glyph on an empty screen. */
   art?: string;
+  /** A painted mark on nothing, for screens where a framed tile would be too loud. */
+  mark?: string;
   title: string;
   description?: string;
   action?: ReactNode;
@@ -279,6 +282,14 @@ export const EmptyState = ({
         loading="lazy"
         decoding="async"
         className="mb-3 size-[136px] rounded-[32px] object-cover"
+      />
+    ) : mark ? (
+      <img
+        src={mark}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className="mb-2 size-[88px] object-contain"
       />
     ) : (
       <span className="mb-2 flex size-14 items-center justify-center rounded-[18px] bg-elevated text-hint">

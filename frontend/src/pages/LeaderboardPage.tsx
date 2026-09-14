@@ -8,6 +8,7 @@ import { compactNumber, durationLabel } from "@/shared/lib/format";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import type { LeaderboardEntry } from "@/shared/lib/types";
 import { Avatar, Panel, PushScreen, ScreenHeader, Segmented, Skeleton } from "@/shared/ui";
+import { MedalMark } from "@/shared/ui/marks";
 
 type Metric = "xp" | "rating" | "voice" | "games";
 
@@ -109,7 +110,7 @@ export const LeaderboardPage = () => {
                         >
                           {format(metric, entry.value)}
                         </span>
-                        <span className="text-[11px] text-hint tabular">{entry.rank}</span>
+                        <MedalMark place={slot} size={first ? 24 : 20} />
                       </span>
                     </m.div>
                   );

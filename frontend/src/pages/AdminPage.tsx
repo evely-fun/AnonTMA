@@ -20,7 +20,7 @@ import {
   Sheet,
   Skeleton,
 } from "@/shared/ui";
-import { GavelMark } from "@/shared/ui/marks";
+import gavelMark from "@/assets/owner/gavel.webp";
 import { useAdmin } from "@/store/admin";
 import { toast } from "@/store/ui";
 
@@ -225,7 +225,7 @@ export const AdminPage = () => {
           </div>
         ) : cases.length === 0 ? (
           <EmptyState
-            icon={<GavelMark size={28} />}
+            mark={gavelMark}
             title={t("admin.empty")}
             description={t("admin.emptyHint")}
           />

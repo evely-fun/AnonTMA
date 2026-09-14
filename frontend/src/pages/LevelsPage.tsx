@@ -13,8 +13,8 @@ import {
   SectionHead,
   Skeleton,
 } from "@/shared/ui";
-import { CheckIcon, CrownIcon } from "@/shared/ui/icons";
-import { CoinMark, EnergyMark } from "@/shared/ui/marks";
+import { CheckIcon } from "@/shared/ui/icons";
+import { CoinMark, CrownMark, EnergyMark } from "@/shared/ui/marks";
 
 interface Rung {
   level: number;
@@ -195,7 +195,7 @@ export const LevelsPage = () => {
                           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
                             {rung.newTitle && (
                               <Perk
-                                icon={<CrownIcon size={12} />}
+                                icon={<CrownMark size={14} />}
                                 label={t("progression.perkTitle", {
                                   title: t(`titles.${rung.title}`),
                                 })}

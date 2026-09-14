@@ -21,7 +21,9 @@ import {
   Skeleton,
 } from "@/shared/ui";
 import { SearchIcon } from "@/shared/ui/icons";
-import { CoinMark, EnergyMark, GavelMark, PromoMark } from "@/shared/ui/marks";
+import gavelMark from "@/assets/owner/gavel.webp";
+import promoMark from "@/assets/owner/promo.webp";
+import { CoinMark, EnergyMark, PromoMark } from "@/shared/ui/marks";
 import { useOwner, type PersonCard, type PromoCode } from "@/store/owner";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
@@ -311,7 +313,7 @@ export const OwnerPage = () => {
       <PushScreen>
         <ScreenHeader title={t("owner.title")} />
         <EmptyState
-          icon={<GavelMark size={28} />}
+          mark={gavelMark}
           title={t("owner.denied")}
           description={t("owner.deniedHint")}
         />
@@ -393,7 +395,7 @@ export const OwnerPage = () => {
 
           {codes.length === 0 ? (
             <EmptyState
-              icon={<PromoMark size={26} />}
+              mark={promoMark}
               title={t("owner.noCodes")}
               description={t("owner.noCodesHint")}
             />
@@ -416,7 +418,7 @@ export const OwnerPage = () => {
         <div className="mt-4 px-4">
           {ledger.length === 0 ? (
             <EmptyState
-              icon={<PromoMark size={26} />}
+              mark={promoMark}
               title={t("owner.noLedger")}
               description={t("owner.noLedgerHint")}
             />

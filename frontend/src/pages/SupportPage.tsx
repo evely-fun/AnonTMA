@@ -5,10 +5,12 @@ import { useBackButton } from "@/shared/hooks/useBackButton";
 import { useT } from "@/shared/i18n";
 import { listStagger, rise } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
+import mailMark from "@/assets/marks/mail.webp";
+import supportMark from "@/assets/marks/ring.webp";
 import {
   Button,
   Chip,
-  Panel,
+  EmptyState,
   PushScreen,
   ScreenHeader,
   Segmented,
@@ -122,11 +124,11 @@ export const SupportPage = () => {
               <Skeleton className="h-[70px] rounded-[18px]" />
             </>
           ) : list.length === 0 ? (
-            <Panel className="mx-0 px-4 py-6 text-center">
-              <p className="text-[13.5px] text-hint">
-                {tab === "queue" ? t("support.queueEmpty") : t("support.empty")}
-              </p>
-            </Panel>
+            <EmptyState
+              mark={tab === "queue" ? supportMark : mailMark}
+              title={tab === "queue" ? t("support.queueEmpty") : t("support.empty")}
+              description={tab === "queue" ? undefined : t("support.emptyHint")}
+            />
           ) : (
             <AnimatePresence initial={false}>{list.map(card)}</AnimatePresence>
           )}

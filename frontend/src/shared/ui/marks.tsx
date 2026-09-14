@@ -8,6 +8,10 @@ import streakFlame from "@/assets/streak/flame.webp";
 import streakSpark from "@/assets/streak/spark.webp";
 import streakSteady from "@/assets/streak/steady.webp";
 import banArt from "@/assets/marks/ban.webp";
+import mailArt from "@/assets/marks/mail.webp";
+import medalGold from "@/assets/marks/medal1.webp";
+import medalSilver from "@/assets/marks/medal2.webp";
+import medalBronze from "@/assets/marks/medal3.webp";
 import bubbleArt from "@/assets/marks/bubbles.webp";
 import clockArt from "@/assets/marks/clock.webp";
 import giftArt from "@/assets/marks/gift.webp";
@@ -218,3 +222,20 @@ export const BanMark = ({ size = 16, className }: { size?: number; className?: s
 export const ClockMark = ({ size = 16, className }: { size?: number; className?: string }) => (
   <Mark src={clockArt} size={size} className={className} />
 );
+
+export const MailMark = ({ size = 16, className }: { size?: number; className?: string }) => (
+  <Mark src={mailArt} size={size} className={className} />
+);
+
+/** First, second and third, in that order. */
+export const MEDALS = [medalGold, medalSilver, medalBronze];
+
+export const MedalMark = ({
+  place,
+  size = 22,
+  className,
+}: {
+  place: number;
+  size?: number;
+  className?: string;
+}) => <Mark src={MEDALS[place] ?? medalBronze} size={size} className={className} />;
