@@ -1,10 +1,17 @@
 import { AnimatePresence, m } from "motion/react";
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 
 import { useT } from "@/shared/i18n";
 import { spring } from "@/shared/lib/motion";
 import type { WheelPrize } from "@/shared/lib/types";
-import { BoltIcon, CoinIcon, CrownIcon } from "@/shared/ui/icons";
+import { CrownIcon } from "@/shared/ui/icons";
+import { CoinMark, EnergyMark } from "@/shared/ui/marks";
 
 /** Frames of the rendered chest opening, in order. */
 const FRAMES = Object.entries(
@@ -25,8 +32,8 @@ export interface DailyChestHandle {
 }
 
 const KIND_ICON = {
-  energy: BoltIcon,
-  coins: CoinIcon,
+  energy: EnergyMark,
+  coins: CoinMark,
   premium: CrownIcon,
 } as const;
 

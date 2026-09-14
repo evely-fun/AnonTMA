@@ -19,12 +19,16 @@ import {
   SectionHead,
   type RewardLine,
 } from "@/shared/ui";
-import { BoltIcon, CheckIcon, CoinIcon, CrownIcon, FlameIcon, SparkleIcon } from "@/shared/ui/icons";
+import { CheckIcon, CrownIcon, SparkleIcon } from "@/shared/ui/icons";
+import { CoinMark, EnergyMark, StreakMark } from "@/shared/ui/marks";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 
-import { DailyChest, type DailyChestHandle } from "@/features/rewards/DailyChest";
+import {
+  DailyChest,
+  type DailyChestHandle,
+} from "@/features/rewards/DailyChest";
 
 export const DailyPage = () => {
   const { t } = useT();
@@ -36,7 +40,10 @@ export const DailyPage = () => {
   const claimStreak = useEconomy((store) => store.claimStreak);
   const refreshProfile = useSession((session) => session.refreshProfile);
   const chestRef = useRef<DailyChestHandle | null>(null);
-  const [burst, setBurst] = useState<{ title: string; lines: RewardLine[] } | null>(null);
+  const [burst, setBurst] = useState<{
+    title: string;
+    lines: RewardLine[];
+  } | null>(null);
 
   useBackButton("/");
 
@@ -81,8 +88,18 @@ export const DailyPage = () => {
     haptic.notify("success");
     celebrate(reward.premiumDays > 0 ? "big" : "small");
     const lines: RewardLine[] = [
-      { icon: <CoinIcon size={18} />, label: t("common.coins"), value: `+${reward.coins}`, tone: "live" },
-      { icon: <BoltIcon size={18} />, label: t("common.energy"), value: `+${reward.energy}`, tone: "warn" },
+      {
+        icon: <CoinMark size={18} />,
+        label: t("common.coins"),
+        value: `+${reward.coins}`,
+        tone: "live",
+      },
+      {
+        icon: <EnergyMark size={18} />,
+        label: t("common.energy"),
+        value: `+${reward.energy}`,
+        tone: "warn",
+      },
     ];
     if (reward.premiumDays > 0) {
       lines.push({
@@ -137,7 +154,9 @@ export const DailyPage = () => {
                 >
                   {spins > 0
                     ? `${t("economy.spin")} · ${spins}`
-                    : t("economy.wheelLocked", { time: clockFormat(remaining) })}
+                    : t("economy.wheelLocked", {
+                        time: clockFormat(remaining),
+                      })}
                 </Button>
                 {spins <= 0 && (
                   <div className="w-full pt-1">
@@ -160,7 +179,7 @@ export const DailyPage = () => {
           <Panel className="px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 font-display text-[15px] font-extrabold tracking-[-0.01em]">
-                <FlameIcon size={17} className="text-warn" />
+                <StreakMark size={18} />
                 {t("economy.streakDay", { day: streakDay })}
               </span>
               {state?.streak.claimedToday ? (
@@ -184,10 +203,16 @@ export const DailyPage = () => {
                   <div
                     key={entry.day}
                     className={`flex h-9 flex-1 items-center justify-center rounded-[12px] font-display text-[13px] font-bold tabular ${
-                      reached ? "bg-accent text-on-accent" : "bg-elevated text-hint"
+                      reached
+                        ? "bg-accent text-on-accent"
+                        : "bg-elevated text-hint"
                     }`}
                   >
-                    {entry.premiumDays > 0 ? <CrownIcon size={15} /> : entry.day}
+                    {entry.premiumDays > 0 ? (
+                      <CrownIcon size={15} />
+                    ) : (
+                      entry.day
+                    )}
                   </div>
                 );
               })}

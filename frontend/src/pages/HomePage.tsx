@@ -10,13 +10,8 @@ import { clockFormat } from "@/shared/lib/format";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
 import { Avatar, Meter, Segmented, TabScreen } from "@/shared/ui";
-import {
-  BoltIcon,
-  ChatIcon,
-  CoinIcon,
-  FlameIcon,
-  MicIcon,
-} from "@/shared/ui/icons";
+import { ChatIcon, MicIcon } from "@/shared/ui/icons";
+import { CoinMark, EnergyMark, StreakMark } from "@/shared/ui/marks";
 import { useChat } from "@/store/chat";
 import { useEconomy } from "@/store/economy";
 import { useSession } from "@/store/session";
@@ -85,7 +80,10 @@ export const HomePage = () => {
           </span>
         </m.p>
 
-        <m.section variants={rise} className="flex flex-1 flex-col justify-center gap-5 py-2">
+        <m.section
+          variants={rise}
+          className="flex flex-1 flex-col justify-center gap-5 py-2"
+        >
           <Segmented
             id="mode"
             value={mode}
@@ -119,7 +117,11 @@ export const HomePage = () => {
               />
               <span className="absolute bottom-0 left-0 right-0 flex h-1/3 items-end justify-center pb-1">
                 <span className="flex size-9 items-center justify-center rounded-full bg-current/12">
-                  {mode === "voice" ? <MicIcon size={18} /> : <ChatIcon size={18} />}
+                  {mode === "voice" ? (
+                    <MicIcon size={18} />
+                  ) : (
+                    <ChatIcon size={18} />
+                  )}
                 </span>
               </span>
             </span>
@@ -152,7 +154,7 @@ export const HomePage = () => {
         >
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2 text-[13px] text-secondary">
-              <BoltIcon size={15} className="text-warn" />
+              <EnergyMark size={16} />
               {unlimited ? (
                 t("home.free")
               ) : (
@@ -162,16 +164,19 @@ export const HomePage = () => {
               )}
             </span>
             <span className="mt-2 block">
-              <Meter ratio={unlimited ? 1 : energy / Math.max(1, energyMax)} tone="warn" />
+              <Meter
+                ratio={unlimited ? 1 : energy / Math.max(1, energyMax)}
+                tone="warn"
+              />
             </span>
           </span>
 
           <span className="flex items-center gap-1.5 text-[13px] text-secondary tabular">
-            <CoinIcon size={15} />
+            <CoinMark size={16} />
             {profile?.stats?.coins ?? 0}
           </span>
           <span className="flex items-center gap-1.5 text-[13px] text-secondary tabular">
-            <FlameIcon size={15} className="text-warn" />
+            <StreakMark size={16} />
             {economy?.streak.days ?? 0}
           </span>
         </m.button>

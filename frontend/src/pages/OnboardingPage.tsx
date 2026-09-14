@@ -6,13 +6,8 @@ import { request } from "@/shared/lib/api";
 import { ease, pop } from "@/shared/lib/motion";
 import type { Profile } from "@/shared/lib/types";
 import { Avatar, Button, Chip, LevelBars, Meter, tileArt } from "@/shared/ui";
-import {
-  BoltIcon,
-  CoinIcon,
-  CrownIcon,
-  MicIcon,
-  ShieldIcon,
-} from "@/shared/ui/icons";
+import { CrownIcon, MicIcon, ShieldIcon } from "@/shared/ui/icons";
+import { CoinMark, EnergyMark } from "@/shared/ui/marks";
 import { useSession } from "@/store/session";
 import { toast } from "@/store/ui";
 import { useVoice } from "@/store/voice";
@@ -167,7 +162,11 @@ export const OnboardingPage = () => {
             animate="animate"
             exit="exit"
           >
-            <Avatar seed={profile?.avatarSeed ?? "anon"} gender={profile?.gender} size={118} />
+            <Avatar
+              seed={profile?.avatarSeed ?? "anon"}
+              gender={profile?.gender}
+              size={118}
+            />
             <h1 className="mt-2 font-display text-[24px] font-extrabold tracking-[-0.03em]">
               {profile?.anonName ?? t("chat.stranger")}
             </h1>
@@ -197,7 +196,9 @@ export const OnboardingPage = () => {
             <h1 className="font-display text-[24px] font-extrabold tracking-[-0.03em]">
               {t("onboarding.interestsTitle")}
             </h1>
-            <p className="text-[13.5px] text-hint">{t("onboarding.interestsHint")}</p>
+            <p className="text-[13.5px] text-hint">
+              {t("onboarding.interestsHint")}
+            </p>
 
             <div className="flex flex-wrap justify-center gap-2">
               {INTERESTS.map((item) => (
@@ -223,13 +224,21 @@ export const OnboardingPage = () => {
                   <MicIcon size={19} />
                 </span>
                 <div className="min-w-0 flex-1 text-left">
-                  <p className="font-display text-[14px] font-bold">{t("onboarding.microphone")}</p>
+                  <p className="font-display text-[14px] font-bold">
+                    {t("onboarding.microphone")}
+                  </p>
                   <p className="text-[11.5px] text-hint">
-                    {permission === "granted" ? t("onboarding.micGranted") : t("onboarding.micNeeded")}
+                    {permission === "granted"
+                      ? t("onboarding.micGranted")
+                      : t("onboarding.micNeeded")}
                   </p>
                 </div>
                 {permission !== "granted" && (
-                  <Button size="sm" variant="surface" onClick={() => void enableVoice()}>
+                  <Button
+                    size="sm"
+                    variant="surface"
+                    onClick={() => void enableVoice()}
+                  >
                     {t("onboarding.allow")}
                   </Button>
                 )}
@@ -267,13 +276,13 @@ export const OnboardingPage = () => {
             <div className="mt-2 flex w-full flex-col gap-2 text-left">
               {[
                 {
-                  icon: <BoltIcon size={19} />,
+                  icon: <EnergyMark size={21} />,
                   tone: "bg-warn/15 text-warn",
                   title: t("onboarding.energyWhat"),
                   body: t("onboarding.energyBody", { voice: 8, text: 4 }),
                 },
                 {
-                  icon: <CoinIcon size={19} />,
+                  icon: <CoinMark size={21} />,
                   tone: "bg-live-quiet text-live",
                   title: t("onboarding.coinsWhat"),
                   body: t("onboarding.coinsBody"),
@@ -285,7 +294,10 @@ export const OnboardingPage = () => {
                   body: t("onboarding.premiumBody"),
                 },
               ].map((row) => (
-                <div key={row.title} className="panel flex gap-3 rounded-[18px] px-4 py-3.5">
+                <div
+                  key={row.title}
+                  className="panel flex gap-3 rounded-[18px] px-4 py-3.5"
+                >
                   <span
                     className={`flex size-10 shrink-0 items-center justify-center rounded-[13px] ${row.tone}`}
                   >
@@ -295,13 +307,21 @@ export const OnboardingPage = () => {
                     <p className="font-display text-[14.5px] font-bold tracking-[-0.01em]">
                       {row.title}
                     </p>
-                    <p className="mt-0.5 text-[12.5px] leading-snug text-hint">{row.body}</p>
+                    <p className="mt-0.5 text-[12.5px] leading-snug text-hint">
+                      {row.body}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <Button full size="lg" loading={busy} className="mt-3" onClick={() => void finish()}>
+            <Button
+              full
+              size="lg"
+              loading={busy}
+              className="mt-3"
+              onClick={() => void finish()}
+            >
               {t("onboarding.enter")}
             </Button>
             <p className="flex items-center gap-1.5 text-[11.5px] text-hint">

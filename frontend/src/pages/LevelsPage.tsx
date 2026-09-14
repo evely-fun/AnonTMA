@@ -6,8 +6,15 @@ import { useBackButton } from "@/shared/hooks/useBackButton";
 import { useT } from "@/shared/i18n";
 import { request } from "@/shared/lib/api";
 import { listStagger, rise } from "@/shared/lib/motion";
-import { Meter, PushScreen, ScreenHeader, SectionHead, Skeleton } from "@/shared/ui";
-import { BoltIcon, CheckIcon, CoinIcon, CrownIcon } from "@/shared/ui/icons";
+import {
+  Meter,
+  PushScreen,
+  ScreenHeader,
+  SectionHead,
+  Skeleton,
+} from "@/shared/ui";
+import { CheckIcon, CrownIcon } from "@/shared/ui/icons";
+import { CoinMark, EnergyMark } from "@/shared/ui/marks";
 
 interface Rung {
   level: number;
@@ -76,7 +83,12 @@ export const LevelsPage = () => {
             ))}
           </div>
         ) : (
-          <m.div variants={listStagger} initial="initial" animate="animate" className="space-y-6">
+          <m.div
+            variants={listStagger}
+            initial="initial"
+            animate="animate"
+            className="space-y-6"
+          >
             <m.section className="px-4" variants={rise}>
               <div className="panel-hero rounded-[22px] px-5 py-4">
                 <p className="font-display text-[11px] font-bold tracking-[0.01em] text-hint">
@@ -93,23 +105,28 @@ export const LevelsPage = () => {
                 </div>
                 <p className="mt-2 text-[12px] text-hint tabular">
                   {data.xpIntoLevel} / {data.xpForNext} XP
-                  {next && ` · ${t("progression.needXp", { count: data.xpForNext - data.xpIntoLevel })}`}
+                  {next &&
+                    ` · ${t("progression.needXp", { count: data.xpForNext - data.xpIntoLevel })}`}
                 </p>
 
                 {(data.energyBonus > 0 || data.coinBonus > 0) && (
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
                     {data.energyBonus > 0 && (
                       <Perk
-                        icon={<BoltIcon size={13} />}
+                        icon={<EnergyMark size={15} />}
                         tone="text-warn"
-                        label={t("progression.perkEnergy", { count: data.energyBonus })}
+                        label={t("progression.perkEnergy", {
+                          count: data.energyBonus,
+                        })}
                       />
                     )}
                     {data.coinBonus > 0 && (
                       <Perk
-                        icon={<CoinIcon size={13} />}
+                        icon={<CoinMark size={15} />}
                         tone="text-live"
-                        label={t("progression.perkCoins", { count: data.coinBonus })}
+                        label={t("progression.perkCoins", {
+                          count: data.coinBonus,
+                        })}
                       />
                     )}
                   </div>
@@ -118,7 +135,10 @@ export const LevelsPage = () => {
             </m.section>
 
             <m.section variants={rise}>
-              <SectionHead title={t("progression.next")} note={t("progression.howXp")} />
+              <SectionHead
+                title={t("progression.next")}
+                note={t("progression.howXp")}
+              />
               {/* One climb rather than forty identical cards each carrying its
                   own padlock. The rail is continuous, the node says whether a
                   rung is behind you, and only the rungs that actually give
@@ -130,9 +150,13 @@ export const LevelsPage = () => {
                 />
                 {data.ladder.map((rung) => {
                   const current = rung.level === data.level;
-                  const perks = rung.newTitle || rung.energyBonus > 0 || rung.coinBonus > 0;
+                  const perks =
+                    rung.newTitle || rung.energyBonus > 0 || rung.coinBonus > 0;
                   return (
-                    <div key={rung.level} className="relative flex items-start gap-4 py-2.5">
+                    <div
+                      key={rung.level}
+                      className="relative flex items-start gap-4 py-2.5"
+                    >
                       <span
                         className={`relative z-10 flex size-[22px] shrink-0 items-center justify-center rounded-full ${
                           current
@@ -151,7 +175,9 @@ export const LevelsPage = () => {
                         )}
                       </span>
 
-                      <div className={`min-w-0 flex-1 ${rung.reached ? "" : "opacity-70"}`}>
+                      <div
+                        className={`min-w-0 flex-1 ${rung.reached ? "" : "opacity-70"}`}
+                      >
                         <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                           <span
                             className={`font-display text-[14px] tracking-[-0.01em] ${
@@ -177,16 +203,20 @@ export const LevelsPage = () => {
                             )}
                             {rung.energyBonus > 0 && (
                               <Perk
-                                icon={<BoltIcon size={12} />}
+                                icon={<EnergyMark size={14} />}
                                 tone="text-warn"
-                                label={t("progression.perkEnergy", { count: rung.energyBonus })}
+                                label={t("progression.perkEnergy", {
+                                  count: rung.energyBonus,
+                                })}
                               />
                             )}
                             {rung.coinBonus > 0 && (
                               <Perk
-                                icon={<CoinIcon size={12} />}
+                                icon={<CoinMark size={14} />}
                                 tone="text-live"
-                                label={t("progression.perkCoins", { count: rung.coinBonus })}
+                                label={t("progression.perkCoins", {
+                                  count: rung.coinBonus,
+                                })}
                               />
                             )}
                           </div>

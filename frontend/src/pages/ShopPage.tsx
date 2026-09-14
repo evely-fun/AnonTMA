@@ -7,10 +7,16 @@ import { useT } from "@/shared/i18n";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { backgroundClass, nameEffectClass } from "@/shared/lib/cosmetics";
 import { haptic } from "@/shared/lib/telegram";
-import { paletteSwatch, resolveScheme, type Palette, type ThemeMode } from "@/shared/lib/theme";
+import {
+  paletteSwatch,
+  resolveScheme,
+  type Palette,
+  type ThemeMode,
+} from "@/shared/lib/theme";
 import type { ShopItem } from "@/shared/lib/types";
 import { Avatar, Button, PushScreen, Rail, ScreenHeader } from "@/shared/ui";
-import { CheckIcon, CoinIcon, CrownIcon, LockIcon, SparkleIcon } from "@/shared/ui/icons";
+import { CheckIcon, CrownIcon, LockIcon, SparkleIcon } from "@/shared/ui/icons";
+import { CoinMark } from "@/shared/ui/marks";
 import { useEconomy } from "@/store/economy";
 import { defaultStyleFor } from "@/shared/lib/avatars";
 import { useSession } from "@/store/session";
@@ -58,7 +64,8 @@ const Preview = ({
     return (
       <span
         className={`block size-11 rounded-[14px] ${
-          backgroundClass(item.value) || "bg-elevated shadow-[inset_0_0_0_1px_var(--color-separator)]"
+          backgroundClass(item.value) ||
+          "bg-elevated shadow-[inset_0_0_0_1px_var(--color-separator)]"
         }`}
       />
     );
@@ -70,7 +77,9 @@ const Preview = ({
     return (
       <span
         className="block size-11 rounded-full"
-        style={{ background: `linear-gradient(150deg, ${swatch.accent}, ${swatch.ground})` }}
+        style={{
+          background: `linear-gradient(150deg, ${swatch.accent}, ${swatch.ground})`,
+        }}
       />
     );
   }
@@ -90,7 +99,9 @@ const Preview = ({
   }
   return (
     <span className="flex size-11 items-center justify-center rounded-[14px] bg-elevated">
-      <span className={`font-display text-[15px] font-extrabold ${nameEffectClass(item.value)}`}>
+      <span
+        className={`font-display text-[15px] font-extrabold ${nameEffectClass(item.value)}`}
+      >
         Aa
       </span>
     </span>
@@ -110,7 +121,9 @@ export const ShopPage = () => {
   const load = useShop((store) => store.load);
   const buy = useShop((store) => store.buy);
   const equip = useShop((store) => store.equip);
-  const scheme = resolveScheme((profile?.preferences?.theme ?? "auto") as ThemeMode);
+  const scheme = resolveScheme(
+    (profile?.preferences?.theme ?? "auto") as ThemeMode,
+  );
   const [tab, setTab] = useState<Category>("avatar");
 
   useBackButton("/");
@@ -173,7 +186,7 @@ export const ShopPage = () => {
         onBack={() => navigate("/")}
         trailing={
           <span className="flex items-center gap-1.5 rounded-full bg-elevated px-3 py-1.5 font-display text-[13px] font-extrabold tabular">
-            <CoinIcon size={14} className="text-warn" />
+            <CoinMark size={15} />
             {coins.toLocaleString("en-US")}
           </span>
         }
@@ -188,7 +201,9 @@ export const ShopPage = () => {
               onPointerDown={() => haptic.select()}
               onClick={() => setTab(category)}
               className={`h-9 shrink-0 rounded-full px-4 font-display text-[12.5px] font-bold tracking-[-0.01em] transition-colors ${
-                tab === category ? "bg-label text-bg" : "bg-elevated text-secondary"
+                tab === category
+                  ? "bg-label text-bg"
+                  : "bg-elevated text-secondary"
               }`}
             >
               {t(`shop.categories.${category}`)}
@@ -227,47 +242,59 @@ export const ShopPage = () => {
                     tile says nothing. Rarity is only worth a line when it is
                     something to notice. */}
                 {item.rarity !== "base" && (
-                  <p className={`text-[11px] font-semibold ${RARITY_TONE[item.rarity]}`}>
+                  <p
+                    className={`text-[11px] font-semibold ${RARITY_TONE[item.rarity]}`}
+                  >
                     {t(`shop.rarity.${item.rarity}`)}
                   </p>
                 )}
 
                 <span className="mt-auto w-full pt-1">
-                {worn ? (
-                  <span className="flex h-9 items-center justify-center gap-1.5 font-display text-[12px] font-bold text-accent">
-                    <CheckIcon size={15} />
-                    {t("shop.equipped")}
-                  </span>
-                ) : item.owned && !item.consumable ? (
-                  <Button
-                    full
-                    size="sm"
-                    variant="surface"
-                    loading={pending}
-                    onClick={() => void onEquip(item)}
-                  >
-                    {t("shop.equip")}
-                  </Button>
-                ) : (
-                  <m.button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => void onBuy(item)}
-                    whileTap={{ scale: 0.95 }}
-                    transition={spring.snappy}
-                    className={`flex h-9 w-full items-center justify-center gap-1.5 rounded-[12px] px-3 font-display text-[13px] font-extrabold tabular ${
-                      item.affordable ? "primary-action" : "bg-elevated text-hint"
-                    }`}
-                  >
-                    {item.affordable ? <CoinIcon size={13} /> : <LockIcon size={12} />}
-                    {item.price.toLocaleString("en-US")}
-                  </m.button>
-                )}
+                  {worn ? (
+                    <span className="flex h-9 items-center justify-center gap-1.5 font-display text-[12px] font-bold text-accent">
+                      <CheckIcon size={15} />
+                      {t("shop.equipped")}
+                    </span>
+                  ) : item.owned && !item.consumable ? (
+                    <Button
+                      full
+                      size="sm"
+                      variant="surface"
+                      loading={pending}
+                      onClick={() => void onEquip(item)}
+                    >
+                      {t("shop.equip")}
+                    </Button>
+                  ) : (
+                    <m.button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => void onBuy(item)}
+                      whileTap={{ scale: 0.95 }}
+                      transition={spring.snappy}
+                      className={`flex h-9 w-full items-center justify-center gap-1.5 rounded-[12px] px-3 font-display text-[13px] font-extrabold tabular ${
+                        item.affordable
+                          ? "primary-action"
+                          : "bg-elevated text-hint"
+                      }`}
+                    >
+                      {item.affordable ? (
+                        <CoinMark size={14} />
+                      ) : (
+                        <LockIcon size={12} />
+                      )}
+                      {item.price.toLocaleString("en-US")}
+                    </m.button>
+                  )}
                 </span>
 
-                {item.category === "avatar" && item.value === suggested && !item.owned && (
-                  <span className="text-[10.5px] text-accent">{t("shop.suggested")}</span>
-                )}
+                {item.category === "avatar" &&
+                  item.value === suggested &&
+                  !item.owned && (
+                    <span className="text-[10.5px] text-accent">
+                      {t("shop.suggested")}
+                    </span>
+                  )}
               </m.div>
             );
           })}
