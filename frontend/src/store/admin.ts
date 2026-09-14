@@ -12,6 +12,9 @@ interface Overview {
 
 interface AdminState {
   allowed: boolean | null;
+  /** The viewer's staff rank, which decides what the app offers them. */
+  role: string;
+  rights: string[];
   overview: Overview | null;
   cases: ModerationCase[];
   detail: ModerationCaseDetail | null;
@@ -26,6 +29,8 @@ interface AdminState {
 
 export const useAdmin = create<AdminState>((set, get) => ({
   allowed: null,
+  role: "none",
+  rights: [],
   overview: null,
   cases: [],
   detail: null,
@@ -34,11 +39,13 @@ export const useAdmin = create<AdminState>((set, get) => ({
 
   check: async () => {
     try {
-      const payload = await request<{ admin: boolean }>("/admin/status");
-      set({ allowed: payload.admin });
+      const payload = await request<{ admin: boolean; role: string; rights: string[] }>(
+        "/admin/status",
+      );
+      set({ allowed: payload.admin, role: payload.role, rights: payload.rights });
       return payload.admin;
     } catch {
-      set({ allowed: false });
+      set({ allowed: false, role: "none", rights: [] });
       return false;
     }
   },

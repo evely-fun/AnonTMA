@@ -370,6 +370,23 @@ export const SettingsPage = () => {
           </Panel>
         </m.section>
 
+        {/* The owner's switch. It is only rendered for the account that can
+            actually set it, and the server refuses it for anyone else, so this
+            is a courtesy rather than the check. */}
+        {profile.rights?.includes("owner.announce") && (
+          <m.section variants={rise}>
+            <SectionHead title={t("settings.owner")} />
+            <Panel>
+              <Toggle
+                title={t("settings.announceEntrance")}
+                hint={t("settings.announceEntranceHint")}
+                checked={Boolean(preferences.announceEntrance)}
+                onChange={(value) => void update({ announceEntrance: value })}
+              />
+            </Panel>
+          </m.section>
+        )}
+
         <m.section variants={rise}>
           <SectionHead title={t("support.title")} note={t("support.subtitle")} />
           <Panel>

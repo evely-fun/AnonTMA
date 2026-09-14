@@ -7,6 +7,7 @@ import type { PresenceSnapshot, Reward, RoomMember } from "@/shared/lib/types";
 import { useChat } from "@/store/chat";
 import { useEconomy } from "@/store/economy";
 import { useGames } from "@/store/games";
+import { useNotices } from "@/features/notices/NoticeSheet";
 import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 import { useSocial } from "@/store/social";
@@ -197,6 +198,18 @@ export const bindRealtime = (): void => {
     if (member.userId !== selfId) {
       peerManager.connect(member.userId, selfId < member.userId);
     }
+  });
+
+  realtime.on("notice", (payload) => {
+    useNotices.getState().push({
+      id: Number(payload.id ?? 0),
+      kind: String(payload.kind ?? "info"),
+      payload: payload as Record<string, unknown>,
+    });
+  });
+
+  realtime.on("room.entrance", (payload) => {
+    useRooms.getState().announce(payload.member as RoomMember);
   });
 
   realtime.on("room.member_updated", (payload) => {

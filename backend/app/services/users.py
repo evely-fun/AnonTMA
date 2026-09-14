@@ -23,6 +23,7 @@ DEFAULT_PREFERENCES: dict = {
     "voicePreset": "natural",
     # The hue the owner picked for their name effect, in degrees.
     "nameHue": 28,
+    "announceEntrance": False,
 }
 
 

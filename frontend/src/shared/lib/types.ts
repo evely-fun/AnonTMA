@@ -32,6 +32,7 @@ export interface Preferences {
   matchLanguage: string;
   matchGender: string;
   allowFriendCalls: boolean;
+  announceEntrance?: boolean;
   voicePreset: string;
   nameHue: number;
 }
@@ -52,6 +53,9 @@ export interface Profile {
   equipped: { avatar: string; frame: string; effect: string; background: string };
   palette: string;
   uiLanguage: string;
+  /** The viewer's staff rank and what it unlocks, so the app renders only what it may. */
+  role: string;
+  rights: string[];
   premium: { active: boolean; until: string | null };
   stats: Stats;
   progress: Progress;

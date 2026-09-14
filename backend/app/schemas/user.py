@@ -66,6 +66,8 @@ class ProfileView(ApiModel):
     palette: str = "auto"
     equipped: dict = Field(default_factory=dict)
     ui_language: str = Field(default="auto", alias="uiLanguage")
+    role: str = "none"
+    rights: list[str] = Field(default_factory=list)
     premium: PremiumView
     stats: StatsView
     progress: ProgressView

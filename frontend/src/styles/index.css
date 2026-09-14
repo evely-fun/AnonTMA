@@ -460,6 +460,15 @@
     weight with it, so the tab you are on is the only coloured thing in the row
     and the two states line up pixel for pixel.
   */
+  /*
+    The stage an entrance plays on. Solid rather than blurred, per the rule
+    about frosted chrome, and it never takes a tap: the room underneath stays
+    usable the whole time it runs.
+  */
+  .entrance-stage {
+    background: oklch(0.12 0.02 28 / 0.88);
+  }
+
   .nav-mark-dim {
     filter: grayscale(1) opacity(0.45) contrast(0.9);
     transition: filter 200ms ease;

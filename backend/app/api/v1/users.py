@@ -12,7 +12,7 @@ from app.schemas.user import (
     PublicProfileView,
     ReportRequest,
 )
-from app.services import identity
+from app.services import identity, staff
 from app.services.achievements import CATALOG
 from app.services.moderation import submit_report
 from app.services.economy import is_premium
@@ -47,6 +47,9 @@ ALLOWED_PREFERENCES: dict[str, type | tuple[type, ...]] = {
     "allowFriendCalls": bool,
     "voicePreset": str,
     "nameHue": int,
+    # Announcing yourself on the way into a room. Only the owner may turn it
+    # on, and the check lives in the merge below rather than in the client.
+    "announceEntrance": bool,
 }
 
 LEADERBOARD_FIELDS = {
@@ -80,6 +83,8 @@ def serialize_profile(user: User, stats: UserStats) -> ProfileView:
             "palette": user.palette or "auto",
             "equipped": equipped_of(user),
             "uiLanguage": user.ui_language or "auto",
+            "role": staff.role_of(user),
+            "rights": sorted(staff.rights_of(user)),
             "premium": {
                 "active": is_premium(user),
                 "until": user.premium_until,
@@ -142,6 +147,9 @@ async def update_me(payload: ProfileUpdate, user: CurrentUser, session: SessionD
         for key, value in payload.preferences.items():
             if key not in ALLOWED_PREFERENCES:
                 continue
+            if key == "announceEntrance":
+                if not staff.can(user, "owner.announce"):
+                    continue
             if isinstance(value, bool) and ALLOWED_PREFERENCES[key] is not bool:
                 continue
             if not isinstance(value, ALLOWED_PREFERENCES[key]):
@@ -272,6 +280,23 @@ async def public_profile(
             "isFriend": friend.first() is not None,
         }
     )
+
+
+@router.get("/{user_id}/actions")
+async def actions(user_id: int, user: CurrentUser, session: SessionDep) -> dict:
+    """What this viewer may do about that person, decided here rather than in
+    the client, so the app renders exactly the buttons it is allowed."""
+    from app.services import moderation
+
+    target = await session.get(User, user_id)
+    if target is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such user")
+    return {
+        "userId": user_id,
+        "actions": staff.actions_for(user, target),
+        "blocked": await moderation.is_blocked(session, user.id, user_id),
+        "role": staff.role_of(target),
+    }
 
 
 @router.post("/{user_id}/block")

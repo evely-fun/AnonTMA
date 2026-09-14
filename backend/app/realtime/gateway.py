@@ -464,6 +464,23 @@ async def handle_room_join(session: Session, payload: dict, ack: str | None) -> 
         exclude=session.connection.id,
     )
 
+    # Someone who has turned their entrance on announces themselves to the
+    # room. The switch is owner only and enforced where it is written, so this
+    # only has to read what is already stored.
+    if not rejoining:
+        async with SessionLocal() as db:
+            person = await db.get(User, session.user_id)
+            announce = bool((person.preferences or {}).get("announceEntrance")) if person else False
+        if announce:
+            await hub.broadcast(
+                rooms.topic(room_id),
+                event(
+                    "room.entrance",
+                    {"roomId": room_id, "member": entry},
+                ),
+                exclude=session.connection.id,
+            )
+
 
 async def handle_room_leave(session: Session, payload: dict, ack: str | None) -> None:
     room_id = int(payload.get("roomId", 0) or 0) or (await rooms.current_room(session.user_id) or 0)

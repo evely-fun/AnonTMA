@@ -58,6 +58,10 @@ def rank_of(user: User) -> int:
     return RANK.get(role_of(user), 0)
 
 
+def rights_of(user: User) -> set[str]:
+    return set(RIGHTS.get(role_of(user), set()))
+
+
 def can(user: User, right: str) -> bool:
     return right in RIGHTS.get(role_of(user), set())
 
@@ -111,3 +115,28 @@ async def roster(session: AsyncSession) -> list[dict]:
         }
         for user in rows.scalars()
     ]
+
+
+# What one person may do about another. Users get the two things that are
+# theirs to decide, staff get the ladder their rank actually carries, and the
+# app renders exactly this rather than guessing at it.
+USER_ACTIONS = ("block", "report")
+MOD_ACTIONS = ("warn", "mute_24h")
+ADMIN_ACTIONS = ("ban_7d", "ban_permanent", "unban")
+OWNER_ACTIONS = ("grant",)
+
+
+def actions_for(actor: User, target: User) -> list[str]:
+    if actor.id == target.id:
+        return []
+    allowed = list(USER_ACTIONS)
+    # Nobody may sanction their own rank or above, which is what stops a
+    # moderator from muting an admin.
+    outranks = rank_of(actor) > rank_of(target)
+    if can(actor, "moderation.act") and outranks:
+        allowed += list(MOD_ACTIONS)
+        if rank_of(actor) >= RANK[StaffRole.admin]:
+            allowed += list(ADMIN_ACTIONS)
+    if can(actor, "economy.grant") and outranks:
+        allowed += list(OWNER_ACTIONS)
+    return allowed

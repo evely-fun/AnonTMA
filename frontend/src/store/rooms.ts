@@ -21,6 +21,8 @@ interface RoomsState {
   messages: RoomChatMessage[];
   joining: boolean;
   kicked: boolean;
+  /** Someone with their entrance turned on, waiting to be played once. */
+  arrival: { id: number; userId: number; anonName: string; avatarSeed: string } | null;
 
   loadList: (filters?: { kind?: string; language?: string }) => Promise<void>;
   create: (payload: Partial<Room> & { title: string }) => Promise<Room | null>;
@@ -38,6 +40,8 @@ interface RoomsState {
   reportMember: (userId: number, reason: string) => void;
   reset: () => void;
   setKicked: (kicked: boolean) => void;
+  announce: (member: RoomMember) => void;
+  clearArrival: () => void;
 }
 
 export type RoomAction =
@@ -56,6 +60,7 @@ export const useRooms = create<RoomsState>((set, get) => ({
   messages: [],
   joining: false,
   kicked: false,
+  arrival: null,
 
   loadList: async (filters) => {
     set({ loading: true });
@@ -163,6 +168,26 @@ export const useRooms = create<RoomsState>((set, get) => ({
 
   setKicked: (kicked) => set({ kicked }),
 
+  announce: (member) =>
+    set({
+      arrival: {
+        // A fresh id each time, so two arrivals in a row both play.
+        id: Date.now(),
+        userId: member.userId,
+        anonName: member.anonName,
+        avatarSeed: member.avatarSeed,
+      },
+    }),
+
+  clearArrival: () => set({ arrival: null }),
+
   reset: () =>
-    set({ current: null, members: [], messages: [], joining: false, kicked: false }),
+    set({
+      current: null,
+      members: [],
+      messages: [],
+      joining: false,
+      kicked: false,
+      arrival: null,
+    }),
 }));

@@ -18,6 +18,7 @@ import {
   SlidersIcon,
 } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
+import { EntranceOverlay } from "@/features/rooms/EntranceOverlay";
 import { useRooms } from "@/store/rooms";
 import { useSocial } from "@/store/social";
 import { toast } from "@/store/ui";
@@ -60,6 +61,8 @@ export const RoomPage = () => {
 
   const room = useRooms((state) => state.current);
   const members = useRooms((state) => state.members);
+  const arrival = useRooms((state) => state.arrival);
+  const clearArrival = useRooms((state) => state.clearArrival);
   const messages = useRooms((state) => state.messages);
   const open = useRooms((state) => state.open);
   const join = useRooms((state) => state.join);
@@ -364,6 +367,7 @@ export const RoomPage = () => {
       </Sheet>
 
       <AudioSheet open={audioOpen} onClose={() => setAudioOpen(false)} />
+      <EntranceOverlay arrival={arrival} onDone={clearArrival} />
     </PushScreen>
   );
 };

@@ -5,6 +5,7 @@ import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import coinArt from "@/assets/currency/coin.webp";
 import energyArt from "@/assets/currency/energy.webp";
 import { CallOverlay } from "@/features/friends/CallOverlay";
+import { NoticeSheet } from "@/features/notices/NoticeSheet";
 import { ChatPage } from "@/pages/ChatPage";
 import { DailyPage } from "@/pages/DailyPage";
 import { FriendsPage } from "@/pages/FriendsPage";
@@ -354,6 +355,7 @@ export const App = () => {
         )}
       </AnimatePresence>
       <CallOverlay />
+      <NoticeSheet />
       <Toaster />
     </div>
   );
