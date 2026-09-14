@@ -6,7 +6,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
 
-from app.api.v1 import admin, auth, config, economy, friends, games, rooms, shop, telegram, users
+from app.api.v1 import (
+    admin,
+    auth,
+    config,
+    economy,
+    friends,
+    games,
+    rooms,
+    shop,
+    support,
+    telegram,
+    users,
+)
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
 from app.bot.bot import setup_webhook, shutdown as shutdown_bot
@@ -90,7 +102,7 @@ async def health() -> dict:
     return {"status": "ok", "environment": settings.environment}
 
 
-for module in (auth, users, friends, rooms, games, config, economy, shop, admin):
+for module in (auth, users, friends, rooms, games, config, economy, shop, admin, support):
     app.include_router(module.router, prefix=settings.api_prefix)
 
 app.include_router(telegram.router)

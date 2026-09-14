@@ -14,7 +14,13 @@ class ResolveRequest(BaseModel):
 
 @router.get("/status")
 async def status_check(user: CurrentUser) -> dict:
-    return {"admin": service.is_admin(user)}
+    from app.services import staff
+
+    return {
+        "admin": service.is_admin(user),
+        "role": staff.role_of(user),
+        "rights": sorted(staff.RIGHTS.get(staff.role_of(user), set())),
+    }
 
 
 @router.get("/overview")

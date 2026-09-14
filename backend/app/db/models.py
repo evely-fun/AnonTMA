@@ -47,6 +47,28 @@ class RequestStatus(StrEnum):
     cancelled = "cancelled"
 
 
+class StaffRole(StrEnum):
+    none = "none"
+    helper = "helper"
+    moderator = "moderator"
+    admin = "admin"
+    owner = "owner"
+
+
+class TicketTopic(StrEnum):
+    technical = "technical"
+    shop = "shop"
+    app = "app"
+    game = "game"
+    report = "report"
+
+
+class TicketState(StrEnum):
+    open = "open"
+    answered = "answered"
+    closed = "closed"
+
+
 class GameStatus(StrEnum):
     lobby = "lobby"
     running = "running"
@@ -86,6 +108,7 @@ class User(Base, BigIntPk, TimestampMixin):
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
     banned_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     trust_score: Mapped[int] = mapped_column(Integer, default=100)
+    staff_role: Mapped[str] = mapped_column(String(16), default=StaffRole.none, index=True)
 
     stats: Mapped["UserStats"] = relationship(back_populates="user", uselist=False, lazy="selectin")
 
@@ -326,3 +349,28 @@ class Inventory(Base, BigIntPk):
     user_id: Mapped[int] = mapped_column(BigInteger, index=True)
     item: Mapped[str] = mapped_column(String(48))
     acquired_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class SupportTicket(Base, BigIntPk, TimestampMixin):
+    __tablename__ = "support_tickets"
+    __table_args__ = (Index("ix_ticket_queue", "state", "topic", "id"),)
+
+    author_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    topic: Mapped[str] = mapped_column(String(16), default=TicketTopic.app, index=True)
+    subject: Mapped[str] = mapped_column(String(120), default="")
+    state: Mapped[str] = mapped_column(String(16), default=TicketState.open, index=True)
+    assignee_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
+    last_message_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    unread_for_author: Mapped[bool] = mapped_column(Boolean, default=False)
+    unread_for_staff: Mapped[bool] = mapped_column(Boolean, default=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class SupportMessage(Base, BigIntPk, TimestampMixin):
+    __tablename__ = "support_messages"
+    __table_args__ = (Index("ix_ticket_thread", "ticket_id", "id"),)
+
+    ticket_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    author_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    from_staff: Mapped[bool] = mapped_column(Boolean, default=False)
+    body: Mapped[str] = mapped_column(Text, default="")

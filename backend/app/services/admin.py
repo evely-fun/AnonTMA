@@ -25,7 +25,11 @@ ACTIONS = {
 
 
 def is_admin(user: User) -> bool:
-    return str(user.tg_id) in set(settings.admin_tg_ids)
+    """Moderation is its own ladder: owners, admins and moderators work the
+    queue, a helper never sees it."""
+    from app.services import staff
+
+    return staff.can(user, "moderation.queue")
 
 
 async def _target_card(session: AsyncSession, target_id: int) -> dict:
