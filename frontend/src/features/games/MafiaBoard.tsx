@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useT } from "@/shared/i18n";
 import { rise } from "@/shared/lib/motion";
 import { Avatar, Button, Chip } from "@/shared/ui";
-import { StarIcon } from "@/shared/ui/icons";
+import { StarMark } from "@/shared/ui/marks";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
@@ -190,8 +190,8 @@ export const MafiaBoard = ({ view }: { view: View }) => {
                   </span>
                 )}
                 {inspect === userId && (
-                  <span className="absolute left-1.5 top-1.5 text-accent">
-                    <StarIcon size={14} />
+                  <span className="absolute left-1.5 top-1.5">
+                    <StarMark size={15} />
                   </span>
                 )}
                 {checked !== undefined && (

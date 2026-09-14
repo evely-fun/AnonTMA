@@ -19,7 +19,8 @@ import {
   Sheet,
   TabScreen,
 } from "@/shared/ui";
-import { CheckIcon, CloseIcon, LinkIcon, PhoneIcon, StarIcon } from "@/shared/ui/icons";
+import { CheckIcon, CloseIcon, LinkIcon, PhoneIcon } from "@/shared/ui/icons";
+import { StarMark } from "@/shared/ui/marks";
 import { useSocial } from "@/store/social";
 import { toast } from "@/store/ui";
 
@@ -159,7 +160,7 @@ export const FriendsPage = () => {
                       >
                         <p className="flex items-center gap-1.5 truncate font-display text-[14.5px] font-bold">
                           {friend.alias ?? friend.anonName}
-                          {friend.favourite && <StarIcon size={12} className="text-warn" />}
+                          {friend.favourite && <StarMark size={13} />}
                         </p>
                         <p className="truncate text-[12px] text-hint">
                           {friend.isOnline
