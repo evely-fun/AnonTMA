@@ -175,6 +175,9 @@
   --hero-tint: 0.3;
   --cosmetic-tint: 0.5;
   --cosmetic-ink: oklch(0.97 0.005 var(--ground-hue));
+  --nav-l: 0.78;
+  --hero-l: 0.62;
+  --hero-ink: oklch(0.16 0.02 var(--ground-hue));
   --orb-lightness: 0.42;
   --orb-alpha: 0.8;
 }
@@ -204,6 +207,9 @@
 
   --action-bg: oklch(0.26 0.02 var(--ground-hue));
   --action-ink: oklch(0.98 0.004 var(--ground-hue));
+  --nav-l: 0.55;
+  --hero-l: 0.72;
+  --hero-ink: oklch(0.18 0.03 28);
   --on-accent: oklch(0.99 0.003 var(--ground-hue));
   --veil: oklch(0.22 0.014 var(--ground-hue) / 0.3);
   --island: oklch(1 0 0 / 0.9);
@@ -647,6 +653,28 @@
   .primary-action {
     background: var(--action-bg);
     color: var(--action-ink);
+  }
+
+  /*
+    The one button on the home screen. It is a single solid fill in the search
+    hue with ink on top, so the drawing sits on the button rather than the
+    button being a picture with a label stuck under it, and there is no seam to
+    break when the theme flips.
+  */
+  .home-hero {
+    background: oklch(var(--hero-l) var(--chroma-search) var(--hue-search));
+    color: var(--hero-ink);
+    box-shadow: var(--panel-shadow);
+  }
+
+  .home-hero.is-short {
+    background: var(--surface-2);
+    color: var(--ink-3);
+  }
+
+  .home-hero.is-short img {
+    filter: grayscale(1);
+    opacity: 0.45;
   }
 
   .accent-action {

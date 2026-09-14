@@ -813,6 +813,12 @@ export const ru: Dictionary = {
     items: {
       avatar: {
         adventurer: "Искатель",
+        neko: "Мочи",
+        ronin: "Дрифт",
+        pilot: "Сигнал",
+        scholar: "Тихие часы",
+        kitsune: "Первый снег",
+        asuka: "Второй удар",
         notionists: "Нотионисты",
         lorelei: "Лорелей",
         openPeeps: "Открытые лица",

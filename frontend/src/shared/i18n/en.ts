@@ -810,6 +810,12 @@ export const en = {
     items: {
       avatar: {
         adventurer: "Adventurer",
+        neko: "Mochi",
+        ronin: "Drift",
+        pilot: "Signal",
+        scholar: "Quiet hours",
+        kitsune: "First snow",
+        asuka: "Second impact",
         notionists: "Notionists",
         lorelei: "Lorelei",
         openPeeps: "Open Peeps",

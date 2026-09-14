@@ -1,16 +1,16 @@
-import { m } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import chestArt from "@/assets/tiles/chest/00.webp";
-import connectArt from "@/assets/tiles/connect.webp";
+import connectText from "@/assets/tiles/connect-text.webp";
+import connectVoice from "@/assets/tiles/connect-voice.webp";
 import { peerManager } from "@/features/voice/webrtc";
 import { useT } from "@/shared/i18n";
 import { clockFormat } from "@/shared/lib/format";
 import { listStagger, rise, spring } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
 import { Avatar, Meter, Segmented, TabScreen } from "@/shared/ui";
-import { ChatIcon, MicIcon } from "@/shared/ui/icons";
 import { CoinMark, EnergyMark, StreakMark } from "@/shared/ui/marks";
 import { useChat } from "@/store/chat";
 import { useEconomy } from "@/store/economy";
@@ -82,7 +82,7 @@ export const HomePage = () => {
 
         <m.section
           variants={rise}
-          className="flex flex-1 flex-col justify-center gap-5 py-2"
+          className="flex flex-1 flex-col justify-center gap-4 py-2"
         >
           <Segmented
             id="mode"
@@ -94,48 +94,50 @@ export const HomePage = () => {
             ]}
           />
 
-          {/* The one action on the screen is drawn rather than labelled: two
-              masked bubbles finding each other, which is the whole product in
-              one picture, with the words sitting underneath it. */}
+          {/* The art sits on the card's own fill rather than carrying a ground
+              of its own, so the button is one solid shape in both themes
+              instead of a picture pasted onto a panel. Voice and text each
+              have their own drawing, which is what the mode switch changes. */}
           <m.button
             type="button"
             onClick={begin}
             onPointerDown={() => haptic.select()}
             whileTap={{ scale: 0.97 }}
             transition={spring.snappy}
-            className={`flex w-full flex-col overflow-hidden rounded-[28px] ${
-              short ? "bg-elevated text-hint" : "primary-action"
+            className={`home-hero flex w-full flex-col items-center gap-1 rounded-[28px] px-6 pb-7 pt-5 ${
+              short ? "is-short" : ""
             }`}
           >
-            <span className="relative block w-full">
-              <img
-                src={connectArt}
-                alt=""
-                width={880}
-                height={495}
-                className={`block aspect-[16/9] w-full object-cover ${short ? "opacity-40 grayscale" : ""}`}
-              />
-              <span className="absolute bottom-0 left-0 right-0 flex h-1/3 items-end justify-center pb-1">
-                <span className="flex size-9 items-center justify-center rounded-full bg-current/12">
-                  {mode === "voice" ? (
-                    <MicIcon size={18} />
-                  ) : (
-                    <ChatIcon size={18} />
-                  )}
-                </span>
-              </span>
+            <span className="relative flex h-[190px] w-full items-center justify-center">
+              <AnimatePresence mode="wait" initial={false}>
+                <m.img
+                  key={mode}
+                  src={mode === "voice" ? connectVoice : connectText}
+                  alt=""
+                  width={560}
+                  height={560}
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={spring.snappy}
+                  className="h-full w-auto max-w-full object-contain"
+                />
+              </AnimatePresence>
             </span>
-            <span className="flex w-full flex-col items-center gap-1 px-6 pb-6 pt-2">
-              <span className="font-display text-[21px] font-extrabold tracking-[-0.02em]">
-                {short ? t("economy.notEnough") : t("home.findNow")}
-              </span>
-              <span className="text-[13px] opacity-70">
-                {short
-                  ? t("home.topUp")
-                  : unlimited
-                    ? t("home.free")
-                    : t("home.cost", { count: cost })}
-              </span>
+            <span className="font-display text-[22px] font-extrabold tracking-[-0.02em]">
+              {short ? t("economy.notEnough") : t("home.findNow")}
+            </span>
+            <span className="flex items-center gap-1.5 text-[13px] opacity-75">
+              {short ? (
+                t("home.topUp")
+              ) : unlimited ? (
+                t("home.free")
+              ) : (
+                <>
+                  <EnergyMark size={15} />
+                  {t("home.cost", { count: cost })}
+                </>
+              )}
             </span>
           </m.button>
 

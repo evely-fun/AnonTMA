@@ -3,8 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   defaultStyleFor,
+  isPortrait,
   isStyleReady,
   loadStyle,
+  PORTRAITS,
   renderAvatar,
   type AvatarStyle,
 } from "@/shared/lib/avatars";
@@ -177,9 +179,10 @@ export const Avatar = ({
     };
   }, [resolved]);
 
+  const portrait = isPortrait(resolved) ? PORTRAITS[resolved] : null;
   const markup = useMemo(
-    () => (ready ? renderAvatar(resolved, seed || "anon", gender) : null),
-    [ready, resolved, seed, gender],
+    () => (portrait || !ready ? null : renderAvatar(resolved, seed || "anon", gender)),
+    [portrait, ready, resolved, seed, gender],
   );
 
   const layer = (FRAME_KEYS as readonly string[]).includes(frame) ? (frame as AvatarFrame) : "none";
@@ -202,7 +205,17 @@ export const Avatar = ({
         className="overflow-hidden"
         style={{ width: size, height: size, borderRadius: size }}
       >
-        {markup ? (
+        {portrait ? (
+          <img
+            src={portrait}
+            alt=""
+            width={size}
+            height={size}
+            loading="lazy"
+            decoding="async"
+            className="block size-full object-cover"
+          />
+        ) : markup ? (
           <span
             className="block size-full"
             // DiceBear renders a static SVG string from a seed, no external input

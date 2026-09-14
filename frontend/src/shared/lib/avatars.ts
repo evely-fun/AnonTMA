@@ -1,5 +1,12 @@
 import { createAvatar } from "@dicebear/core";
 
+import asuka from "@/assets/portraits/asuka.webp";
+import kitsune from "@/assets/portraits/kitsune.webp";
+import neko from "@/assets/portraits/neko.webp";
+import pilot from "@/assets/portraits/pilot.webp";
+import ronin from "@/assets/portraits/ronin.webp";
+import scholar from "@/assets/portraits/scholar.webp";
+
 /**
  * Every style draws a person. The abstract sets, robots, shapes, thumbs and
  * the flat geometric fallback, are gone: a mask you wear in a conversation
@@ -14,7 +21,36 @@ export type AvatarStyle =
   | "personas"
   | "bigSmile"
   | "avataaars"
-  | "pixelArt";
+  | "pixelArt"
+  | PortraitStyle;
+
+/**
+ * Drawn characters rather than generated ones. A seeded set can only ever
+ * recombine the parts it shipped with, so every account eventually meets its
+ * own face on someone else. These are one of a kind: you pick one, and it is
+ * yours until you change it.
+ */
+export type PortraitStyle =
+  | "asuka"
+  | "neko"
+  | "ronin"
+  | "kitsune"
+  | "pilot"
+  | "scholar";
+
+export const PORTRAITS: Record<PortraitStyle, string> = {
+  asuka,
+  neko,
+  ronin,
+  kitsune,
+  pilot,
+  scholar,
+};
+
+export const PORTRAIT_STYLES = Object.keys(PORTRAITS) as PortraitStyle[];
+
+export const isPortrait = (style: string): style is PortraitStyle =>
+  style in PORTRAITS;
 
 /**
  * One character comes free, the Seeker, and everything else is earned. A
@@ -23,6 +59,7 @@ export type AvatarStyle =
 export const FREE_AVATAR_STYLES: AvatarStyle[] = ["adventurer"];
 
 export const AVATAR_STYLES: AvatarStyle[] = [
+  ...PORTRAIT_STYLES,
   "adventurer",
   "notionists",
   "lorelei",
@@ -37,7 +74,7 @@ export const AVATAR_STYLES: AvatarStyle[] = [
 type StyleModule = { create: unknown; meta: unknown; schema: unknown };
 type Loader = () => Promise<StyleModule>;
 
-const LOADERS: Record<AvatarStyle, Loader> = {
+const LOADERS: Partial<Record<AvatarStyle, Loader>> = {
   adventurer: () => import("@dicebear/adventurer"),
   notionists: () => import("@dicebear/notionists"),
   lorelei: () => import("@dicebear/lorelei"),
@@ -97,9 +134,12 @@ const loaded = new Map<AvatarStyle, StyleModule>();
 const cache = new Map<string, string>();
 const pending = new Map<AvatarStyle, Promise<unknown>>();
 
-export const isStyleReady = (style: AvatarStyle): boolean => loaded.has(style);
+export const isStyleReady = (style: AvatarStyle): boolean =>
+  isPortrait(style) || loaded.has(style);
 
 export async function loadStyle(style: AvatarStyle): Promise<void> {
+  // A portrait is a file, there is nothing to fetch and compile.
+  if (isPortrait(style)) return;
   if (loaded.has(style)) return;
   const loader = LOADERS[style];
   if (!loader) return;

@@ -27,6 +27,13 @@ CATALOG: tuple[Item, ...] = (
     # else is earned. The robot, shape and thumb sets are gone: a mask you
     # wear in a conversation should be a face.
     Item("avatar.adventurer", "avatar", 0, "adventurer", "base"),
+    # Drawn characters, one of a kind rather than recombined from a seed.
+    Item("avatar.neko", "avatar", 1500, "neko", "rare"),
+    Item("avatar.ronin", "avatar", 1800, "ronin", "rare"),
+    Item("avatar.pilot", "avatar", 2100, "pilot", "epic"),
+    Item("avatar.scholar", "avatar", 2300, "scholar", "epic"),
+    Item("avatar.kitsune", "avatar", 3200, "kitsune", "legendary"),
+    Item("avatar.asuka", "avatar", 4200, "asuka", "legendary"),
     Item("avatar.notionists", "avatar", 700, "notionists", "common"),
     Item("avatar.lorelei", "avatar", 900, "lorelei", "common"),
     Item("avatar.openPeeps", "avatar", 1100, "openPeeps", "common"),

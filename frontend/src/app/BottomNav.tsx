@@ -2,16 +2,27 @@ import { m } from "motion/react";
 import { NavLink, useLocation } from "react-router-dom";
 
 import { useT } from "@/shared/i18n";
-import { FriendsIcon, GamesIcon, ProfileIcon, RadarIcon, RoomsIcon } from "@/shared/ui/icons";
-import { haptic } from "@/shared/lib/telegram";
 import { spring } from "@/shared/lib/motion";
+import { haptic } from "@/shared/lib/telegram";
+import {
+  FindMark,
+  FriendsMark,
+  PlayMark,
+  ProfileMark,
+  RoomsMark,
+} from "@/shared/ui/navicons";
 
+/**
+ * Each tab owns one of the five section hues, so the tab you are on is the
+ * only colour in the row and it is always the same colour as the screen it
+ * opens. Everything else sits in plain grey.
+ */
 const TABS = [
-  { to: "/", key: "find", Icon: RadarIcon },
-  { to: "/rooms", key: "rooms", Icon: RoomsIcon },
-  { to: "/games", key: "play", Icon: GamesIcon },
-  { to: "/friends", key: "friends", Icon: FriendsIcon },
-  { to: "/profile", key: "profile", Icon: ProfileIcon },
+  { to: "/", key: "find", Mark: FindMark, hue: "search" },
+  { to: "/rooms", key: "rooms", Mark: RoomsMark, hue: "rooms" },
+  { to: "/games", key: "play", Mark: PlayMark, hue: "games" },
+  { to: "/friends", key: "friends", Mark: FriendsMark, hue: "friends" },
+  { to: "/profile", key: "profile", Mark: ProfileMark, hue: "profile" },
 ];
 
 export const BottomNav = () => {
@@ -24,37 +35,31 @@ export const BottomNav = () => {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[480px]">
       <div className="nav-island relative flex w-full items-stretch gap-0.5 rounded-t-[20px] px-2 pb-[calc(5px+env(safe-area-inset-bottom))] pt-1.5">
-        {TABS.map(({ to, key, Icon }) => {
+        {TABS.map(({ to, key, Mark, hue }) => {
           const active = current?.to === to;
+          const tint = `oklch(var(--nav-l) var(--chroma-${hue}) var(--hue-${hue}))`;
           return (
             <NavLink
               key={to}
               to={to}
               onPointerDown={() => haptic.select()}
-              className="relative z-10 flex flex-1 flex-col items-center justify-center gap-0.5 py-1"
+              className="relative z-10 flex flex-1 flex-col items-center justify-center gap-1 py-1"
+              style={active ? { color: tint } : undefined}
             >
-              {active && (
-                <m.span
-                  layoutId="nav-glow"
-                  className="absolute inset-x-3 -top-1.5 h-[2px] rounded-full bg-accent"
-                  transition={spring.snappy}
-                />
-              )}
               <m.span
                 className="flex size-6 items-center justify-center"
-                animate={{ scale: active ? 1.06 : 1 }}
+                animate={{ scale: active ? 1.06 : 1, y: active ? -1 : 0 }}
                 transition={spring.snappy}
               >
-                <Icon
-                  size={19}
-                  className={`transition-colors duration-200 ${
-                    active ? "text-label" : "text-hint"
-                  }`}
+                <Mark
+                  size={21}
+                  filled={active}
+                  className={active ? "" : "text-hint/70"}
                 />
               </m.span>
               <span
                 className={`font-display text-[9.5px] font-bold tracking-tight transition-colors duration-200 ${
-                  active ? "text-label" : "text-hint"
+                  active ? "" : "text-hint/70"
                 }`}
               >
                 {t(`nav.${key}`)}
