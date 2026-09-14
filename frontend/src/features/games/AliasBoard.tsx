@@ -8,21 +8,23 @@ import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 import { useVoice } from "@/store/voice";
 
-import { GameStatus, Versus, WordCard } from "./shared";
+import { GameStatus, WordCard } from "./shared";
 
 interface View {
   phase: string;
-  teams: { a: number[]; b: number[] };
-  yourTeam: "a" | "b";
-  turn: "a" | "b";
+  pairs: number[][];
+  yourPair: number | null;
+  playingPair: number;
+  yourTurn: boolean;
+  round: number;
+  totalRounds: number;
   explainer: number | null;
   youExplain: boolean;
   word: string | null;
-  scores: { a: number; b: number };
+  scores: Record<string, number>;
   personal: Record<string, number>;
   skips: number;
   maxSkips: number;
-  target: number;
   winner: string | null;
   secondsLeft: number;
 }
@@ -57,38 +59,46 @@ export const AliasBoard = ({ view }: { view: View }) => {
   return (
     <div className="flex flex-col gap-5">
       <GameStatus
-        eyebrow={t("games.board.teamExplains", { team: view.turn.toUpperCase() })}
+        eyebrow={t("games.board.roundOf", {
+          current: view.round,
+          total: view.totalRounds,
+        })}
         title={nameOf(view.explainer)}
         seconds={view.secondsLeft}
       />
 
-      <Versus
-        left={{
-          name:
-            view.yourTeam === "a"
-              ? `${t("games.board.teamA")} · ${t("common.you")}`
-              : t("games.board.teamA"),
-          badge: "A",
-          score: view.scores.a,
-          active: view.turn === "a",
-        }}
-        right={{
-          name:
-            view.yourTeam === "b"
-              ? `${t("games.board.teamB")} · ${t("common.you")}`
-              : t("games.board.teamB"),
-          badge: "B",
-          score: view.scores.b,
-          active: view.turn === "b",
-        }}
-        middleLabel={t("games.board.toWin")}
-        middleValue={view.target}
-      />
+      {/* Every pair on one line, so you can see the whole standing at a glance
+          rather than only your own half of it. */}
+      <div className="flex flex-col gap-1.5">
+        {view.pairs.map((pair, index) => {
+          const playing = index === view.playingPair;
+          const mine = index === view.yourPair;
+          return (
+            <div
+              key={index}
+              className={`flex items-center gap-2.5 rounded-[16px] px-3.5 py-2.5 ${
+                playing ? "bg-accent-quiet" : "panel"
+              }`}
+            >
+              <span className="font-display text-[12px] font-extrabold tabular opacity-60">
+                {index + 1}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
+                {pair.map((member) => nameOf(member)).join(" · ")}
+                {mine && ` · ${t("common.you")}`}
+              </span>
+              <span className="font-display text-[15px] font-extrabold tabular">
+                {view.scores[String(index)] ?? 0}
+              </span>
+            </div>
+          );
+        })}
+      </div>
 
       {view.phase === "finished" ? (
         <WordCard
           label={t("games.board.winner")}
-          value={String(view.winner ?? "").toUpperCase()}
+          value={t("games.board.pairNumber", { number: Number(view.winner ?? 0) + 1 })}
         />
       ) : view.youExplain ? (
         <>
@@ -110,12 +120,12 @@ export const AliasBoard = ({ view }: { view: View }) => {
       ) : (
         <>
           <p className="text-center text-[13.5px] leading-snug text-hint">
-            {view.turn === view.yourTeam
+            {view.yourTurn
               ? t("games.board.teammateExplaining")
               : t("games.board.otherTeam")}
           </p>
 
-          {view.turn === view.yourTeam && (
+          {view.yourTurn && (
             <div className="flex items-center gap-2">
               <div className="flex flex-1 items-center rounded-[16px] bg-surface px-4">
                 <input
