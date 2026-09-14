@@ -4,33 +4,22 @@ Kept here rather than in a chat so it survives between sessions. Ordered by
 what blocks the most. Everything below comes from the brief, plus Emil's
 comments on it.
 
-## **1. City Mafia, the real one**
+## Done and in the repository
 
-**The make or break feature.** A separate game from the casual four player
-Mafia we already ship, which stays as it is.
-
-- Ten players plus a host. Roles: two Mafia, a Don, a Sheriff, a Doctor and
-  five Civilians. Seats are numbered one to ten and a player is referred to by
-  their number.
-- Night, sixty seconds: the black team agrees on one number, and a miss is a
-  real outcome when they do not agree. The Don looks for the Sheriff, the
-  Sheriff checks one player, the Doctor saves one and may save themselves only
-  once and never the same person twice running.
-- Day: a circle of one minute speeches in seat order, each player may nominate
-  one number, then a vote on the nominated in nomination order.
-- A tie gives each tied player thirty seconds more and a revote. A second tie
-  on the same players puts the whole table to a vote, and if that does not
-  carry, nobody leaves.
-- Whoever leaves gets a minute of last words.
-- Fouls: the third costs the player their speech, the fourth takes them off the
-  table with no last words. Two warnings do the same.
-- The host needs a panel: give a foul or a warning, put someone back, open and
-  close each phase, end the game.
-- The black team needs a night channel of their own, and the Doctor and the
-  Sheriff need a private line to the host.
-
-Reference: the Discord bot Denys bought (rules and flow only, our own code) and
-the federation rules at dom-mafia.ru and gomafia.pro.
+- **City Mafia**, ten seats and a host, the full federation rule set, host
+  panel, private notes, fouls and warnings. Engine, board and cover.
+- **Staff roles**, owner, admin, moderator, helper, with moderation and support
+  as separate ladders.
+- **Support desk**, topics that route to the right queue, threaded both ways,
+  reachable from settings.
+- **Streak with no ceiling**, a curve instead of a table, smaller payouts that
+  climb, weekly and monthly milestones, and a flame that grows through five
+  stages.
+- **Icon pack**, five generated tab marks with a coloured and a grey state cut
+  from one file.
+- **Home**, one ink card with its own drawing per mode, identical in both
+  themes.
+- **Avatar pack**, six drawn characters. **Crest frames**, ears, petals, crown.
 
 ## **2. Bunker to the official rules**
 
@@ -47,36 +36,22 @@ Rebuild against https://bunker-online.com/ru/rules.
 - Seven rounds at most, and the game ends as soon as the bunker is full.
 - Action cards are barred during last words.
 
-## **3. Staff roles and rights**
+## **Economy, still to do**
 
-Owner, Admin, Moderator, Helper, each with its own rights. Moderation stays out
-of the support queues below.
-
-## **4. Support**
-
-A button that opens a ticket with a category: technical, shop, report, a
-question about the app or a game. App and game questions go to Helpers.
-Technical and shop go to Admins and the Owner. Moderators see none of it.
-Everything is threaded and answerable in the app.
-
-## **5. Economy**
-
-- A Telegram Stars shop.
-- Much bigger rewards for an invite, weighted to the first few.
+- A Telegram Stars shop. Nothing exists yet.
+- Much bigger rewards for an invite, weighted to the first few. Today an invite
+  pays a flat hundred coins.
 - Streak freezes in the Duolingo shape: a freeze is spent automatically on a
-  missed day, and can be bought and stockpiled.
+  missed day, and can be bought and stockpiled. Nothing exists yet.
 
-## **6. Home**
+## **Home**
 
-Two entry points instead of one: find someone to text, and find someone to
-talk to. Each with its own art.
+Done: one card with its own drawing per mode, and the mode switch above it.
 
-## **7. Cosmetics**
+## **Cosmetics, partly done**
 
-- A real avatar pack, not the textbook set: cat ears, soft characters, a set
-  with some attitude for the boys.
-- Frames with ears, looped animated decorations.
-- Many more name effects.
+- Done: six drawn characters, and three crest frames with looped movement.
+- Still to do: more characters, and many more name effects.
 - Every asset generated in our own style, backgrounds cut, checked against a
   real card before it ships.
 
