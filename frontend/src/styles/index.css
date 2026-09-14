@@ -469,6 +469,18 @@
     background: oklch(0.12 0.02 28 / 0.88);
   }
 
+  /* The clip is the room the title stands in, not the title itself, so it is
+     pushed under a scrim that clears the lower third for the name. */
+  .entrance-scrim {
+    background: linear-gradient(
+      to bottom,
+      oklch(0.12 0.02 28 / 0.2) 0%,
+      oklch(0.12 0.02 28 / 0.35) 42%,
+      oklch(0.1 0.02 28 / 0.92) 78%,
+      oklch(0.1 0.02 28 / 0.98) 100%
+    );
+  }
+
   .nav-mark-dim {
     filter: grayscale(1) opacity(0.45) contrast(0.9);
     transition: filter 200ms ease;
@@ -1179,10 +1191,21 @@
     The developer background. A painted ground rather than a gradient, so it
     is the one profile that cannot be approximated with a colour picker.
   */
+  /* The only skin that is a photograph rather than a tint, so it carries its
+     own ink: the card is dark in both themes and the light one would otherwise
+     print dark text on it. */
   .skin-forge {
     background-image: url("@/assets/owner/forge.webp");
     background-size: cover;
     background-position: center;
+    --cosmetic-ink: oklch(0.97 0.008 60);
+    --color-label: oklch(0.97 0.008 60);
+    --color-secondary: oklch(0.88 0.012 60);
+    --color-hint: oklch(0.76 0.014 60);
+    --color-elevated: oklch(1 0 0 / 0.14);
+    --color-bezel: oklch(1 0 0 / 0.2);
+    --color-accent: oklch(0.82 0.14 52);
+    color: var(--color-label);
   }
 
   @keyframes skin-drift {

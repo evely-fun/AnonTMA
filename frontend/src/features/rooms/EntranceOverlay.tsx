@@ -12,6 +12,8 @@ interface Arrival {
   userId: number;
   anonName: string;
   avatarSeed: string;
+  avatarStyle?: string;
+  frame?: string;
 }
 
 /**
@@ -45,7 +47,7 @@ export const EntranceOverlay = ({
       video.currentTime = 0;
       void video.play().catch(() => undefined);
     }
-    const timer = window.setTimeout(onDone, reduced ? 1800 : 3600);
+    const timer = window.setTimeout(onDone, reduced ? 1800 : 4000);
     return () => window.clearTimeout(timer);
   }, [arrival, onDone, reduced]);
 
@@ -58,7 +60,7 @@ export const EntranceOverlay = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35 }}
-          className="entrance-stage pointer-events-none fixed inset-0 z-[60] mx-auto flex max-w-[480px] flex-col items-center justify-center"
+          className="entrance-stage pointer-events-none fixed inset-0 z-[60] mx-auto flex max-w-[480px] flex-col items-center justify-end overflow-hidden pb-[22%]"
         >
           {!reduced && (
             <video
@@ -67,23 +69,31 @@ export const EntranceOverlay = ({
               muted
               playsInline
               preload="auto"
-              className="absolute inset-0 size-full object-cover opacity-80"
+              className="absolute inset-0 size-full scale-110 object-cover opacity-70"
             />
           )}
+
+          <div className="entrance-scrim absolute inset-0" />
 
           <m.div
             initial={{ scale: 0.86, opacity: 0, y: 16 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             transition={{ ...spring.soft, delay: reduced ? 0 : 0.9 }}
-            className="relative flex flex-col items-center gap-3 px-8 text-center"
+            className="relative flex flex-col items-center gap-2.5 px-8 text-center"
           >
-            <Avatar seed={arrival.avatarSeed} size={78} frame="crest" />
-            <span className="mt-2 block font-display text-[12px] font-bold tracking-[0.02em] text-white/70">
+            <Avatar
+              seed={arrival.avatarSeed}
+              style={arrival.avatarStyle}
+              frame={arrival.frame ?? "crest"}
+              size={92}
+            />
+            <span className="mt-1.5 block font-display text-[12px] font-bold tracking-[0.02em] text-white/65">
               {t("rooms.entranceEyebrow")}
             </span>
-            <span className="name-crimson block font-display text-[26px] font-extrabold leading-tight tracking-[-0.02em]">
+            <span className="name-crimson block font-display text-[28px] font-extrabold leading-tight tracking-[-0.02em]">
               {arrival.anonName}
             </span>
+            <span className="mt-1 block h-px w-16 bg-white/25" />
           </m.div>
         </m.div>
       )}

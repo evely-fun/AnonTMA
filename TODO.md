@@ -28,6 +28,13 @@ comments on it.
   freezes, and a stars shelf selling coins and one set stars alone can buy.
 - **Alias** in pairs over four rounds, swapping roles between them.
 - **Broken Telephone** as the drawing chain, with a canvas and a gallery.
+- **Owner panel**, people found by anonymous name only, grants written to a
+  ledger, promo codes minted and revoked, codes redeemed from settings.
+- **One person sheet**, the server decides what a viewer may do about someone:
+  a block and a report for a player, a warning and a mute for a moderator, a
+  ban for an admin. Every sanction writes the person a notice.
+- **Entrance**, a switch only the owner account has, and a clip the room sees
+  when they walk in.
 
 ## **Economy**
 

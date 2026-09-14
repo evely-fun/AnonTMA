@@ -22,7 +22,15 @@ interface RoomsState {
   joining: boolean;
   kicked: boolean;
   /** Someone with their entrance turned on, waiting to be played once. */
-  arrival: { id: number; userId: number; anonName: string; avatarSeed: string } | null;
+  arrival: {
+    id: number;
+    userId: number;
+    anonName: string;
+    avatarSeed: string;
+    avatarStyle?: string;
+    frame?: string;
+    effect?: string;
+  } | null;
 
   loadList: (filters?: { kind?: string; language?: string }) => Promise<void>;
   create: (payload: Partial<Room> & { title: string }) => Promise<Room | null>;
@@ -176,6 +184,8 @@ export const useRooms = create<RoomsState>((set, get) => ({
         userId: member.userId,
         anonName: member.anonName,
         avatarSeed: member.avatarSeed,
+        avatarStyle: member.avatarStyle,
+        frame: member.frame,
       },
     }),
 
