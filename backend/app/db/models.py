@@ -130,6 +130,8 @@ class UserStats(Base, TimestampMixin):
     games_played: Mapped[int] = mapped_column(Integer, default=0)
     games_won: Mapped[int] = mapped_column(Integer, default=0)
     friends_count: Mapped[int] = mapped_column(Integer, default=0)
+    streak_freezes: Mapped[int] = mapped_column(Integer, default=0)
+    invites_accepted: Mapped[int] = mapped_column(Integer, default=0)
     likes_received: Mapped[int] = mapped_column(Integer, default=0)
     reports_received: Mapped[int] = mapped_column(Integer, default=0)
     reports_filed: Mapped[int] = mapped_column(Integer, default=0)

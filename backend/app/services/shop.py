@@ -5,7 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import utcnow
 from app.db.models import Inventory, RewardLog, User, UserStats
-from app.services.economy import ENERGY_MAX, WHEEL_MAX_PENDING, add_energy, grant_premium, is_premium
+from app.services.economy import (
+    ENERGY_MAX,
+    MAX_FREEZES,
+    WHEEL_MAX_PENDING,
+    add_energy,
+    grant_premium,
+    is_premium,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +81,7 @@ CATALOG: tuple[Item, ...] = (
 
     Item("boost.energy", "boost", 300, "energy", "common"),
     Item("boost.spin", "boost", 750, "spin", "rare"),
+    Item("boost.freeze", "boost", 900, "freeze", "rare"),
 
     Item("premium.week", "premium", 4000, "7", "epic"),
     Item("premium.month", "premium", 14000, "30", "legendary"),
@@ -141,6 +149,13 @@ async def buy(session: AsyncSession, user: User, key: str) -> dict:
     elif item.category == "boost" and item.value == "spin":
         stats.wheel_spins = min(WHEEL_MAX_PENDING, stats.wheel_spins + 1)
         granted["spins"] = stats.wheel_spins
+    elif item.category == "boost" and item.value == "freeze":
+        if stats.streak_freezes >= MAX_FREEZES:
+            # Refunded rather than swallowed: they already hold the limit.
+            stats.coins += item.price
+            return {"error": "freezes_full"}
+        stats.streak_freezes = min(MAX_FREEZES, stats.streak_freezes + 1)
+        granted["freezes"] = stats.streak_freezes
     elif item.category == "premium":
         days = int(item.value)
         grant_premium(user, days)

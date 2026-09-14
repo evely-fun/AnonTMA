@@ -204,6 +204,25 @@ export const DailyPage = () => {
               )}
             </div>
 
+            {/* Freezes are what a run with no ceiling needs: one covers a day
+                you missed, so a single bad day cannot undo three months. */}
+            <div className="mt-3 flex items-center gap-1.5">
+              {Array.from({ length: state?.streak.maxFreezes ?? 3 }).map((_, index) => (
+                <span
+                  key={index}
+                  className={`h-1.5 flex-1 rounded-full ${
+                    index < (state?.streak.freezes ?? 0) ? "bg-accent" : "bg-elevated"
+                  }`}
+                />
+              ))}
+              <span className="ml-1 shrink-0 text-[11.5px] text-hint tabular">
+                {t("economy.freezesHeld", {
+                  count: state?.streak.freezes ?? 0,
+                  max: state?.streak.maxFreezes ?? 3,
+                })}
+              </span>
+            </div>
+
             {/* The week in front of you rather than a fixed ladder, because
                 the run does not stop at seven. */}
             <div className="mt-4 flex gap-1.5">

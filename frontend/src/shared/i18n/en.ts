@@ -646,6 +646,7 @@ export const en = {
     dailyTitle: "Daily rewards",
     streak: "Streak",
     streakDay: "Day {day}",
+    freezesHeld: "{count} of {max} freezes",
     streakTier: {
       spark: "A spark",
       flame: "Burning",
@@ -668,6 +669,7 @@ export const en = {
     wheelReadyPlural: "{count} chests waiting",
     wheelLocked: "{time} of voice to go",
     spin: "Open",
+        freeze: "Streak freeze",
     spinsLeft: "rewards",
     spinning: "Spinning…",
     youWon: "You won",

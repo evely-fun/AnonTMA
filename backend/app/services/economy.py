@@ -41,6 +41,37 @@ STREAK_TIERS = (
 )
 
 
+# A freeze is spent on a day you missed, and it keeps the run alive. They can
+# be bought, and a long run earns them on its own, which is the shape Duolingo
+# settled on because it stops one bad day undoing three months.
+MAX_FREEZES = 3
+FREEZE_EVERY = 10
+
+
+# Invites pay most for the first few, because the first three friends are what
+# decide whether someone stays, and a flat rate rewards nothing but volume.
+INVITE_LADDER = (
+    {"coins": 300, "xp": 120, "freeze": 1, "premiumDays": 0},
+    {"coins": 250, "xp": 100, "freeze": 0, "premiumDays": 0},
+    {"coins": 200, "xp": 90, "freeze": 1, "premiumDays": 1},
+    {"coins": 150, "xp": 70, "freeze": 0, "premiumDays": 0},
+    {"coins": 120, "xp": 60, "freeze": 0, "premiumDays": 0},
+)
+INVITE_TAIL = {"coins": 90, "xp": 45, "freeze": 0, "premiumDays": 0}
+# What the person who followed the link gets for showing up.
+INVITE_WELCOME_COINS = 150
+
+
+def invite_reward(accepted_before: int) -> dict:
+    """What this invite pays, given how many the inviter already has."""
+    if accepted_before < len(INVITE_LADDER):
+        return dict(INVITE_LADDER[accepted_before])
+    reward = dict(INVITE_TAIL)
+    # Every fifth invite past the ladder still hands back a freeze.
+    reward["freeze"] = 1 if (accepted_before + 1) % 5 == 0 else 0
+    return reward
+
+
 def streak_tier(day: int) -> str:
     name = STREAK_TIERS[0][0]
     for tier, starts in STREAK_TIERS:
@@ -181,6 +212,8 @@ def streak_reward_for(day: int) -> dict:
         "energy": energy,
         "coins": coins,
         "premiumDays": 1 if day % STREAK_MONTH == 0 else 0,
+        # Every tenth day hands back a freeze, up to what you can hold.
+        "freeze": 1 if day % FREEZE_EVERY == 0 else 0,
         "tier": streak_tier(day),
     }
 
@@ -195,6 +228,8 @@ async def claim_streak(session: AsyncSession, user: User, stats: UserStats) -> d
     stats.coins += int(reward["coins"])
     if reward["premiumDays"]:
         grant_premium(user, int(reward["premiumDays"]))
+    if reward.get("freeze"):
+        stats.streak_freezes = min(MAX_FREEZES, stats.streak_freezes + 1)
     session.add(
         RewardLog(
             user_id=user.id,
@@ -209,6 +244,8 @@ async def claim_streak(session: AsyncSession, user: User, stats: UserStats) -> d
         "energy": gained,
         "coins": int(reward["coins"]),
         "premiumDays": int(reward["premiumDays"]),
+        "freeze": int(reward.get("freeze", 0)),
+        "freezes": stats.streak_freezes,
         "tier": streak_tier(stats.streak_days or 1),
     }
 
@@ -278,6 +315,8 @@ def state_payload(user: User, stats: UserStats) -> dict:
         },
         "streak": {
             "days": stats.streak_days,
+            "freezes": stats.streak_freezes,
+            "maxFreezes": MAX_FREEZES,
             "claimedToday": stats.streak_claimed_day == today_key(),
             "tier": streak_tier(stats.streak_days or 1),
             "nextReward": streak_reward_for((stats.streak_days or 1) + 1),

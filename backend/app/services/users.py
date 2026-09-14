@@ -80,8 +80,21 @@ async def ensure_user(
                 user.referred_by_id = inviter.id
                 inviter_stats = await session.get(UserStats, inviter.id)
                 if inviter_stats:
-                    inviter_stats.coins += 100
-                    inviter_stats.xp += 50
+                    reward = economy.invite_reward(inviter_stats.invites_accepted)
+                    inviter_stats.invites_accepted += 1
+                    inviter_stats.coins += reward["coins"]
+                    inviter_stats.xp += reward["xp"]
+                    if reward["freeze"]:
+                        inviter_stats.streak_freezes = min(
+                            economy.MAX_FREEZES, inviter_stats.streak_freezes + reward["freeze"]
+                        )
+                    if reward["premiumDays"]:
+                        economy.grant_premium(inviter, reward["premiumDays"])
+                    # Whoever arrived starts with something too, so a link is
+                    # worth following rather than only worth sending.
+                    new_stats = await session.get(UserStats, user.id)
+                    if new_stats:
+                        new_stats.coins += economy.INVITE_WELCOME_COINS
             linked = await link_friends(session, inviter.id, user.id)
             if linked:
                 # The inviter is usually sitting in the app when this happens,
@@ -129,7 +142,16 @@ async def touch_presence(session: AsyncSession, user: User) -> None:
             gap = (
                 datetime.strptime(today, "%Y-%m-%d") - datetime.strptime(previous, "%Y-%m-%d")
             ).days
-            stats.streak_days = stats.streak_days + 1 if gap == 1 else 1
+            if gap == 1:
+                stats.streak_days += 1
+            elif gap > 1 and stats.streak_freezes > 0 and gap - 1 <= stats.streak_freezes:
+                # One freeze covers one missed day. Spending them keeps the run
+                # alive rather than restarting it, which is the whole point of
+                # holding them.
+                stats.streak_freezes -= gap - 1
+                stats.streak_days += 1
+            else:
+                stats.streak_days = 1
         else:
             stats.streak_days = 1
         stats.best_streak = max(stats.best_streak, stats.streak_days)

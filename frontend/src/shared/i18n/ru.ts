@@ -648,6 +648,7 @@ export const ru: Dictionary = {
     dailyTitle: "Ежедневные награды",
     streak: "Огонёк",
     streakDay: "День {day}",
+    freezesHeld: "{count} из {max} заморозок",
     streakTier: {
       spark: "Искра",
       flame: "Горит",
@@ -671,6 +672,7 @@ export const ru: Dictionary = {
     wheelReadyMany: "сундуков ждёт: {count}",
     wheelLocked: "ещё {time} в голосе",
     spin: "Открыть",
+        freeze: "Заморозка огонька",
     spinsLeft: "наград",
     spinning: "Крутится…",
     youWon: "Вам выпало",
