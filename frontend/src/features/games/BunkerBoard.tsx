@@ -26,6 +26,8 @@ interface View {
   opened: Record<string, Record<string, Card>>;
   yourDossier: Record<string, Card>;
   yourCards: string[];
+  voteRound: number;
+  defending: boolean;
   votes: Record<string, number>;
   runoff: number[];
   accused: number | null;
@@ -78,13 +80,17 @@ export const BunkerBoard = ({ view }: { view: View }) => {
           : t("games.board.bunker.speaking", { name: nameOf(view.speaker) })
         : view.phase === "debate"
           ? t("games.board.bunker.debate")
-          : view.phase === "vote"
-            ? view.runoff.length > 0
-              ? t("games.board.bunker.runoff")
-              : t("games.board.bunker.voteNow")
-            : view.phase === "last_word"
-              ? t("games.board.bunker.accused", { name: nameOf(view.accused) })
-              : t("games.board.bunker.debate");
+          : view.phase === "defence"
+            ? view.defending
+              ? t("games.board.bunker.yourDefence")
+              : t("games.board.bunker.defenceOf", { name: nameOf(view.speaker) })
+            : view.phase === "vote"
+              ? view.runoff.length > 0
+                ? t("games.board.bunker.runoff")
+                : t("games.board.bunker.voteNow")
+              : view.phase === "last_word"
+                ? t("games.board.bunker.accused", { name: nameOf(view.accused) })
+                : t("games.board.bunker.debate");
 
   return (
     <div className="flex flex-col gap-4">
@@ -194,6 +200,12 @@ export const BunkerBoard = ({ view }: { view: View }) => {
       {view.phase === "debate" && view.youAlive && (
         <Button full variant="surface" onClick={() => act("done_debating", {})}>
           {t("games.board.bunker.doneDebating")}
+        </Button>
+      )}
+
+      {view.phase === "defence" && view.defending && (
+        <Button full onClick={() => act("done_speaking", {})}>
+          {t("games.board.bunker.doneSpeaking")}
         </Button>
       )}
 

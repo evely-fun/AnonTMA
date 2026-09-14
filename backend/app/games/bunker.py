@@ -1,12 +1,16 @@
 """Bunker: a social deduction game where you argue for one of too few places.
 
-The shape follows the published rules exactly. A catastrophe and a broken
-shelter are dealt first, because they are what decides whose skills matter:
-an agronomist is priceless when the greenhouse is the thing that failed and
-merely pleasant when it is not. Everyone then opens their dossier two cards
-at a time across three rounds, and every round from the second onwards ends
-with a vote that shuts someone out. It runs until the survivors match the
-number of places.
+Built to the rules published at bunker-online.com/ru/rules. A catastrophe and
+a broken shelter are dealt first, because they are what decides whose skills
+matter: an agronomist is priceless when the greenhouse is the thing that
+failed and merely pleasant when it is not.
+
+A round is four passes. Everyone opens that round's cards and speaks for a
+minute, the table talks for a minute together, everyone gets thirty seconds
+to say why they should be let in, and then fifteen seconds to vote. Seventy
+percent of the vote shuts someone out at once; anything less buys the
+accused another thirty seconds and a second vote. The opening round never
+excludes anyone. It runs until the shelter is full.
 """
 
 import random
@@ -15,19 +19,51 @@ from typing import Any
 
 from app.games.base import Effect, GameEngine, GameMeta, deadline
 
-SPEECH_SECONDS = 40
-DEBATE_SECONDS = 150
-VOTE_SECONDS = 40
+SPEECH_SECONDS = 60
+DISCUSSION_SECONDS = 60
+DEFENCE_SECONDS = 30
+VOTE_SECONDS = 15
 LAST_WORD_SECONDS = 30
-REVEAL_SECONDS = 10
 
-# Two cards open per round: profession and biology, then health and hobby,
-# then luggage and the fact you would rather not mention.
-ROUND_CARDS: list[tuple[str, ...]] = [
-    ("profession", "biology"),
-    ("health", "hobby"),
-    ("luggage", "fact"),
-]
+# A vote this size is decisive on the spot. Anything short of it buys the
+# accused another thirty seconds and a second count.
+DECISIVE_SHARE = 0.7
+
+# Cards never open later than this, however long the game runs.
+MAX_CARD_ROUNDS = 7
+
+ALL_FIELDS: tuple[str, ...] = (
+    "profession",
+    "biology",
+    "health",
+    "hobby",
+    "luggage",
+    "fact",
+)
+
+# How fast the dossier comes open depends on how many people are at the table:
+# a short game has to show its hand early, a long one can hold cards back.
+SCHEDULES: tuple[tuple[int, list[tuple[str, ...]]], ...] = (
+    (7, [("profession", "biology", "health"), ("hobby", "luggage"), ("fact",)]),
+    (10, [("profession", "biology"), ("health", "hobby"), ("luggage",), ("fact",)]),
+    (
+        15,
+        [
+            ("profession",),
+            ("biology", "health"),
+            ("hobby",),
+            ("luggage",),
+            ("fact",),
+        ],
+    ),
+)
+
+
+def _schedule(total: int) -> list[tuple[str, ...]]:
+    for limit, rounds in SCHEDULES:
+        if total <= limit:
+            return rounds
+    return SCHEDULES[-1][1]
 
 CATASTROPHES = [
     "nuclear_winter",
@@ -102,16 +138,16 @@ class Bunker(GameEngine):
         subtitle="Argue your way into a shelter with too few places",
         icon="🚪",
         accent="#1F7A8C",
-        min_players=4,
-        max_players=12,
+        min_players=6,
+        max_players=15,
         voice_required=True,
-        duration_minutes=20,
+        duration_minutes=30,
         tags=["voice", "party", "deduction"],
         rules=[
-            "The world ends and the shelter has half the places it needs",
-            "Open two cards a round and argue why this catastrophe needs you",
-            "Every round from the second ends with a vote that shuts someone out",
-            "Everyone still inside when the places run out has won",
+            "Six to fifteen players and half as many places, rounded down",
+            "A round is a minute each, a minute together, thirty seconds to defend, then the vote",
+            "Seventy percent shuts you out at once, less than that buys you a second chance",
+            "The opening round never excludes anyone, and it ends when the shelter is full",
         ],
     )
 
@@ -161,8 +197,10 @@ class Bunker(GameEngine):
             "round": 0,
             "speaker": None,
             "queue": [],
+            "defenceQueue": [],
             "spoken": [],
             "votes": {},
+            "voteRound": 0,
             "runoff": [],
             "immune": [],
             "accused": None,
@@ -194,9 +232,11 @@ class Bunker(GameEngine):
         state["round"] += 1
         state["spoken"] = []
         state["votes"] = {}
+        state["voteRound"] = 0
         state["runoff"] = []
         state["immune"] = []
         state["accused"] = None
+        state["defenceQueue"] = []
         # Speaking order is reshuffled each round so nobody is always last.
         queue = [player for player in state["alive"]]
         random.shuffle(queue)
@@ -223,20 +263,22 @@ class Bunker(GameEngine):
                         }
                     )
                 ]
-        return self._open_debate(state)
+        return self._open_discussion(state)
 
     def _open_cards(self, state: dict[str, Any], player: int) -> None:
-        index = min(state["round"], len(ROUND_CARDS)) - 1
+        schedule = _schedule(len(state["players"]))
         opened = state["opened"].setdefault(str(player), [])
-        for card in ROUND_CARDS[index]:
+        if state["round"] > min(len(schedule), MAX_CARD_ROUNDS):
+            return
+        for card in schedule[state["round"] - 1]:
             if card not in opened:
                 opened.append(card)
 
-    def _open_debate(self, state: dict[str, Any]) -> list[Effect]:
+    def _open_discussion(self, state: dict[str, Any]) -> list[Effect]:
         state["speaker"] = None
         state["phase"] = "debate"
         state["spoken"] = []
-        state["deadline"] = deadline(DEBATE_SECONDS)
+        state["deadline"] = deadline(DISCUSSION_SECONDS)
         return [
             Effect(
                 event={"type": "game.phase",
@@ -244,12 +286,39 @@ class Bunker(GameEngine):
             )
         ]
 
+    def _open_defence(self, state: dict[str, Any], queue: list[int] | None = None) -> list[Effect]:
+        """Thirty seconds each to say why the shelter should keep you."""
+        if queue is not None:
+            state["defenceQueue"] = [player for player in queue if player in state["alive"]]
+        while state["defenceQueue"]:
+            speaker = state["defenceQueue"][0]
+            if speaker in state["alive"]:
+                state["phase"] = "defence"
+                state["speaker"] = speaker
+                state["deadline"] = deadline(DEFENCE_SECONDS)
+                return [
+                    Effect(
+                        event={
+                            "type": "game.phase",
+                            "payload": {
+                                "phase": "defence",
+                                "round": state["round"],
+                                "speaker": speaker,
+                            },
+                        }
+                    )
+                ]
+            state["defenceQueue"].pop(0)
+        state["speaker"] = None
+        return self._open_vote(state, state.get("runoff") or None)
+
     def _open_vote(self, state: dict[str, Any], runoff: list[int] | None = None) -> list[Effect]:
-        # The first round is introductions only; nobody is shut out on it.
+        # The opening round is introductions only; nobody is shut out on it.
         if state["round"] < 2:
             return self._open_round(state)
         state["phase"] = "vote"
         state["votes"] = {}
+        state["voteRound"] += 1
         state["runoff"] = list(runoff or [])
         state["deadline"] = deadline(VOTE_SECONDS)
         return [
@@ -280,12 +349,18 @@ class Bunker(GameEngine):
                 return []
             return self._next_speaker(state)
 
+        if action == "done_speaking" and state["phase"] == "defence":
+            if state.get("speaker") != user_id or not state["defenceQueue"]:
+                return []
+            state["defenceQueue"].pop(0)
+            return self._open_defence(state)
+
         if action == "done_debating" and state["phase"] == "debate":
             spoken = set(state.get("spoken", [])) | {user_id}
             state["spoken"] = list(spoken)
-            # A majority can cut the debate short rather than wait it out.
+            # A majority can cut the discussion short rather than wait it out.
             if len(spoken) > len(state["alive"]) // 2:
-                return self._open_vote(state)
+                return self._open_defence(state, list(state["alive"]))
             return [
                 Effect(event={"type": "bunker.ready", "payload": {"count": len(spoken)}})
             ]
@@ -294,6 +369,9 @@ class Bunker(GameEngine):
             return self._cast(state, user_id, payload)
 
         if action == "play_card":
+            # A card cannot be played to talk your way out of a lost vote.
+            if state["phase"] == "last_word":
+                return []
             return self._play_card(state, user_id, payload)
 
         return []
@@ -343,7 +421,7 @@ class Bunker(GameEngine):
 
         if card == "swap" and target:
             field = str(payload.get("field", "hobby"))
-            if field in ROUND_CARDS[0] + ROUND_CARDS[1] + ROUND_CARDS[2]:
+            if field in ALL_FIELDS:
                 mine = state["dossiers"][str(user_id)]
                 theirs = state["dossiers"][str(target)]
                 mine[field], theirs[field] = theirs[field], mine[field]
@@ -415,22 +493,46 @@ class Bunker(GameEngine):
         if not tally:
             return self._open_round(state)
 
+        cast = sum(tally.values())
         top = max(tally.values())
         tied = sorted(player for player, votes in tally.items() if votes == top)
+        board = Effect(
+            event={
+                "type": "bunker.tally",
+                "payload": {str(key): value for key, value in tally.items()},
+            }
+        )
 
-        if len(tied) > 1:
-            if state["runoff"]:
-                # A second tie settles nothing and nobody leaves this round.
-                state["log"].append({"round": state["round"], "text": "tie"})
-                effects = [
-                    Effect(event={"type": "bunker.tie", "payload": {"between": tied}})
-                ]
-                return effects + self._open_round(state)
+        # Seventy percent of the vote behind one name settles it on the spot.
+        if len(tied) == 1 and cast and top / cast >= DECISIVE_SHARE:
+            return [board] + self._accuse(state, tied[0], tally)
+
+        second = state["voteRound"] >= 2
+        if not second:
+            # Short of decisive, or tied: everyone still in the running gets
+            # another thirty seconds, and the table votes again on them alone.
+            state["runoff"] = tied
             return [
-                Effect(event={"type": "bunker.runoff", "payload": {"between": tied}})
-            ] + self._open_vote(state, tied)
+                board,
+                Effect(event={"type": "bunker.runoff", "payload": {"between": tied}}),
+            ] + self._open_defence(state, tied)
 
-        state["accused"] = tied[0]
+        if len(tied) == 1:
+            return [board] + self._accuse(state, tied[0], tally)
+
+        # A tie that survives a second vote shuts every name in it out, and
+        # the opening round is the one place that cannot happen.
+        state["log"].append({"round": state["round"], "text": "tie"})
+        effects = [board, Effect(event={"type": "bunker.tie", "payload": {"between": tied}})]
+        for player in tied:
+            effects += self._remove(state, player, "tie")
+        ended = self._check_end(state)
+        if ended:
+            return effects + ended
+        return effects + self._open_round(state)
+
+    def _accuse(self, state: dict[str, Any], player: int, tally: Counter) -> list[Effect]:
+        state["accused"] = player
         state["phase"] = "last_word"
         state["deadline"] = deadline(LAST_WORD_SECONDS)
         return [
@@ -438,20 +540,20 @@ class Bunker(GameEngine):
                 event={
                     "type": "bunker.accused",
                     "payload": {
-                        "accused": tied[0],
+                        "accused": player,
                         "tally": {str(key): value for key, value in tally.items()},
                     },
                 }
             )
         ]
 
-    def _eliminate(self, state: dict[str, Any], player: int, reason: str) -> list[Effect]:
+    def _remove(self, state: dict[str, Any], player: int, reason: str) -> list[Effect]:
+        """Shut one person out. The hatch closes and their dossier is laid out."""
         if player in state["alive"]:
             state["alive"].remove(player)
         state["accused"] = None
         state["log"].append({"round": state["round"], "text": "out", "user": player, "reason": reason})
-        # The hatch closes and everything they were holding is laid out.
-        effects = [
+        return [
             Effect(
                 event={
                     "type": "bunker.out",
@@ -463,6 +565,9 @@ class Bunker(GameEngine):
                 }
             )
         ]
+
+    def _eliminate(self, state: dict[str, Any], player: int, reason: str) -> list[Effect]:
+        effects = self._remove(state, player, reason)
         ended = self._check_end(state)
         if ended:
             return effects + ended
@@ -544,7 +649,11 @@ class Bunker(GameEngine):
         if phase == "speech":
             return self._next_speaker(state)
         if phase == "debate":
-            return self._open_vote(state)
+            return self._open_defence(state, list(state["alive"]))
+        if phase == "defence":
+            if state["defenceQueue"]:
+                state["defenceQueue"].pop(0)
+            return self._open_defence(state)
         if phase == "vote":
             # Everyone who stayed quiet has already voted against themselves.
             return self._resolve_vote(state)
@@ -584,6 +693,8 @@ class Bunker(GameEngine):
             "accused": state.get("accused"),
             "youAlive": user_id in state["alive"],
             "canVote": state["phase"] == "vote" and user_id in state["alive"],
+            "voteRound": state["voteRound"],
+            "defending": state["phase"] == "defence" and state.get("speaker") == user_id,
             "winner": state.get("winner"),
             "epilogue": state.get("epilogue"),
             "secondsLeft": remaining(state),
