@@ -4,12 +4,11 @@ import { useState } from "react";
 import { useT } from "@/shared/i18n";
 import { rise } from "@/shared/lib/motion";
 import { haptic } from "@/shared/lib/telegram";
-import { Avatar, Button, Chip, IconTile, Panel, Sheet } from "@/shared/ui";
-import { EyeIcon, GhostIcon, ProfileIcon, ShieldIcon } from "@/shared/ui/icons";
+import { Avatar, Button, Chip, Sheet } from "@/shared/ui";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
 
-import { Countdown } from "./shared";
+import { PhaseBanner, RoleCard } from "./art";
 
 interface SeatView {
   userId: number;
@@ -45,14 +44,6 @@ interface View {
   canAct: boolean;
 }
 
-const ROLE_ICONS: Record<string, typeof GhostIcon> = {
-  mafia: GhostIcon,
-  don: GhostIcon,
-  sheriff: EyeIcon,
-  doctor: ShieldIcon,
-  civilian: ProfileIcon,
-};
-
 const BLACK = ["mafia", "don"];
 
 export const CityMafiaBoard = ({ view }: { view: View }) => {
@@ -78,7 +69,6 @@ export const CityMafiaBoard = ({ view }: { view: View }) => {
   };
 
   const roleKey = view.yourRole ?? "civilian";
-  const RoleIcon = ROLE_ICONS[roleKey] ?? ProfileIcon;
   const isNight = view.phase === "night" || view.phase === "first_night";
   const isVote = view.phase === "vote";
   const isTableVote = view.phase === "table_vote";
@@ -151,37 +141,28 @@ export const CityMafiaBoard = ({ view }: { view: View }) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <span className="min-w-0">
-          <span className="block text-[12px] text-hint">
-            {view.isHost
-              ? t("games.board.citymafia.host")
-              : t("games.board.citymafia.yourSeat", { seat: view.yourSeat })}
-            {view.day > 0 && ` · ${t("games.board.day", { day: view.day })}`}
-          </span>
-          <span className="mt-0.5 block truncate font-display text-[16px] font-extrabold tracking-[-0.02em]">
-            {headline}
-          </span>
-        </span>
-        {view.secondsLeft > 0 && <Countdown seconds={view.secondsLeft} />}
-      </div>
+      <PhaseBanner
+        phase={view.phase}
+        eyebrow={
+          view.isHost
+            ? t("games.board.citymafia.host")
+            : t("games.board.citymafia.yourSeat", { seat: view.yourSeat })
+        }
+        title={headline}
+        seconds={view.secondsLeft}
+      />
 
       {!view.isHost && (
-        <Panel className="mx-0 flex items-center gap-3.5 px-4 py-3.5">
-          <IconTile tone={BLACK.includes(roleKey) ? "danger" : "accent"} size={42}>
-            <RoleIcon size={20} />
-          </IconTile>
-          <span className="min-w-0">
-            <span className="block font-display text-[15px] font-extrabold tracking-[-0.02em]">
-              {t(`games.board.citymafia.roles.${roleKey}.name`)}
-            </span>
-            <span className="mt-0.5 block text-[12.5px] leading-snug text-hint">
-              {view.youAlive
-                ? t(`games.board.citymafia.roles.${roleKey}.hint`)
-                : t("games.board.youAreOut")}
-            </span>
-          </span>
-        </Panel>
+        <RoleCard
+          role={roleKey}
+          seat={view.yourSeat}
+          title={t(`games.board.citymafia.roles.${roleKey}.name`)}
+          hint={
+            view.youAlive
+              ? t(`games.board.citymafia.roles.${roleKey}.hint`)
+              : t("games.board.youAreOut")
+          }
+        />
       )}
 
       {donSplit && (

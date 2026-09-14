@@ -176,6 +176,8 @@
   --cosmetic-tint: 0.5;
   --cosmetic-ink: oklch(0.97 0.005 var(--ground-hue));
   --nav-l: 0.78;
+  --role-l: 0.28;
+  --card-l: 0.27;
   --orb-lightness: 0.42;
   --orb-alpha: 0.8;
 }
@@ -206,6 +208,8 @@
   --action-bg: oklch(0.26 0.02 var(--ground-hue));
   --action-ink: oklch(0.98 0.004 var(--ground-hue));
   --nav-l: 0.55;
+  --role-l: 0.95;
+  --card-l: 0.955;
   --on-accent: oklch(0.99 0.003 var(--ground-hue));
   --veil: oklch(0.22 0.014 var(--ground-hue) / 0.3);
   --island: oklch(1 0 0 / 0.9);
@@ -601,6 +605,52 @@
     Everything moves on transform only, so a decorated avatar in a list of
     twenty costs no layout.
   */
+  /*
+    The role card. Two washes, one for each team, flat fills rather than
+    gradients, and they hold their meaning in both themes because the tint is
+    built from the same hue tokens the rest of the app uses.
+  */
+  .role-card {
+    background: var(--surface-1);
+    box-shadow: var(--panel-shadow);
+  }
+
+  .role-card.is-black {
+    background: oklch(var(--role-l) 0.05 28);
+    color: var(--ink-1);
+  }
+
+  .role-card.is-red {
+    background: oklch(var(--role-l) 0.045 150);
+    color: var(--ink-1);
+  }
+
+  /*
+    A Bunker card. The wash is built from the hue the card kind is filed under,
+    so a dossier of six reads as six different things at a glance, and an
+    unopened one is the same card with the colour drained out of it.
+  */
+  .bunker-card {
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: oklch(var(--card-l) 0.045 var(--card-hue));
+    color: var(--ink-1);
+  }
+
+  .bunker-card.is-compact {
+    padding: 7px 10px;
+    border-radius: 13px;
+  }
+
+  .bunker-card.is-closed {
+    background: var(--surface-2);
+    color: var(--ink-3);
+  }
+
+  .bunker-card.is-closed img {
+    filter: grayscale(1) opacity(0.5);
+  }
+
   .frame-crest {
     position: absolute;
     left: 50%;

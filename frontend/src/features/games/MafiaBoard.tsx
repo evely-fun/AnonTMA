@@ -3,13 +3,13 @@ import { useState } from "react";
 
 import { useT } from "@/shared/i18n";
 import { rise } from "@/shared/lib/motion";
-import { Avatar, Button, Chip, IconTile } from "@/shared/ui";
-import { EyeIcon, GhostIcon, ProfileIcon, ShieldIcon, StarIcon } from "@/shared/ui/icons";
+import { Avatar, Button, Chip } from "@/shared/ui";
+import { StarIcon } from "@/shared/ui/icons";
 import { useGames } from "@/store/games";
 import { useRooms } from "@/store/rooms";
 import { useSession } from "@/store/session";
 
-import { GameStatus } from "./shared";
+import { PhaseBanner, RoleCard } from "./art";
 
 interface View {
   phase: string;
@@ -30,14 +30,6 @@ interface View {
   secondsLeft: number;
   canAct: boolean;
 }
-
-const ROLE_ICONS: Record<string, typeof GhostIcon> = {
-  mafia: GhostIcon,
-  don: GhostIcon,
-  doctor: ShieldIcon,
-  sheriff: EyeIcon,
-  civilian: ProfileIcon,
-};
 
 const PHASE_KEYS: Record<string, string> = {
   intro: "introTitle",
@@ -60,7 +52,6 @@ export const MafiaBoard = ({ view }: { view: View }) => {
   const [assign, setAssign] = useState<"victim" | "check">("victim");
 
   const roleKey = view.yourRole ?? "civilian";
-  const RoleIcon = ROLE_ICONS[roleKey] ?? ProfileIcon;
   const nameOf = (userId: number) =>
     userId === profile?.id
       ? t("common.you")
@@ -111,33 +102,30 @@ export const MafiaBoard = ({ view }: { view: View }) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <GameStatus
+      <PhaseBanner
+        phase={view.phase}
         eyebrow={t("games.board.day", { day: view.day })}
-        title={t(`games.board.${PHASE_KEYS[view.phase] ?? "discussion"}`)}
+        title={
+          view.phase === "finished"
+            ? view.winner === "mafia"
+              ? t("games.board.mafiaWins")
+              : t("games.board.townWins")
+            : t(`games.board.${PHASE_KEYS[view.phase] ?? "discussion"}`)
+        }
         seconds={view.secondsLeft}
       />
 
-      <div className="panel flex items-center gap-3.5 rounded-[18px] px-4 py-4">
-        <IconTile tone={MAFIA_ROLES.includes(roleKey) ? "danger" : "accent"} size={44}>
-          <RoleIcon size={21} />
-        </IconTile>
-        <div className="min-w-0">
-          <p className="font-display text-[16px] font-extrabold tracking-[-0.02em]">
-            {view.phase === "finished"
-              ? view.winner === "mafia"
-                ? t("games.board.mafiaWins")
-                : t("games.board.townWins")
-              : t(`games.board.roles.${roleKey}.name`)}
-          </p>
-          <p className="mt-0.5 text-[12.5px] leading-snug text-hint">
-            {!view.youAlive
-              ? t("games.board.youAreOut")
-              : view.phase === "intro"
-                ? t("games.board.introHint")
-                : t(`games.board.roles.${roleKey}.hint`)}
-          </p>
-        </div>
-      </div>
+      <RoleCard
+        role={roleKey}
+        title={t(`games.board.roles.${roleKey}.name`)}
+        hint={
+          !view.youAlive
+            ? t("games.board.youAreOut")
+            : view.phase === "intro"
+              ? t("games.board.introHint")
+              : t(`games.board.roles.${roleKey}.hint`)
+        }
+      />
 
       {isVote && view.runoff.length > 0 && (
         <div className="flex items-center justify-center gap-2">
