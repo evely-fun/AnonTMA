@@ -1,227 +1,273 @@
-import difflib
+"""Broken Telephone, played on paper rather than down a line.
+
+Everyone starts a sheet with a situation written on it. The sheet moves one
+seat, and whoever picks it up has to draw what it says. It moves again, and
+the next person writes down what they think the drawing shows, having never
+seen the words that made it. The gap between the first sentence and the last
+one is the whole game, and the chains are shown side by side at the end.
+
+Drawings travel as strokes rather than pictures: a list of points in a
+thousand by thousand square. That keeps a sheet a few kilobytes instead of a
+few hundred, and it redraws crisply at any size.
+"""
+
 import random
-import re
 from typing import Any
 
 from app.games.base import Effect, GameEngine, GameMeta, deadline, remaining
 
-SPEAK_SECONDS = 15
-WRITE_SECONDS = 25
-REVEAL_SECONDS = 20
+WRITE_SECONDS = 30
+DRAW_SECONDS = 60
+GALLERY_SECONDS = 45
+VOTE_SECONDS = 30
 
-PHRASES_EN = [
-    "A purple octopus is baking pancakes on the roof",
-    "Seven sleepy turtles raced a paper airplane",
-    "The lighthouse keeper collects thunderstorms in jars",
-    "My neighbour taught his cactus to play the trumpet",
-    "Nine penguins opened a laundromat in the desert",
-    "A robot barista spilled coffee on the moon",
-    "The postman delivers dreams every second Tuesday",
-    "Grandma hid a spaceship behind the garden shed",
-    "Two foxes argued about the price of clouds",
-    "The library cat reviews horror novels at midnight",
-    "A tiny dragon started a bakery near the river",
-    "The mountain sneezed and dropped a rainbow",
+# A chain longer than this stops being funny and starts being a queue.
+MAX_STEPS = 6
+MIN_STEPS = 3
+
+# What one drawing may carry. Generous for a phone drawing, small enough that
+# a full game stays well inside a normal state payload.
+MAX_STROKES = 120
+MAX_POINTS = 240
+CANVAS = 1000
+
+PROMPTS_EN = [
+    "A purple octopus baking pancakes on the roof",
+    "Seven sleepy turtles racing a paper aeroplane",
+    "A lighthouse keeper collecting thunderstorms in jars",
+    "A cactus being taught the trumpet",
+    "Nine penguins opening a laundromat in the desert",
+    "A robot barista spilling coffee on the moon",
+    "A postman delivering dreams on a Tuesday",
+    "A spaceship hidden behind the garden shed",
+    "Two foxes arguing about the price of clouds",
+    "The library cat reviewing horror novels at midnight",
 ]
-PHRASES_RU = [
+PROMPTS_RU = [
     "Фиолетовый осьминог печёт блины на крыше",
-    "Семь сонных черепах обогнали бумажный самолёт",
+    "Семь сонных черепах обгоняют бумажный самолёт",
     "Смотритель маяка собирает грозы в банки",
-    "Сосед научил свой кактус играть на трубе",
-    "Девять пингвинов открыли прачечную в пустыне",
-    "Робот-бариста разлил кофе на Луне",
-    "Почтальон разносит сны каждый второй вторник",
-    "Бабушка спрятала космолёт за сараем",
-    "Две лисы спорили о цене облаков",
+    "Кактус учат играть на трубе",
+    "Девять пингвинов открывают прачечную в пустыне",
+    "Робот-бариста разливает кофе на Луне",
+    "Почтальон разносит сны по вторникам",
+    "За сараем спрятан космолёт",
+    "Две лисы спорят о цене облаков",
     "Библиотечный кот рецензирует ужасы в полночь",
-    "Маленький дракон открыл пекарню у реки",
-    "Гора чихнула и уронила радугу",
 ]
 
 
-def normalize(value: str) -> str:
-    return re.sub(r"[^\w\s]", "", value.lower(), flags=re.UNICODE).strip()
-
-
-def similarity(left: str, right: str) -> int:
-    ratio = difflib.SequenceMatcher(None, normalize(left), normalize(right)).ratio()
-    return int(round(ratio * 100))
+def _clean_strokes(raw: Any) -> list[dict[str, Any]]:
+    """Take only what a drawing is allowed to be, and clamp all of it."""
+    if not isinstance(raw, list):
+        return []
+    strokes: list[dict[str, Any]] = []
+    for entry in raw[:MAX_STROKES]:
+        if not isinstance(entry, dict):
+            continue
+        points = entry.get("p")
+        if not isinstance(points, list) or len(points) < 4:
+            continue
+        clamped = [
+            max(0, min(CANVAS, int(value)))
+            for value in points[: MAX_POINTS * 2]
+            if isinstance(value, (int, float))
+        ]
+        if len(clamped) < 4:
+            continue
+        # Points come in pairs, so an odd tail is dropped rather than guessed.
+        if len(clamped) % 2:
+            clamped.pop()
+        strokes.append(
+            {
+                "c": max(0, min(7, int(entry.get("c", 0) or 0))),
+                "w": max(1, min(24, int(entry.get("w", 4) or 4))),
+                "p": clamped,
+            }
+        )
+    return strokes
 
 
 class BrokenTelephone(GameEngine):
     meta = GameMeta(
         key="telephone",
         title="Broken Telephone",
-        subtitle="Whisper a phrase down the chain and watch it melt",
-        icon="📞",
-        accent="#F2A33C",
-        min_players=3,
+        subtitle="Write it, draw it, guess it, and watch it fall apart",
+        icon="✏️",
+        accent="#E0514C",
+        min_players=4,
         max_players=10,
-        voice_required=True,
-        duration_minutes=10,
-        tags=["voice", "party", "funny"],
+        voice_required=False,
+        duration_minutes=12,
+        tags=["party", "drawing", "words"],
         rules=[
-            "Only the current pair hears each other",
-            "You get 15 seconds to whisper what you heard",
-            "Accuracy of the chain decides the score",
+            "Everyone writes a situation, then the sheets start moving",
+            "Draw what the sheet says, in sixty seconds",
+            "The next person writes what the drawing shows, without the words",
+            "The chains are laid out at the end and the table votes on the best",
         ],
     )
 
     def create(self, players: list[int], options: dict[str, Any]) -> dict[str, Any]:
-        chain = list(players)
-        random.shuffle(chain)
+        roster = list(players)
+        random.shuffle(roster)
+        language = str(options.get("language", "en"))
+        prompts = PROMPTS_RU if language.startswith(("ru", "uk")) else PROMPTS_EN
+        # Every sheet belongs to whoever started it, and each one keeps its own
+        # suggestion so nobody stares at an empty box.
+        sheets = [
+            {"owner": player, "suggestion": prompt, "steps": []}
+            for player, prompt in zip(roster, random.sample(prompts, len(roster)))
+        ]
         return {
             "phase": "lobby",
             "players": list(players),
-            "chain": chain,
-            "language": options.get("language", "en"),
-            "round": 0,
-            "rounds": int(options.get("rounds", 2)),
+            "order": roster,
+            "sheets": sheets,
             "step": 0,
-            "original": "",
-            "current": "",
-            "history": [],
-            "totals": {str(player): 0 for player in players},
+            "steps": max(MIN_STEPS, min(MAX_STEPS, len(roster))),
+            "submitted": [],
+            "votes": {},
+            "winner": None,
             "deadline": None,
         }
 
-    def _deck(self, state: dict[str, Any]) -> list[str]:
-        language = str(state.get("language", "en"))
-        return PHRASES_RU if language.startswith(("ru", "uk")) else PHRASES_EN
+    # Whose hands a sheet is in on a given step.
+
+    def _holder(self, state: dict[str, Any], sheet: int, step: int) -> int:
+        order = state["order"]
+        return order[(sheet + step) % len(order)]
+
+    def _sheet_for(self, state: dict[str, Any], user_id: int) -> int | None:
+        order = state["order"]
+        if user_id not in order:
+            return None
+        seat = order.index(user_id)
+        return (seat - state["step"]) % len(order)
+
+    def _kind(self, step: int) -> str:
+        """Odd steps are drawings, even ones are words, starting with words."""
+        return "draw" if step % 2 else "write"
 
     def start(self, state: dict[str, Any]) -> list[Effect]:
-        return self._begin_round(state)
+        return self._open_step(state)
 
-    def _begin_round(self, state: dict[str, Any]) -> list[Effect]:
-        state["round"] += 1
-        state["step"] = 0
-        state["history"] = []
-        chain = state["chain"]
-        chain.append(chain.pop(0))
-        phrase = random.choice(self._deck(state))
-        state["original"] = phrase
-        state["current"] = phrase
-        state["phase"] = "speak"
-        state["deadline"] = deadline(SPEAK_SECONDS)
-
-        speaker, listener = chain[0], chain[1]
+    def _open_step(self, state: dict[str, Any]) -> list[Effect]:
+        if state["step"] >= state["steps"]:
+            return self._open_gallery(state)
+        kind = self._kind(state["step"])
+        state["phase"] = kind
+        state["submitted"] = []
+        state["deadline"] = deadline(DRAW_SECONDS if kind == "draw" else WRITE_SECONDS)
         return [
             Effect(
-                event={"type": "telephone.phrase", "payload": {"phrase": phrase, "round": state["round"]}},
-                target="user",
-                user_id=speaker,
-            ),
-            Effect(
                 event={
-                    "type": "telephone.turn",
-                    "payload": {
-                        "round": state["round"],
-                        "step": 0,
-                        "speaker": speaker,
-                        "listener": listener,
-                        "phase": "speak",
-                    },
+                    "type": "game.phase",
+                    "payload": {"phase": kind, "step": state["step"], "of": state["steps"]},
                 }
-            ),
+            )
         ]
 
     def action(
         self, state: dict[str, Any], user_id: int, action: str, payload: dict[str, Any]
     ) -> list[Effect]:
-        chain = state["chain"]
-        step = state["step"]
-        if step + 1 >= len(chain):
-            return []
-        speaker, listener = chain[step], chain[step + 1]
-
-        if action == "done_speaking" and state["phase"] == "speak" and user_id == speaker:
-            return self._open_write(state, listener)
-
-        if action == "submit" and state["phase"] == "write" and user_id == listener:
-            heard = str(payload.get("text", ""))[:160].strip()
-            return self._record(state, heard)
-
+        if action == "submit" and state["phase"] in ("write", "draw"):
+            return self._submit(state, user_id, payload)
+        if action == "vote" and state["phase"] == "vote":
+            return self._vote(state, user_id, payload)
         return []
 
-    def _open_write(self, state: dict[str, Any], listener: int) -> list[Effect]:
-        state["phase"] = "write"
-        state["deadline"] = deadline(WRITE_SECONDS)
+    def _submit(
+        self, state: dict[str, Any], user_id: int, payload: dict[str, Any]
+    ) -> list[Effect]:
+        sheet = self._sheet_for(state, user_id)
+        if sheet is None or user_id in state["submitted"]:
+            return []
+
+        kind = self._kind(state["step"])
+        entry: dict[str, Any] = {"by": user_id, "kind": kind}
+        if kind == "write":
+            text = str(payload.get("text", "")).strip()[:120]
+            if not text:
+                return []
+            entry["text"] = text
+        else:
+            strokes = _clean_strokes(payload.get("strokes"))
+            if not strokes:
+                return []
+            entry["strokes"] = strokes
+
+        state["sheets"][sheet]["steps"].append(entry)
+        state["submitted"].append(user_id)
+
+        effects = [
+            Effect(
+                event={
+                    "type": "telephone.submitted",
+                    "payload": {"count": len(state["submitted"]), "of": len(state["order"])},
+                }
+            )
+        ]
+        if len(state["submitted"]) >= len(state["order"]):
+            state["step"] += 1
+            effects += self._open_step(state)
+        return effects
+
+    def _open_gallery(self, state: dict[str, Any]) -> list[Effect]:
+        state["phase"] = "gallery"
+        state["deadline"] = deadline(GALLERY_SECONDS)
         return [
             Effect(
                 event={
-                    "type": "telephone.turn",
-                    "payload": {
-                        "round": state["round"],
-                        "step": state["step"],
-                        "speaker": state["chain"][state["step"]],
-                        "listener": listener,
-                        "phase": "write",
-                    },
+                    "type": "telephone.gallery",
+                    "payload": {"sheets": state["sheets"]},
                 }
             )
         ]
 
-    def _record(self, state: dict[str, Any], heard: str) -> list[Effect]:
-        chain = state["chain"]
-        step = state["step"]
-        speaker, listener = chain[step], chain[step + 1]
-        accuracy = similarity(state["current"], heard) if heard else 0
-
-        state["history"].append(
-            {
-                "step": step,
-                "from": speaker,
-                "to": listener,
-                "said": state["current"],
-                "heard": heard or "…",
-                "accuracy": accuracy,
-            }
-        )
-        state["totals"][str(listener)] = state["totals"].get(str(listener), 0) + accuracy
-        state["current"] = heard or state["current"]
-        state["step"] += 1
-
-        if state["step"] + 1 >= len(chain):
-            return self._reveal(state)
-
-        state["phase"] = "speak"
-        state["deadline"] = deadline(SPEAK_SECONDS)
-        next_speaker, next_listener = chain[state["step"]], chain[state["step"] + 1]
+    def _open_vote(self, state: dict[str, Any]) -> list[Effect]:
+        state["phase"] = "vote"
+        state["votes"] = {}
+        state["deadline"] = deadline(VOTE_SECONDS)
         return [
-            Effect(
-                event={"type": "telephone.phrase", "payload": {"phrase": state["current"], "round": state["round"]}},
-                target="user",
-                user_id=next_speaker,
-            ),
-            Effect(
-                event={
-                    "type": "telephone.turn",
-                    "payload": {
-                        "round": state["round"],
-                        "step": state["step"],
-                        "speaker": next_speaker,
-                        "listener": next_listener,
-                        "phase": "speak",
-                    },
-                }
-            ),
+            Effect(event={"type": "game.phase", "payload": {"phase": "vote"}})
         ]
 
-    def _reveal(self, state: dict[str, Any]) -> list[Effect]:
-        final_accuracy = similarity(state["original"], state["current"])
-        state["phase"] = "reveal"
-        state["deadline"] = deadline(REVEAL_SECONDS)
+    def _vote(self, state: dict[str, Any], user_id: int, payload: dict[str, Any]) -> list[Effect]:
+        sheet = int(payload.get("sheet", -1))
+        if not 0 <= sheet < len(state["sheets"]):
+            return []
+        # You cannot vote for the chain you started.
+        if state["sheets"][sheet]["owner"] == user_id:
+            return []
+        state["votes"][str(user_id)] = sheet
+        effects = [
+            Effect(
+                event={
+                    "type": "telephone.vote",
+                    "payload": {"count": len(state["votes"]), "of": len(state["order"])},
+                }
+            )
+        ]
+        if len(state["votes"]) >= len(state["order"]) - 1:
+            effects += self._finish(state)
+        return effects
+
+    def _finish(self, state: dict[str, Any]) -> list[Effect]:
+        state["phase"] = "finished"
+        state["deadline"] = None
+        tally: dict[int, int] = {}
+        for sheet in state["votes"].values():
+            tally[sheet] = tally.get(sheet, 0) + 1
+        state["winner"] = max(tally, key=lambda key: tally[key]) if tally else None
         return [
             Effect(
                 event={
-                    "type": "telephone.reveal",
+                    "type": "game.finished",
                     "payload": {
-                        "original": state["original"],
-                        "final": state["current"],
-                        "accuracy": final_accuracy,
-                        "history": state["history"],
-                        "totals": state["totals"],
-                        "round": state["round"],
+                        "winner": state["winner"],
+                        "sheets": state["sheets"],
+                        "tally": {str(key): value for key, value in tally.items()},
                     },
                 }
             )
@@ -230,62 +276,72 @@ class BrokenTelephone(GameEngine):
     def tick(self, state: dict[str, Any], now: float) -> list[Effect]:
         if not state.get("deadline") or now < state["deadline"]:
             return []
-        phase = state["phase"]
-        chain = state["chain"]
-
-        if phase == "speak":
-            return self._open_write(state, chain[state["step"] + 1])
-        if phase == "write":
-            return self._record(state, "")
-        if phase == "reveal":
-            if state["round"] >= state["rounds"]:
-                state["phase"] = "finished"
-                state["deadline"] = None
-                return [
-                    Effect(
-                        event={"type": "game.finished", "payload": {"totals": state["totals"]}}
-                    )
-                ]
-            return self._begin_round(state)
+        if state["phase"] in ("write", "draw"):
+            # Whoever ran out of time simply contributed nothing to that sheet.
+            state["step"] += 1
+            return self._open_step(state)
+        if state["phase"] == "gallery":
+            return self._open_vote(state)
+        if state["phase"] == "vote":
+            return self._finish(state)
         return []
 
     def player_view(self, state: dict[str, Any], user_id: int) -> dict[str, Any]:
-        chain = state["chain"]
-        step = state["step"]
-        speaker = chain[step] if step < len(chain) else None
-        listener = chain[step + 1] if step + 1 < len(chain) else None
+        sheet_index = self._sheet_for(state, user_id)
+        sheet = state["sheets"][sheet_index] if sheet_index is not None else None
+        kind = self._kind(state["step"]) if state["step"] < state["steps"] else None
+
+        # You only ever see the step immediately before yours, which is what
+        # makes the chain break in the first place.
+        previous: dict[str, Any] | None = None
+        if sheet and sheet["steps"]:
+            previous = sheet["steps"][-1]
+        prompt = sheet["suggestion"] if sheet and not sheet["steps"] else None
+
+        showing = state["phase"] in ("gallery", "vote", "finished")
         return {
             "phase": state["phase"],
-            "round": state["round"],
-            "rounds": state["rounds"],
-            "step": step,
-            "chain": chain,
-            "speaker": speaker,
-            "listener": listener,
-            "youSpeak": user_id == speaker,
-            "youListen": user_id == listener,
-            "audioRoute": [speaker, listener] if state["phase"] in ("speak", "write") else [],
-            "totals": state["totals"],
-            "reveal": (
-                {
-                    "original": state["original"],
-                    "final": state["current"],
-                    "history": state["history"],
-                }
-                if state["phase"] in ("reveal", "finished")
-                else None
-            ),
+            "step": state["step"],
+            "steps": state["steps"],
+            "kind": kind,
+            "yourSheet": sheet_index,
+            "prompt": prompt,
+            "previous": previous if not showing else None,
+            "submitted": user_id in state["submitted"],
+            "waiting": len(state["order"]) - len(state["submitted"]),
+            "sheets": state["sheets"] if showing else [],
+            "owners": [item["owner"] for item in state["sheets"]],
+            "votes": state["votes"] if showing else {},
+            "voted": str(user_id) in state["votes"],
+            "winner": state.get("winner"),
             "secondsLeft": remaining(state),
         }
 
     def scores(self, state: dict[str, Any]) -> dict[int, dict[str, Any]]:
-        ranking = sorted(
-            ((int(key), value) for key, value in state["totals"].items()),
-            key=lambda item: item[1],
-            reverse=True,
-        )
-        best = ranking[0][1] if ranking else 0
-        return {
-            player: {"score": total, "won": total == best and best > 0, "placement": index}
-            for index, (player, total) in enumerate(ranking, start=1)
-        }
+        tally: dict[int, int] = {}
+        for sheet in state["votes"].values():
+            tally[sheet] = tally.get(sheet, 0) + 1
+
+        output: dict[int, dict[str, Any]] = {}
+        for player in state["players"]:
+            contributed = sum(
+                1
+                for sheet in state["sheets"]
+                for step in sheet["steps"]
+                if step["by"] == player
+            )
+            # A chain is a group effort, so everyone on the winning sheet is
+            # paid, not only whoever started it.
+            on_winner = (
+                state["winner"] is not None
+                and any(
+                    step["by"] == player
+                    for step in state["sheets"][state["winner"]]["steps"]
+                )
+            )
+            output[player] = {
+                "score": contributed * 12 + (40 if on_winner else 0),
+                "won": on_winner,
+                "placement": 1 if on_winner else 2,
+            }
+        return output
