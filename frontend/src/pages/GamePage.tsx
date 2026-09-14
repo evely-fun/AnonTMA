@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { AliasBoard } from "@/features/games/AliasBoard";
 import { BunkerBoard } from "@/features/games/BunkerBoard";
+import { CityMafiaBoard } from "@/features/games/CityMafiaBoard";
 import { FlappyGame } from "@/features/games/FlappyGame";
 import { MafiaBoard } from "@/features/games/MafiaBoard";
 import { TelephoneBoard } from "@/features/games/TelephoneBoard";
@@ -95,6 +96,8 @@ export const GamePage = () => {
         return <AliasBoard view={view as never} />;
       case "bunker":
         return <BunkerBoard view={view as never} />;
+      case "citymafia":
+        return <CityMafiaBoard view={view as never} />;
       case "flappy":
         return <FlappyGame view={view as never} />;
       default:

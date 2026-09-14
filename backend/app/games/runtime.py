@@ -92,7 +92,10 @@ async def create_game(
         if not (game_key == "tictactoe" and len(unique_players) == 1):
             return None
 
-    state = engine.create(unique_players, options or {})
+    settings = dict(options or {})
+    # Whoever opened the table runs it, which is what a game with a host reads.
+    settings.setdefault("host", host_id)
+    state = engine.create(unique_players, settings)
     async with SessionLocal() as session:
         record = GameSession(
             game_key=game_key,

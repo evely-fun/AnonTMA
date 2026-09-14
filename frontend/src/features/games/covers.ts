@@ -1,5 +1,6 @@
 import alias from "@/assets/games/alias.webp";
 import bunker from "@/assets/games/bunker.webp";
+import citymafia from "@/assets/games/citymafia.webp";
 import flappy from "@/assets/games/flappy.webp";
 import mafia from "@/assets/games/mafia.webp";
 import telephone from "@/assets/games/telephone.webp";
@@ -13,6 +14,7 @@ export interface Cover {
 
 const COVERS: Record<string, Cover> = {
   mafia: { src: mafia, tint: "#4e1ea0" },
+  citymafia: { src: citymafia, tint: "#a7010e" },
   bunker: { src: bunker, tint: "#02c2c3" },
   alias: { src: alias, tint: "#1376de" },
   telephone: { src: telephone, tint: "#e6454e" },
