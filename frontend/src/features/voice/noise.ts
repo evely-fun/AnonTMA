@@ -1,16 +1,19 @@
 import { getAudioContext, isRunning, onAudioState, resumeAudio } from "./audioContext";
 import { voiceChanger, type VoicePreset } from "./changer";
-import { suppressorWorklet } from "./worklet";
+import { suppressorWorklet } from "./dsp/suppressor";
 
 export type NoiseLevel = "off" | "light" | "medium" | "high";
 
 interface LevelProfile {
   highPass: number;
   lowPass: number;
-  threshold: number;
-  ratio: number;
+  /** The deepest a band may be pushed, which is what decides how clean or how
+   *  hollow the result sounds. */
   floorGain: number;
-  release: number;
+  /** How far past a plain Wiener filter to lean on a band that looks like
+   *  noise. One is the textbook filter. */
+  sharpness: number;
+  bypass: boolean;
   constraints: { noiseSuppression: boolean; echoCancellation: boolean; autoGainControl: boolean };
 }
 
@@ -18,37 +21,33 @@ export const NOISE_PROFILES: Record<NoiseLevel, LevelProfile> = {
   off: {
     highPass: 40,
     lowPass: 18000,
-    threshold: 1,
-    ratio: 1,
     floorGain: 1,
-    release: 0.3,
+    sharpness: 1,
+    bypass: true,
     constraints: { noiseSuppression: false, echoCancellation: true, autoGainControl: true },
   },
   light: {
-    highPass: 80,
-    lowPass: 14000,
-    threshold: 2,
-    ratio: 1.6,
-    floorGain: 0.5,
-    release: 0.3,
+    highPass: 70,
+    lowPass: 15000,
+    floorGain: 0.4,
+    sharpness: 1.15,
+    bypass: false,
     constraints: { noiseSuppression: true, echoCancellation: true, autoGainControl: true },
   },
   medium: {
-    highPass: 110,
-    lowPass: 11000,
-    threshold: 2.6,
-    ratio: 2.2,
-    floorGain: 0.28,
-    release: 0.26,
+    highPass: 90,
+    lowPass: 13000,
+    floorGain: 0.18,
+    sharpness: 1.4,
+    bypass: false,
     constraints: { noiseSuppression: true, echoCancellation: true, autoGainControl: true },
   },
   high: {
-    highPass: 140,
-    lowPass: 9000,
-    threshold: 3.2,
-    ratio: 3.2,
-    floorGain: 0.12,
-    release: 0.22,
+    highPass: 110,
+    lowPass: 11000,
+    floorGain: 0.08,
+    sharpness: 1.8,
+    bypass: false,
     constraints: { noiseSuppression: true, echoCancellation: true, autoGainControl: true },
   },
 };
@@ -105,6 +104,7 @@ export class VoicePipeline {
   private releaseAudioState: (() => void) | null = null;
   private maskListeners = new Set<(unavailable: boolean) => void>();
   private building = false;
+  private promotionTimer: number | null = null;
 
   level: NoiseLevel = "medium";
   preset: VoicePreset = "natural";
@@ -344,7 +344,14 @@ export class VoicePipeline {
    * failure that leaves the other side hearing nothing.
    */
   private schedulePromotion(): void {
-    window.setTimeout(() => {
+    if (this.promotionTimer !== null) {
+      window.clearTimeout(this.promotionTimer);
+    }
+    this.promotionTimer = window.setTimeout(() => {
+      this.promotionTimer = null;
+      if (!this.ready) {
+        return;
+      }
       const track = this.processedStream?.getAudioTracks()[0] ?? null;
       if (!track || track.readyState !== "live" || !isRunning()) {
         return;
@@ -362,7 +369,7 @@ export class VoicePipeline {
       const blob = new Blob([suppressorWorklet], { type: "application/javascript" });
       this.workletUrl = URL.createObjectURL(blob);
       await context.audioWorklet.addModule(this.workletUrl);
-      const node = new AudioWorkletNode(context, "adaptive-suppressor", {
+      const node = new AudioWorkletNode(context, "spectral-suppressor", {
         numberOfInputs: 1,
         numberOfOutputs: 1,
         outputChannelCount: [1],
@@ -499,11 +506,9 @@ export class VoicePipeline {
       return;
     }
     const now = getAudioContext().currentTime;
-    parameters.get("threshold")?.setValueAtTime(profile.threshold, now);
-    parameters.get("ratio")?.setValueAtTime(profile.ratio, now);
     parameters.get("floorGain")?.setValueAtTime(profile.floorGain, now);
-    parameters.get("release")?.setValueAtTime(profile.release, now);
-    parameters.get("bypass")?.setValueAtTime(profile.ratio <= 1 ? 1 : 0, now);
+    parameters.get("sharpness")?.setValueAtTime(profile.sharpness, now);
+    parameters.get("bypass")?.setValueAtTime(profile.bypass ? 1 : 0, now);
   }
 
   setLevel(level: NoiseLevel): void {
@@ -548,6 +553,11 @@ export class VoicePipeline {
   }
 
   private teardownGraph(): void {
+    if (this.suppressor) {
+      this.suppressor.port.onmessage = null;
+      this.suppressor.onprocessorerror = null;
+      this.suppressor.port.close();
+    }
     this.suppressor?.disconnect();
     // Only the edge into the processing chain goes, the shared source still
     // feeds the level meter.
@@ -589,6 +599,10 @@ export class VoicePipeline {
     if (this.watchdogTimer !== null) {
       window.clearInterval(this.watchdogTimer);
       this.watchdogTimer = null;
+    }
+    if (this.promotionTimer !== null) {
+      window.clearTimeout(this.promotionTimer);
+      this.promotionTimer = null;
     }
     this.teardownGraph();
     this.meterAnalyser?.disconnect();

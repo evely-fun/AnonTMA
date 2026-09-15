@@ -146,14 +146,23 @@ const run = async () => {
 
   const aliceDelta = (laterAlice[0]?.bytesReceived ?? 0) - firstAlice;
   const bobDelta = (laterBob[0]?.bytesReceived ?? 0) - firstBob;
+  const alicePackets = (laterAlice[0]?.packetsReceived ?? 0) - (aliceStats[0]?.packetsReceived ?? 0);
+  const bobPackets = (laterBob[0]?.packetsReceived ?? 0) - (bobStats[0]?.packetsReceived ?? 0);
   const route = await alice.page.evaluate(() => window.__voiceStore.getState().route);
 
   console.log("alice peers:", JSON.stringify(laterAlice, null, 2));
   console.log("bob peers:", JSON.stringify(laterBob, null, 2));
   console.log("alice capture route:", route);
-  console.log(`bytes received over the following 25s: alice ${aliceDelta}, bob ${bobDelta}`);
+  console.log(
+    `over the following 25s: alice ${aliceDelta} bytes / ${alicePackets} packets, ` +
+      `bob ${bobDelta} bytes / ${bobPackets} packets`,
+  );
 
-  const sustained = aliceDelta > 20000 && bobDelta > 20000;
+  // Opus is asked to stop sending while nobody is speaking, so a byte count is
+  // no longer a measure of a healthy call: a quiet one legitimately drops to a
+  // few hundred bytes a second. Packets still arriving in both directions is
+  // the thing that separates a quiet call from a dead one.
+  const sustained = alicePackets > 200 && bobPackets > 200 && aliceDelta > 4000 && bobDelta > 4000;
 
   if (errors.length) {
     console.log("page errors:");

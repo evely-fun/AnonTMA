@@ -20,7 +20,11 @@ services:
     region: frankfurt
     rootDir: backend
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --ws websockets --proxy-headers --forwarded-allow-ips '*'
+    # ws-max-size is the only place a frame can be capped before it is read.
+    # The protocol drops anything over sixty four kilobytes, but that check runs
+    # after the whole frame is in memory, so without this a single client can
+    # post half a gigabyte at an instance that has five hundred megabytes.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --ws websockets --ws-max-size 131072 --proxy-headers --forwarded-allow-ips '*'
     healthCheckPath: /health
     autoDeploy: true
     envVars:

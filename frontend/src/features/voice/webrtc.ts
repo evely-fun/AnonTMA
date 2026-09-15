@@ -2,6 +2,7 @@ import { request } from "@/shared/lib/api";
 import { realtime } from "@/shared/lib/socket";
 
 import { getAudioContext, isRunning, resumeAudio } from "./audioContext";
+import { fingerprintsOf, safetyCode, tuneOpus } from "./dsp/codec";
 
 export type PeerState = "new" | "connecting" | "connected" | "failed" | "closed";
 
@@ -21,6 +22,8 @@ interface PeerEntry {
   lastBytes: number;
   starvedChecks: number;
   outputMuted: boolean;
+  remoteFingerprints: string[];
+  safety: string;
 }
 
 type StreamListener = (peerId: number, stream: MediaStream) => void;
@@ -52,6 +55,7 @@ export class PeerManager {
   private stateListeners = new Set<StateListener>();
   private levelListeners = new Set<LevelListener>();
   private blockedListeners = new Set<(blocked: boolean) => void>();
+  private safetyListeners = new Set<(peerId: number, code: string) => void>();
   private levelTimer: number | null = null;
   private healthTimer: number | null = null;
   private playbackBlocked = false;
@@ -238,6 +242,8 @@ export class PeerManager {
       lastBytes: 0,
       starvedChecks: 0,
       outputMuted: false,
+      remoteFingerprints: [],
+      safety: "",
     };
 
     // Only the side that opens the call lays out the session. The polite side
@@ -348,18 +354,53 @@ export class PeerManager {
       if (connection.signalingState !== "stable") {
         return;
       }
-      await connection.setLocalDescription(description);
+      const sdp = tuneOpus(description.sdp ?? "");
+      await connection.setLocalDescription({ type: description.type, sdp });
       realtime.send("rtc.signal", {
         kind: "offer",
         to: peerId,
         sdpType: description.type,
-        sdp: connection.localDescription?.sdp ?? description.sdp,
+        sdp: connection.localDescription?.sdp ?? sdp,
       });
     } catch {
       /* negotiation is retried by the health loop */
     } finally {
       entry.makingOffer = false;
     }
+  }
+
+  /**
+   * Works out the code that proves nobody is sitting in the middle, and hands
+   * it to whoever is listening. Called once each side has both descriptions.
+   */
+  private async verify(peerId: number, entry: PeerEntry): Promise<void> {
+    if (entry.safety) {
+      return;
+    }
+    const local = fingerprintsOf(entry.connection.localDescription?.sdp ?? "");
+    if (local.length === 0 || entry.remoteFingerprints.length === 0) {
+      return;
+    }
+    try {
+      entry.safety = await safetyCode(local, entry.remoteFingerprints);
+    } catch {
+      return;
+    }
+    if (entry.safety) {
+      this.safetyListeners.forEach((listener) => listener(peerId, entry.safety));
+    }
+  }
+
+  /** The safety code for a peer, once both descriptions have been exchanged. */
+  safetyOf(peerId: number): string {
+    return this.peers.get(peerId)?.safety ?? "";
+  }
+
+  onSafety(listener: (peerId: number, code: string) => void): () => void {
+    this.safetyListeners.add(listener);
+    return () => {
+      this.safetyListeners.delete(listener);
+    };
   }
 
   private attachAnalyser(entry: PeerEntry): void {
@@ -484,10 +525,12 @@ export class PeerManager {
         // is broken on mobile Safari, which is what the Telegram iOS webview
         // runs on, and would strand the call in have-local-offer.
         await connection.setRemoteDescription(description);
+        entry.remoteFingerprints = fingerprintsOf(description.sdp ?? "");
         this.note(
           `setRemote ${description.type} ${peerId} tx=${connection.getTransceivers().length}`,
         );
         entry.settingRemoteAnswer = false;
+        void this.verify(peerId, entry);
 
         for (const candidate of entry.pendingCandidates.splice(0)) {
           await connection.addIceCandidate(candidate).catch(() => undefined);
@@ -496,13 +539,18 @@ export class PeerManager {
         if (description.type === "offer") {
           this.attachLocalTrack(entry);
           const answer = await connection.createAnswer();
-          await connection.setLocalDescription(answer);
+          const tuned = tuneOpus(answer.sdp ?? "");
+          await connection.setLocalDescription({ type: answer.type, sdp: tuned });
           realtime.send("rtc.signal", {
             kind: "answer",
             to: peerId,
             sdpType: answer.type,
-            sdp: connection.localDescription?.sdp ?? answer.sdp,
+            sdp: connection.localDescription?.sdp ?? tuned,
           });
+          // The answering side only has both descriptions once its own answer
+          // is set. Verifying any earlier reads an empty local fingerprint and
+          // leaves this end without a code to compare.
+          void this.verify(peerId, entry);
         }
       } catch {
         entry.settingRemoteAnswer = false;

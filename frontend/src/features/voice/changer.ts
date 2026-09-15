@@ -1,4 +1,4 @@
-import { pitchWorklet } from "./pitchWorklet";
+import { formantWorklet } from "./dsp/formant";
 
 export type VoicePreset =
   | "natural"
@@ -13,6 +13,11 @@ export type VoicePreset =
 
 interface PresetProfile {
   pitch: number;
+  /** The size of the vocal tract, moved on its own. Below one is a larger
+   *  head and a deeper resonance; above one is a smaller one. */
+  formant?: number;
+  /** Phase reset every frame, which is what a robot actually is. */
+  robot?: boolean;
   ring?: number;
   drive?: number;
   bandpass?: { frequency: number; q: number };
@@ -39,14 +44,17 @@ export const FREE_PRESETS: VoicePreset[] = ["natural"];
 
 const PROFILES: Record<VoicePreset, PresetProfile> = {
   natural: { pitch: 1 },
-  chipmunk: { pitch: 1.48, tilt: { frequency: 2600, gain: 3 } },
-  bass: { pitch: 0.68, tilt: { frequency: 240, gain: 4 }, lowpass: 6500 },
-  robot: { pitch: 1, ring: 74, drive: 12, lowpass: 7000 },
-  demon: { pitch: 0.58, ring: 28, tilt: { frequency: 200, gain: 5 }, lowpass: 5200 },
-  radio: { pitch: 1.04, bandpass: { frequency: 1500, q: 1.4 }, drive: 26, gain: 1.2 },
-  cave: { pitch: 0.94, echo: { time: 0.16, feedback: 0.44, wet: 0.5 }, lowpass: 5600 },
-  underwater: { pitch: 0.86, lowpass: 780, wobble: { rate: 1.6, depth: 260 } },
-  alien: { pitch: 1.26, ring: 132, wobble: { rate: 5.5, depth: 900 }, lowpass: 8200 },
+  // Pitch and tract move together but not by the same amount: a smaller person
+  // is not simply a faster tape, and the gap between the two factors is what
+  // stops every mask from sounding like one.
+  chipmunk: { pitch: 1.42, formant: 1.22 },
+  bass: { pitch: 0.7, formant: 0.82, tilt: { frequency: 240, gain: 3 } },
+  robot: { pitch: 1, formant: 1.04, robot: true, lowpass: 7500 },
+  demon: { pitch: 0.62, formant: 0.72, tilt: { frequency: 200, gain: 4 }, lowpass: 6000 },
+  radio: { pitch: 1.02, formant: 1.06, bandpass: { frequency: 1500, q: 1.4 }, drive: 26, gain: 1.2 },
+  cave: { pitch: 0.95, formant: 0.9, echo: { time: 0.16, feedback: 0.44, wet: 0.5 }, lowpass: 5600 },
+  underwater: { pitch: 0.88, formant: 0.94, lowpass: 780, wobble: { rate: 1.6, depth: 260 } },
+  alien: { pitch: 1.24, formant: 1.35, wobble: { rate: 5.5, depth: 900 }, lowpass: 8200 },
 };
 
 const curve = (amount: number): Float32Array<ArrayBuffer> => {
@@ -79,10 +87,10 @@ export class VoiceChanger {
     this.output = context.createGain();
 
     try {
-      const blob = new Blob([pitchWorklet], { type: "application/javascript" });
+      const blob = new Blob([formantWorklet], { type: "application/javascript" });
       this.moduleUrl = URL.createObjectURL(blob);
       await context.audioWorklet.addModule(this.moduleUrl);
-      this.pitch = new AudioWorkletNode(context, "granular-pitch", {
+      this.pitch = new AudioWorkletNode(context, "formant-voice", {
         numberOfInputs: 1,
         numberOfOutputs: 1,
         outputChannelCount: [1],
@@ -138,10 +146,16 @@ export class VoiceChanger {
       return;
     }
 
+    const formant = profile.formant ?? 1;
     this.pitch?.parameters.get("pitch")?.setValueAtTime(profile.pitch, now);
+    this.pitch?.parameters.get("formant")?.setValueAtTime(formant, now);
+    this.pitch?.parameters.get("robot")?.setValueAtTime(profile.robot ? 1 : 0, now);
+
+    const shifts =
+      Math.abs(profile.pitch - 1) > 0.005 || Math.abs(formant - 1) > 0.005 || Boolean(profile.robot);
 
     let node: AudioNode = input;
-    if (this.pitch && Math.abs(profile.pitch - 1) > 0.001) {
+    if (this.pitch && shifts) {
       input.connect(this.pitch);
       node = this.pitch;
     }
@@ -239,6 +253,11 @@ export class VoiceChanger {
 
   dispose(): void {
     this.teardown();
+    if (this.pitch) {
+      this.pitch.onprocessorerror = null;
+      this.pitch.port.onmessage = null;
+      this.pitch.port.close();
+    }
     this.output?.disconnect();
     if (this.moduleUrl) {
       URL.revokeObjectURL(this.moduleUrl);
